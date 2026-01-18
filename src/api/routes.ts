@@ -7,6 +7,7 @@ import tablesRouter from "./tables/table.route";
 import menusRouter from "./menus/menus.route";
 import profilesRouter from "./profiles/profile.route";
 import ordersRouter from "./orders/order.route";
+import { customerRoutes } from "./customers/customer.route";
 
 /**
  * Main API Router for v1 endpoints.
@@ -52,5 +53,6 @@ router.use("/profile", profilesRouter);
  * Orders Management Routes
  */
 router.use("/orders", ordersRouter);
+router.use("/customers", customerRoutes);
 
 export default router;
