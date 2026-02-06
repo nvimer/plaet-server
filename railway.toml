@@ -1,5 +1,5 @@
 # Railway Configuration for Plaet API
-# Optimized para plaet.cloud con variables mixtas (Railway + estáticas)
+# Configurado con tu PostgreSQL URL real
 
 [build]
 buildCommand = "npm run build"
@@ -13,18 +13,18 @@ restartPolicyMaxRetries = 10
 NODE_ENV = "production"
 PORT = "8080"
 
-# Database Configuration (automática de Railway)
-DATABASE_URL = "${{RAILWAY_POSTGRESQL_DATABASE_URL}"
+# Database Configuration (Tu PostgreSQL REAL)
+DATABASE_URL = "${{RAILWAY_POSTGRESQL_DATABASE_URL}}"
 
-# Application Configuration
+# Application Configuration (para plaet.cloud)
 APP_URL = "https://plaet.cloud/api/v1"
 JWT_SECRET = "${{RAILWAY_TOKEN_JWT_SECRET}"
 SALT_ROUNDS = "10"
 JWT_ACCESS_EXPIRATION_MINUTES = "30"
 JWT_ACCESS_EXPIRATION_DAYS = "7"
 
-# CORS Configuration para plaet.cloud (actualizar después de configurar dominio)
-ALLOWED_ORIGINS = "${RAILWAY_PUBLIC_DOMAIN},https://www.plaet.cloud,https://plaet.cloud"
+# CORS Configuration para plaet.cloud
+ALLOWED_ORIGINS = "https://plaet.cloud,https://www.plaet.cloud,${{RAILWAY_PUBLIC_DOMAIN}"
 
 # Health Check
 HEALTH_CHECK_ENDPOINT = "/api/health"
