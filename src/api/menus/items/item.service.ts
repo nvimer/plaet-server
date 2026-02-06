@@ -126,7 +126,7 @@ export class ItemService implements ItemServiceInterface {
     const itemIds = data.items.map((i) => i.itemId);
     let existingItems: (MenuItem | null)[];
 
-    if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
+    if (process.env.NODE_ENV === "test") {
       const client = getPrismaClient();
       existingItems = await Promise.all(
         itemIds.map((id) => client.menuItem.findUnique({ where: { id } })),
@@ -170,7 +170,7 @@ export class ItemService implements ItemServiceInterface {
     }
 
     // For tests, implement the reset logic directly
-    if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
+    if (process.env.NODE_ENV === "test") {
       const client = getPrismaClient();
       await client.$transaction(async (tx: PrismaTransaction) => {
         await Promise.all(
@@ -478,7 +478,7 @@ export class ItemService implements ItemServiceInterface {
    */
   async getLowStock(): Promise<MenuItem[]> {
     // For tests, use the test database client directly
-    if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
+    if (process.env.NODE_ENV === "test") {
       const client = getPrismaClient();
       return client.menuItem.findMany({
         where: {
@@ -503,7 +503,7 @@ export class ItemService implements ItemServiceInterface {
    */
   async getOutStock(): Promise<MenuItem[]> {
     // For tests, use the test database client directly
-    if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
+    if (process.env.NODE_ENV === "test") {
       const client = getPrismaClient();
       return client.menuItem.findMany({
         where: {
@@ -534,7 +534,7 @@ export class ItemService implements ItemServiceInterface {
     await this.findMenuItemByIdOrFail(id);
 
     // For tests, use the test database client directly
-    if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
+    if (process.env.NODE_ENV === "test") {
       const client = getPrismaClient();
       const skip = (params.page - 1) * params.limit;
 

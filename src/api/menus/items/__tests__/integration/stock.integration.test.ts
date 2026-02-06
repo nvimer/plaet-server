@@ -32,8 +32,10 @@ describe("Stock Management Integration Tests", () => {
   beforeEach(async () => {
     // Clean stock adjustments before each test
     await testPrisma.stockAdjustment.deleteMany();
-    await testPrisma.menuItem.deleteMany();
-    await testPrisma.menuCategory.deleteMany();
+
+    // For menu items and categories, delete all records including soft-deleted ones
+    await testPrisma.$executeRaw`DELETE FROM "menu_items"`;
+    await testPrisma.$executeRaw`DELETE FROM "menu_categories"`;
   });
 
   describe("Daily Stock Reset", () => {

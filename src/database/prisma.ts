@@ -148,9 +148,9 @@ process.on("beforeExit", async () => {
  *
  * @returns Prisma client instance (test or production)
  */
-export function getPrismaClient(): typeof prisma {
-  if (process.env.NODE_ENV === "test" && process.env.TEST_TYPE) {
-    // For integration/E2E tests, use test database client
+export function getPrismaClient(): any {
+  if (process.env.NODE_ENV === "test") {
+    // For all tests (unit, integration, E2E), use test database client
     // Dynamic import to avoid circular dependencies
     const { getTestDatabaseClient } = require("../tests/shared/test-database");
     return getTestDatabaseClient();
