@@ -2,7 +2,7 @@
 # Versión corregida con credenciales válidas de Railway
 
 [build]
-buildCommand = "npm run build"
+buildCommand = "npm run build && npx prisma migrate deploy"
 
 [deploy]
 startCommand = "npm start"
