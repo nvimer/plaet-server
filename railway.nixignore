@@ -1,0 +1,11 @@
+# Railway ignore file
+node_modules
+dist
+coverage
+.env
+.env.local
+.env.development.local
+*.log
+.DS_Store
+.git
+.gitignore

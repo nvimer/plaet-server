@@ -1,0 +1,72 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main, develop, production]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      railway_url:
+        description: "The URL of the deployed Railway application"
+        value: ${{ steps.deploy.outputs.railway_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Railway CLI
+      run: npm install -g @railway/cli
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Deploy to Railway
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      id: deploy
+      run: |
+        railway login --token $RAILWAY_TOKEN
+        
+        # Set production environment
+        echo "NODE_ENV=production" > .env.production
+        echo "JWT_SECRET=$(node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\")" >> .env.production
+        
+        # Deploy
+        railway up
+        
+        # Health check
+        sleep 30
+        RAILWAY_DOMAIN=$(railway domain)
+        if [ -n "$RAILWAY_DOMAIN" ]; then
+          echo "RAILWAY_URL=https://$RAILWAY_DOMAIN" >> $GITHUB_OUTPUT
+        else
+          echo "Deployment domain not available" && exit 1
+        fi
+        
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$RAILWAY_URL/api/health" || echo "000")
+        
+        if [ "$HTTP_STATUS" = "200" ]; then
+          echo "✅ Health check passed ($HTTP_STATUS)"
+        else
+          echo "❌ Health check failed ($HTTP_STATUS)"
+          exit 1
+        fi
+        
+    - name: Notify Deployment
+      if: success()
+        run: |
+          echo "🎉 Plaet API deployed successfully!"
+          echo "🌐 API URL: $RAILWAY_URL"
+          echo "📖 Documentation: $RAILWAY_URL/api/v1/docs"
