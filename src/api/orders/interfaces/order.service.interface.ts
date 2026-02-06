@@ -75,7 +75,7 @@ export interface OrderServiceInterface {
   /**
    * Creates multiple orders in a single transaction (batch creation)
    *
-   * Used for corrientazo orders where multiple diners at the same table
+   * Used for setLunch orders where multiple diners at the same table
    * create separate orders atomically.
    *
    * @param waiterId - Waiter creating the orders

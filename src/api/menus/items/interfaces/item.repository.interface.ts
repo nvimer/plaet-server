@@ -3,7 +3,7 @@ import {
   CreateItemInput,
   DailyStockResetInput,
   MenuItemSearchParams,
-  CorrientazoFilterParams,
+  SetLunchFilterParams,
 } from "../item.validator";
 import {
   PaginatedResponse,
@@ -29,8 +29,8 @@ export interface ItemRepositoryInterface {
   search(
     params: PaginationParams & MenuItemSearchParams,
   ): Promise<PaginatedResponse<MenuItem>>;
-  findByCorrientazoFilters(
-    params: PaginationParams & CorrientazoFilterParams,
+  findBySetLunchFilters(
+    params: PaginationParams & SetLunchFilterParams,
   ): Promise<PaginatedResponse<MenuItem>>;
   updateStock(
     id: number,

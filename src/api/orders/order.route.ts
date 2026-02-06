@@ -35,7 +35,7 @@ router.post("/", validate(createOrderSchema), orderController.createOrder);
 /**
  * POST /orders/batch
  * Creates multiple orders in a single atomic transaction.
- * Used for corrientazo orders where multiple diners at the same table
+ * Used for setLunch orders where multiple diners at the same table
  * create separate orders simultaneously.
  */
 router.post(

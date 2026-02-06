@@ -9,11 +9,11 @@ const envSchema = z.object({
     .default("development"),
   APP_URL: z.string(),
   DATABASE_URL: z.string(),
-  TEST_DATABASE_URL: z.string(),
-  JWT_SECRET: z.string(), // Añade si planeas usar JWT
-  SALT_ROUNDS: z.coerce.number(),
-  JWT_ACCESS_EXPIRATION_MINUTES: z.coerce.number(),
-  JWT_ACCESS_EXPIRATION_DAYS: z.coerce.number(),
+  TEST_DATABASE_URL: z.string().optional(), // Hacer opcional para producción
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  SALT_ROUNDS: z.coerce.number().default(10),
+  JWT_ACCESS_EXPIRATION_MINUTES: z.coerce.number().default(30),
+  JWT_ACCESS_EXPIRATION_DAYS: z.coerce.number().default(7),
   ALLOWED_ORIGINS: z.string(),
 });
 
@@ -24,6 +24,35 @@ if (!parsedEnv.success) {
     "❌ Invalid environment variables:",
     parsedEnv.error.flatten().fieldErrors,
   );
+
+  // En producción, mostrar variables faltantes específicas
+  if (process.env.NODE_ENV === "production") {
+    logger.error("🔧 Production Environment - Missing Variables:");
+
+    if (!process.env.JWT_SECRET) {
+      logger.error("❌ JWT_SECRET is required in production");
+    }
+    if (!process.env.DATABASE_URL) {
+      logger.error("❌ DATABASE_URL is required in production");
+    }
+    if (!process.env.APP_URL) {
+      logger.error("❌ APP_URL is required in production");
+    }
+    if (!process.env.ALLOWED_ORIGINS) {
+      logger.error("❌ ALLOWED_ORIGINS is required in production");
+    }
+
+    // Log valores actuales (sin secretos)
+    logger.info("📋 Current Environment (sensitive):", {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      DATABASE_URL: process.env.DATABASE_URL ? "SET" : "MISSING",
+      APP_URL: process.env.APP_URL || "MISSING",
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "MISSING",
+      JWT_SECRET_SET: process.env.JWT_SECRET ? "YES" : "NO",
+    });
+  }
+
   throw new Error("Invalid environment variables");
 }
 

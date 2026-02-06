@@ -103,10 +103,10 @@ class ItemController {
   });
 
   /**
-   * GET /items/corrientazo
+   * GET /items/setLunch
    *
-   * Retrieves menu items filtered by corrientazo-specific criteria.
-   * This endpoint is used for corrientazo (set lunch) order creation
+   * Retrieves menu items filtered by setLunch-specific criteria.
+   * This endpoint is used for setLunch (set lunch) order creation
    * to get proteins, plate components, and extras.
    *
    * Query Parameters:
@@ -124,7 +124,7 @@ class ItemController {
    * - 400: Invalid filter parameters
    * - 500: Server error during retrieval
    */
-  getCorrientazoItems = asyncHandler(async (req: Request, res: Response) => {
+  getSetLunchItems = asyncHandler(async (req: Request, res: Response) => {
     const page = Number(req.query.page) || DEFAULT_PAGE;
     const limit = Number(req.query.limit) || DEFAULT_LIMIT;
     const isProtein =
@@ -164,11 +164,11 @@ class ItemController {
       maxPrice,
     };
 
-    const menuItems = await this.itemService.getCorrientazoItems(params);
+    const menuItems = await this.itemService.getSetLunchItems(params);
 
     res.status(HttpStatus.OK).json({
       success: true,
-      message: "Corrientazo items retrieved successfully",
+      message: "SetLunch items retrieved successfully",
       data: menuItems.data,
       meta: menuItems.meta,
     });

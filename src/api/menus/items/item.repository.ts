@@ -4,7 +4,7 @@ import {
   CreateItemInput,
   DailyStockResetInput,
   MenuItemSearchParams,
-  CorrientazoFilterParams,
+  SetLunchFilterParams,
 } from "./item.validator";
 import prisma from "../../../database/prisma";
 import {
@@ -129,16 +129,16 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   /**
-   * Finds menu items filtered by corrientazo-specific criteria
+   * Finds menu items filtered by setLunch-specific criteria
    *
    * Supports filtering by protein status, plate component status, component type,
-   * category name, and price ranges. Used for corrientazo order creation.
+   * category name, and price ranges. Used for setLunch order creation.
    *
    * @param params - Filter parameters including pagination
    * @returns Paginated list of filtered menu items
    */
-  async findByCorrientazoFilters(
-    params: PaginationParams & CorrientazoFilterParams,
+  async findBySetLunchFilters(
+    params: PaginationParams & SetLunchFilterParams,
   ): Promise<PaginatedResponse<MenuItem>> {
     const {
       page,

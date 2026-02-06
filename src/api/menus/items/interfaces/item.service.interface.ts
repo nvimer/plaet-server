@@ -7,7 +7,7 @@ import {
   MenuItemSearchParams,
   RemoveStockBodyInput,
   StockHistoryParams,
-  CorrientazoFilterParams,
+  SetLunchFilterParams,
 } from "../item.validator";
 import {
   PaginatedResponse,
@@ -24,8 +24,8 @@ export interface ItemServiceInterface {
   searchMenuItems(
     params: PaginationParams & MenuItemSearchParams,
   ): Promise<PaginatedResponse<MenuItem>>;
-  getCorrientazoItems(
-    params: PaginationParams & CorrientazoFilterParams,
+  getSetLunchItems(
+    params: PaginationParams & SetLunchFilterParams,
   ): Promise<PaginatedResponse<MenuItem>>;
   dailyStockReset(data: DailyStockResetInput): Promise<void>;
   addStock(
