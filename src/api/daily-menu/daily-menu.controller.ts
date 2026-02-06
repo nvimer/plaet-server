@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpStatus } from "../../utils/httpStatus.enum";
-import { DailyMenuServiceInterface } from "./daily-menu.service";
+import { DailyMenuServiceInterface } from "./interfaces/daily-menu.service.interface";
 import dailyMenuService from "./daily-menu.service";
 import {
   UpdateDailyMenuBodyInput,
-  UpdateDailyMenuDateInput,
 } from "./daily-menu.validator";
 
 /**

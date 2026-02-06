@@ -4,21 +4,20 @@ export { default as dailyMenuService } from "./daily-menu.service";
 export { default as dailyMenuController } from "./daily-menu.controller";
 export { default as dailyMenuRoutes } from "./daily-menu.route";
 
-// Export types
+// Export types from interfaces
 export type {
   DailyMenuRepositoryInterface,
   DailyMenuWithId,
   CreateDailyMenuData,
   UpdateDailyMenuData,
-} from "./daily-menu.repository";
+} from "./interfaces/daily-menu.repository.interface";
 
 export type {
   DailyMenuServiceInterface,
   UpdateDailyMenuInput,
   DailyMenuResponse,
-} from "./daily-menu.service";
+} from "./interfaces/daily-menu.service.interface";
 
 export type {
   UpdateDailyMenuBodyInput,
-  UpdateDailyMenuDateInput,
 } from "./daily-menu.validator";
