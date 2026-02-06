@@ -110,8 +110,21 @@ describe("Stock Management Integration Tests", () => {
     });
 
     test("should throw validation error for negative quantities", async () => {
+      const category = await testPrisma.menuCategory.create({
+        data: { name: "Test Category" },
+      });
+
+      const item = await testPrisma.menuItem.create({
+        data: {
+          categoryId: category.id,
+          name: "Test Item",
+          price: 10000,
+          inventoryType: "TRACKED",
+        },
+      });
+
       const resetData = {
-        items: [{ itemId: 1, quantity: -5 }],
+        items: [{ itemId: item.id, quantity: -5 }],
       };
 
       await expect(itemService.dailyStockReset(resetData)).rejects.toThrow();
