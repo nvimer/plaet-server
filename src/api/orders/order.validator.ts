@@ -41,7 +41,7 @@ const orderItemSchema = z.object({
   menuItemId: z.number().int().positive("Menu item ID must be positive"),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   notes: z.string().max(200, "Notes cannot exceed 200 characters").optional(),
-  // CORRIENTAZO SPECIFIC FIELDS
+  // SET_LUNCH SPECIFIC FIELDS
   isSubstitution: z.boolean().optional(),
   originalItemId: z.number().int().positive().optional(),
   isExtra: z.boolean().optional(),
@@ -103,7 +103,7 @@ export const orderSearchSchema = z.object({
  * Validation Schema for Batch Order Creation
  *
  * Validates the request body for creating multiple orders at once.
- * Used for corrientazo orders where multiple diners order at the same table.
+ * Used for setLunch orders where multiple diners order at the same table.
  */
 export const batchCreateOrderSchema = z.object({
   body: z.object({

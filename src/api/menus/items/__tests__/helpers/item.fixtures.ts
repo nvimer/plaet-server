@@ -18,7 +18,7 @@ export function createMenuItemFixture(
     initialStock: 100,
     lowStockAlert: 5,
     autoMarkUnavailable: true,
-    // CORRIENTAZO SPECIFIC FIELDS
+    // SET_LUNCH SPECIFIC FIELDS
     isProtein: false,
     proteinIcon: null,
     isPlateComponent: false,

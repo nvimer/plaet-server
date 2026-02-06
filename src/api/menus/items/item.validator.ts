@@ -32,7 +32,7 @@ export const createItemSchema = z.object({
     isExtra: z.boolean(),
     isAvailable: z.boolean(),
     imageUrl: z.string().optional(),
-    // CORRIENTAZO SPECIFIC FIELDS
+    // SET_LUNCH SPECIFIC FIELDS
     isProtein: z.boolean().optional(),
     proteinIcon: z
       .enum(["beef", "fish", "chicken", "pork", "other"])
@@ -69,12 +69,12 @@ export const menuItemSearchSchema = z.object({
 });
 
 /**
- * Validation Schema for Corrientazo Menu Item Filters
+ * Validation Schema for SetLunch Menu Item Filters
  *
- * Validates query parameters for filtering menu items by corrientazo-specific fields.
+ * Validates query parameters for filtering menu items by setLunch-specific fields.
  * Supports filtering by protein status, plate component status, and component type.
  */
-export const corrientazoFilterSchema = z.object({
+export const setLunchFilterSchema = z.object({
   query: z.object({
     isProtein: z
       .enum(["true", "false"])
@@ -191,6 +191,6 @@ export type RemoveStockInput = z.infer<typeof removeStockSchema>;
 export type RemoveStockBodyInput = z.infer<typeof removeStockSchema>["body"];
 export type InventoryTypeInput = z.infer<typeof inventoryTypeSchema>["body"];
 export type StockHistoryParams = z.infer<typeof stockHistorySchema>["query"];
-export type CorrientazoFilterParams = z.infer<
-  typeof corrientazoFilterSchema
+export type SetLunchFilterParams = z.infer<
+  typeof setLunchFilterSchema
 >["query"];

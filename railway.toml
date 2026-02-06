@@ -1,6 +1,6 @@
 # Railway Configuration for Plaet API
+
 [build]
-builder = "NIXPACKS"
 buildCommand = "npm run build"
 
 [deploy]
@@ -28,21 +28,5 @@ ALLOWED_ORIGINS = "${{RAILWAY_PUBLIC_DOMAIN},https://www.plaet.cloud,https://pla
 # Health Check
 HEALTH_CHECK_ENDPOINT = "/api/health"
 
-[variables]
-# Railway automatically provides these variables:
-# - RAILWAY_PUBLIC_DOMAIN: Your app's public URL
-# - RAILWAY_SERVICE_NAME: Your service name  
-# - RAILWAY_PROJECT_NAME: Your project name
-# - postgresql.DATABASE_URL: PostgreSQL connection string
-
-# Static Assets (if needed for future frontend)
-# [statics]
-# publicDir = "public"
-
-# Log Configuration
-[logs]
-# [logs] # Configure logs if needed
-
-# Custom Domain (optional)
-# [domains]
-# { domain = "api.tu-dominio.com" }
+# Use Node.js 18 for compatibility
+NODE_VERSION = "18"

@@ -403,9 +403,9 @@ export class OrderService implements OrderServiceInterface {
   }
 
   /**
-   * Calculates order total using combo pricing for corrientazo orders
+   * Calculates order total using combo pricing for setLunch orders
    *
-   * For corrientazo orders with proteins:
+   * For setLunch orders with proteins:
    * - Uses protein's comboPrice as base
    * - Adds price of paid extras (items with price > 0 that are not proteins)
    * - Free substitutions (price = 0) don't affect total
@@ -428,7 +428,7 @@ export class OrderService implements OrderServiceInterface {
     });
 
     if (proteinItem) {
-      // Corrientazo pricing: start with protein's combo price
+      // SetLunch pricing: start with protein's combo price
       const proteinMenuItem = menuItems.find(
         (mi) => mi.id === proteinItem.menuItemId,
       );
@@ -460,7 +460,7 @@ export class OrderService implements OrderServiceInterface {
   /**
    * Creates Multiple Orders in a Single Transaction (Batch Order Creation)
    *
-   * Used for corrientazo orders where multiple diners at the same table
+   * Used for setLunch orders where multiple diners at the same table
    * create separate orders. All orders are created atomically - if one fails,
    * all are rolled back.
    *
@@ -560,7 +560,7 @@ export class OrderService implements OrderServiceInterface {
           orderMenuItems,
         );
 
-        // Prepare order data with prices and corrientazo fields
+        // Prepare order data with prices and setLunch fields
         const orderId = uuidv4();
         const preparedItems = orderItems.map((item) => {
           const menuItem = orderMenuItems.find(

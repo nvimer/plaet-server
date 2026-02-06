@@ -240,7 +240,7 @@ class OrderController {
    * POST /orders/batch
    *
    * Creates multiple orders in a single atomic transaction.
-   * Used for corrientazo orders where multiple diners at the same table
+   * Used for setLunch orders where multiple diners at the same table
    * create separate orders simultaneously.
    *
    * @param req - Express request object with batch order data in body
@@ -270,7 +270,7 @@ class OrderController {
    *
    * Business Logic:
    * - All orders created atomically (all succeed or all fail)
-   * - Combo pricing applied for corrientazo orders
+   * - Combo pricing applied for setLunch orders
    * - Stock validated for all items across all orders
    * - Stock deducted for all TRACKED items
    * - Returns table total for easy billing
