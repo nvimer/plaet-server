@@ -1,4 +1,4 @@
-import { Order, Prisma } from "@prisma/client";
+import { Order, Prisma, MenuItem } from "@prisma/client";
 import {
   PaginationParams,
   PaginatedResponse,
@@ -18,12 +18,15 @@ import {
   CreateOrderBodyInput,
   OrderSearchParams,
   UpdateOrderStatusBodyInput,
+  BatchCreateOrderBodyInput,
+  OrderItemInput,
 } from "./order.validator";
 import orderRepository from "./order.repository";
 import itemService from "../menus/items/item.service";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
+import { v4 as uuidv4 } from "uuid";
 
 export class OrderService implements OrderServiceInterface {
   constructor(
@@ -32,7 +35,7 @@ export class OrderService implements OrderServiceInterface {
       ItemServiceInterface,
       "findMenuItemById" | "deductStockForOrder" | "revertStockForOrder"
     >,
-  ) { }
+  ) {}
 
   /**
    * Private Helper: Find Order by ID or Fail
@@ -396,6 +399,239 @@ export class OrderService implements OrderServiceInterface {
         where: { id },
         data: { status: OrderStatus.CANCELLED },
       });
+    });
+  }
+
+  /**
+   * Calculates order total using combo pricing for corrientazo orders
+   *
+   * For corrientazo orders with proteins:
+   * - Uses protein's comboPrice as base
+   * - Adds price of paid extras (items with price > 0 that are not proteins)
+   * - Free substitutions (price = 0) don't affect total
+   *
+   * For orders without proteins:
+   * - Sums all individual item prices
+   *
+   * @param items - Order items with menu item details
+   * @param menuItems - Menu items data
+   * @returns Calculated total amount
+   */
+  private calculateOrderTotal(
+    items: OrderItemInput[],
+    menuItems: MenuItem[],
+  ): number {
+    // Find the protein item (if any)
+    const proteinItem = items.find((item) => {
+      const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
+      return menuItem?.isProtein;
+    });
+
+    if (proteinItem) {
+      // Corrientazo pricing: start with protein's combo price
+      const proteinMenuItem = menuItems.find(
+        (mi) => mi.id === proteinItem.menuItemId,
+      );
+      let total = Number(
+        proteinMenuItem?.comboPrice || proteinMenuItem?.price || 0,
+      );
+
+      // Add paid extras (non-protein items with price > 0)
+      const extras = items.filter((item) => {
+        const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
+        return !menuItem?.isProtein && Number(menuItem?.price || 0) > 0;
+      });
+
+      extras.forEach((item) => {
+        const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
+        total += Number(menuItem?.price || 0) * item.quantity;
+      });
+
+      return total;
+    } else {
+      // No protein: sum of all individual prices
+      return items.reduce((sum, item) => {
+        const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
+        return sum + Number(menuItem?.price || 0) * item.quantity;
+      }, 0);
+    }
+  }
+
+  /**
+   * Creates Multiple Orders in a Single Transaction (Batch Order Creation)
+   *
+   * Used for corrientazo orders where multiple diners at the same table
+   * create separate orders. All orders are created atomically - if one fails,
+   * all are rolled back.
+   *
+   * Business Logic:
+   * 1. Validates all menu items are available
+   * 2. Validates stock for TRACKED items
+   * 3. Calculates combo pricing for each order
+   * 4. Creates all orders in a single transaction
+   * 5. Deducts stock for all items
+   * 6. Returns created orders with table total
+   *
+   * @param waiterId - Waiter creating the orders
+   * @param data - Batch order data including tableId and orders array
+   * @returns Created orders and table total
+   */
+  async batchCreateOrders(
+    waiterId: string,
+    data: BatchCreateOrderBodyInput,
+  ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
+    const client = getPrismaClient();
+
+    return await client.$transaction(async (tx: PrismaTransaction) => {
+      const createdOrders: OrderWithItems[] = [];
+      let tableTotal = 0;
+
+      // Collect all unique menu item IDs from all orders
+      const allMenuItemIds = new Set<number>();
+      data.orders.forEach((order) => {
+        order.items.forEach((item) => allMenuItemIds.add(item.menuItemId));
+      });
+
+      // Fetch all menu items in a single query
+      const menuItems = await tx.menuItem.findMany({
+        where: {
+          id: { in: Array.from(allMenuItemIds) },
+          deleted: false,
+        },
+      });
+
+      // Validate all items exist
+      const foundIds = new Set(menuItems.map((mi) => mi.id));
+      const missingIds = Array.from(allMenuItemIds).filter(
+        (id) => !foundIds.has(id),
+      );
+      if (missingIds.length > 0) {
+        throw new CustomError(
+          `Menu items not found: ${missingIds.join(", ")}`,
+          HttpStatus.NOT_FOUND,
+          "ITEMS_NOT_FOUND",
+        );
+      }
+
+      // Validate all items are available
+      const unavailableItems = menuItems.filter((item) => !item.isAvailable);
+      if (unavailableItems.length > 0) {
+        const itemNames = unavailableItems.map((item) => item.name).join(", ");
+        throw new CustomError(
+          `The following items are not available: ${itemNames}`,
+          HttpStatus.BAD_REQUEST,
+          "ITEMS_NOT_AVAILABLE",
+        );
+      }
+
+      // Validate stock for all orders
+      const stockRequirements = new Map<number, number>();
+      data.orders.forEach((order) => {
+        order.items.forEach((item) => {
+          const current = stockRequirements.get(item.menuItemId) || 0;
+          stockRequirements.set(item.menuItemId, current + item.quantity);
+        });
+      });
+
+      for (const [itemId, requiredQty] of stockRequirements.entries()) {
+        const menuItem = menuItems.find((mi) => mi.id === itemId);
+        if (menuItem?.inventoryType === InventoryType.TRACKED) {
+          const availableStock = menuItem.stockQuantity ?? 0;
+          if (availableStock < requiredQty) {
+            throw new CustomError(
+              `Insufficient stock for ${menuItem.name}. Available: ${availableStock}, Required: ${requiredQty}`,
+              HttpStatus.BAD_REQUEST,
+              "INSUFFICIENT_STOCK",
+            );
+          }
+        }
+      }
+
+      // Create each order
+      for (const orderData of data.orders) {
+        const orderItems = orderData.items;
+        const orderMenuItems = orderItems.map(
+          (item) => menuItems.find((mi) => mi.id === item.menuItemId)!,
+        );
+
+        // Calculate total using combo pricing
+        const totalAmount = this.calculateOrderTotal(
+          orderItems,
+          orderMenuItems,
+        );
+
+        // Prepare order data with prices and corrientazo fields
+        const orderId = uuidv4();
+        const preparedItems = orderItems.map((item) => {
+          const menuItem = orderMenuItems.find(
+            (mi) => mi.id === item.menuItemId,
+          )!;
+          return {
+            ...item,
+            priceAtOrder: Number(menuItem.price),
+          };
+        });
+
+        // Create the order
+        const createData: CreateOrderBodyInput = {
+          tableId: data.tableId,
+          type: orderData.type,
+          customerId: orderData.customerId,
+          items: preparedItems,
+          notes: orderData.notes,
+        };
+
+        const order = await this.orderRepository.create(
+          waiterId,
+          createData,
+          tx,
+        );
+
+        // Update order total
+        await this.orderRepository.updateTotal(order.id, totalAmount, tx);
+
+        // Deduct stock
+        const stockDeductionPromises = orderItems.map((item) => {
+          const menuItem = orderMenuItems.find(
+            (mi) => mi.id === item.menuItemId,
+          )!;
+          if (menuItem.inventoryType === InventoryType.TRACKED) {
+            return this.itemService.deductStockForOrder(
+              item.menuItemId,
+              item.quantity,
+              order.id,
+              tx,
+            );
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(stockDeductionPromises);
+
+        // Fetch the complete order with items
+        const completeOrder = await tx.order.findUnique({
+          where: { id: order.id },
+          include: {
+            items: {
+              include: {
+                menuItem: true,
+              },
+            },
+          },
+        });
+
+        if (!completeOrder) {
+          throw new CustomError(
+            `Order ${order.id} not found after creation`,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "ORDER_NOT_FOUND",
+          );
+        }
+
+        createdOrders.push(completeOrder as OrderWithItems);
+        tableTotal += totalAmount;
+      }
+
+      return { orders: createdOrders, tableTotal };
     });
   }
 }

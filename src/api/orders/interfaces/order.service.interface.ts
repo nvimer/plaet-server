@@ -11,6 +11,7 @@ import {
   CreateOrderBodyInput,
   OrderSearchParams,
   UpdateOrderStatusBodyInput,
+  BatchCreateOrderBodyInput,
 } from "../order.validator";
 
 /**
@@ -70,4 +71,20 @@ export interface OrderServiceInterface {
    * @throws CustomError if order cannot be cancelled;
    */
   cancelOrder(id: string): Promise<Order>;
+
+  /**
+   * Creates multiple orders in a single transaction (batch creation)
+   *
+   * Used for corrientazo orders where multiple diners at the same table
+   * create separate orders atomically.
+   *
+   * @param waiterId - Waiter creating the orders
+   * @param data - Batch order data
+   * @returns Created orders and table total
+   * @throws CustomError if validation fails
+   */
+  batchCreateOrders(
+    waiterId: string,
+    data: BatchCreateOrderBodyInput,
+  ): Promise<{ orders: OrderWithItems[]; tableTotal: number }>;
 }

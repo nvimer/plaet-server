@@ -4,6 +4,7 @@ import {
   orderIdSchema,
   orderSearchSchema,
   updateOrderStatusSchema,
+  batchCreateOrderSchema,
 } from "./order.validator";
 import orderController from "./order.controller";
 import { validate } from "../../middlewares/validation.middleware";
@@ -30,6 +31,18 @@ router.get("/:id", validate(orderIdSchema), orderController.getOrder);
  * Creates a new order with items and stock management
  */
 router.post("/", validate(createOrderSchema), orderController.createOrder);
+
+/**
+ * POST /orders/batch
+ * Creates multiple orders in a single atomic transaction.
+ * Used for corrientazo orders where multiple diners at the same table
+ * create separate orders simultaneously.
+ */
+router.post(
+  "/batch",
+  validate(batchCreateOrderSchema),
+  orderController.batchCreateOrders,
+);
 
 /**
  * PATCH /orders/:id/status

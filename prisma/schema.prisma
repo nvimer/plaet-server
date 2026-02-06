@@ -231,6 +231,14 @@ model MenuItem {
   lowStockAlert       Int?    @default(5) @map("low_stock_alert")
   autoMarkUnavailable Boolean @default(true) @map("auto_mark_unavailable)")
 
+  // CORRIENTAZO SPECIFIC FIELDS
+  isProtein        Boolean  @default(false) @map("is_protein")
+  proteinIcon      String?  @map("protein_icon") // "beef" | "fish" | "chicken" | "pork" | "other"
+  isPlateComponent Boolean  @default(false) @map("is_plate_component")
+  componentType    String?  @map("component_type") // "soup" | "principle" | "salad" | "additional"
+  comboPrice       Decimal? @db.Decimal(10, 2) @map("combo_price")
+  isPremium        Boolean  @default(false) @map("is_premium")
+
   dailyMenuOptions DailyMenuOption[]
   orderItems       OrderItem[]
   stockAdjustments StockAdjustment[]
@@ -320,6 +328,10 @@ model OrderItem {
   priceAtOrder Decimal @map("price_at_order") @db.Decimal(10, 2)
   notes        String?
 
+  // CORRIENTAZO SPECIFIC FIELDS
+  isSubstitution Boolean @default(false) @map("is_substitution")
+  originalItemId Int?    @map("original_item_id")
+  isExtra        Boolean @default(false) @map("is_extra")
   isFreeSubstitution Boolean @default(false) @map("is_free_substitution")
 
   createdAt DateTime @default(now()) @map("created_at")

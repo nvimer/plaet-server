@@ -1,9 +1,10 @@
-import { MenuItem, StockAdjustment } from "@prisma/client";
+import { MenuItem, Prisma, StockAdjustment } from "@prisma/client";
 import { ItemRepositoryInterface } from "./interfaces/item.repository.interface";
 import {
   CreateItemInput,
   DailyStockResetInput,
   MenuItemSearchParams,
+  CorrientazoFilterParams,
 } from "./item.validator";
 import prisma from "../../../database/prisma";
 import {
@@ -53,10 +54,10 @@ class ItemRepository implements ItemRepositoryInterface {
 
   /**
    * Retrieves a menu item by ID for update within a transaction
-   * 
+   *
    * This method is used within transactions to ensure proper locking
    * and prevent race conditions when updating stock quantities.
-   * 
+   *
    * @param tx - Transaction client
    * @param itemId - Menu item identifier
    * @returns Menu item or null if not found
@@ -74,7 +75,7 @@ class ItemRepository implements ItemRepositoryInterface {
         deleted: false,
       },
     });
-    
+
     return item;
   }
 
@@ -115,6 +116,91 @@ class ItemRepository implements ItemRepositoryInterface {
     const [menuItems, total] = await Promise.all([
       prisma.menuItem.findMany({
         where: whereConditions,
+        orderBy: { name: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.menuItem.count({
+        where: whereConditions,
+      }),
+    ]);
+
+    return createPaginatedResponse(menuItems, total, { page, limit });
+  }
+
+  /**
+   * Finds menu items filtered by corrientazo-specific criteria
+   *
+   * Supports filtering by protein status, plate component status, component type,
+   * category name, and price ranges. Used for corrientazo order creation.
+   *
+   * @param params - Filter parameters including pagination
+   * @returns Paginated list of filtered menu items
+   */
+  async findByCorrientazoFilters(
+    params: PaginationParams & CorrientazoFilterParams,
+  ): Promise<PaginatedResponse<MenuItem>> {
+    const {
+      page,
+      limit,
+      isProtein,
+      isPlateComponent,
+      componentType,
+      category,
+      minPrice,
+      maxPrice,
+    } = params;
+    const skip = (page - 1) * limit;
+
+    // Build where conditions
+    const whereConditions: Prisma.MenuItemWhereInput = {
+      deleted: false,
+      isAvailable: true,
+    };
+
+    // Add protein filter
+    if (isProtein !== undefined) {
+      whereConditions.isProtein = isProtein;
+    }
+
+    // Add plate component filter
+    if (isPlateComponent !== undefined) {
+      whereConditions.isPlateComponent = isPlateComponent;
+    }
+
+    // Add component type filter
+    if (componentType) {
+      whereConditions.componentType = componentType;
+    }
+
+    // Add category filter
+    if (category) {
+      whereConditions.category = {
+        name: {
+          contains: category,
+          mode: "insensitive",
+        },
+      };
+    }
+
+    // Add price range filters
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      whereConditions.price = {};
+      if (minPrice !== undefined) {
+        whereConditions.price.gte = minPrice;
+      }
+      if (maxPrice !== undefined) {
+        whereConditions.price.lte = maxPrice;
+      }
+    }
+
+    // Execute query and count in parallel
+    const [menuItems, total] = await Promise.all([
+      prisma.menuItem.findMany({
+        where: whereConditions,
+        include: {
+          category: true,
+        },
         orderBy: { name: "asc" },
         skip,
         take: limit,
@@ -355,10 +441,10 @@ class ItemRepository implements ItemRepositoryInterface {
 
   /**
    * Updates stock with partial data within a transaction
-   * 
+   *
    * This method allows updating menu item stock fields with partial data
    * within a transaction context for atomic operations.
-   * 
+   *
    * @param tx - Transaction client
    * @param itemId - Menu item identifier
    * @param data - Partial menu item data to update
@@ -380,10 +466,10 @@ class ItemRepository implements ItemRepositoryInterface {
 
   /**
    * Creates a stock adjustment record within a transaction
-   * 
+   *
    * This method creates an audit trail entry for stock changes
    * within a transaction context.
-   * 
+   *
    * @param tx - Transaction client
    * @param data - Stock adjustment data
    * @returns Created stock adjustment

@@ -41,6 +41,11 @@ const orderItemSchema = z.object({
   menuItemId: z.number().int().positive("Menu item ID must be positive"),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   notes: z.string().max(200, "Notes cannot exceed 200 characters").optional(),
+  // CORRIENTAZO SPECIFIC FIELDS
+  isSubstitution: z.boolean().optional(),
+  originalItemId: z.number().int().positive().optional(),
+  isExtra: z.boolean().optional(),
+  isFreeSubstitution: z.boolean().optional(),
 });
 
 /**
@@ -94,6 +99,37 @@ export const orderSearchSchema = z.object({
   }),
 });
 
+/**
+ * Validation Schema for Batch Order Creation
+ *
+ * Validates the request body for creating multiple orders at once.
+ * Used for corrientazo orders where multiple diners order at the same table.
+ */
+export const batchCreateOrderSchema = z.object({
+  body: z.object({
+    tableId: z.number().int().positive("Table ID must be positive"),
+    orders: z
+      .array(
+        z.object({
+          type: orderTypeEnum,
+          customerId: z
+            .string()
+            .uuid("Customer ID must be a valid UUID")
+            .optional(),
+          items: z
+            .array(orderItemSchema)
+            .min(1, "Order must contain at least one item."),
+          notes: z
+            .string()
+            .max(500, "Notes cannot exceed 500 characters")
+            .optional(),
+        }),
+      )
+      .min(1, "At least one order must be provided")
+      .max(10, "Cannot create more than 10 orders at once"),
+  }),
+});
+
 export type OrderIdParams = z.infer<typeof orderIdSchema>["params"];
 export type CreateOrderBodyInput = z.infer<typeof createOrderSchema>["body"];
 export type UpdateOrderStatusBodyInput = z.infer<
@@ -101,3 +137,6 @@ export type UpdateOrderStatusBodyInput = z.infer<
 >["body"];
 export type OrderSearchParams = z.infer<typeof orderSearchSchema>["query"];
 export type OrderItemInput = z.infer<typeof orderItemSchema>;
+export type BatchCreateOrderBodyInput = z.infer<
+  typeof batchCreateOrderSchema
+>["body"];

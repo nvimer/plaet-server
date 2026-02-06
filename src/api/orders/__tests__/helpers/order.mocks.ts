@@ -27,6 +27,7 @@ export function createMockOrderService(): jest.Mocked<OrderServiceInterface> {
     createOrder: jest.fn(),
     updateOrderStatus: jest.fn(),
     cancelOrder: jest.fn(),
+    batchCreateOrders: jest.fn(),
   };
 }
 

@@ -12,6 +12,7 @@ import {
   CreateOrderBodyInput,
   OrderSearchParams,
   UpdateOrderStatusBodyInput,
+  BatchCreateOrderBodyInput,
 } from "./order.validator";
 import { OrderStatus, OrderType } from "../../types/prisma.types";
 
@@ -232,6 +233,61 @@ class OrderController {
       success: true,
       message: `Order with ID ${id} has been CANCELLED`,
       data: order,
+    });
+  });
+
+  /**
+   * POST /orders/batch
+   *
+   * Creates multiple orders in a single atomic transaction.
+   * Used for corrientazo orders where multiple diners at the same table
+   * create separate orders simultaneously.
+   *
+   * @param req - Express request object with batch order data in body
+   * @param res - Express response object
+   *
+   * Request Body:
+   * - tableId: Table ID (number, required)
+   * - orders: Array of orders to create (required, min 1, max 10)
+   *   - type: Order type (DINE_IN | TAKE_OUT | DELIVERY | WHATSAPP, required)
+   *   - customerId: Customer ID (UUID, optional)
+   *   - items: Array of order items (required, min 1)
+   *     - menuItemId: Menu item ID (number, required)
+   *     - quantity: Quantity (number, required, min 1)
+   *     - notes: Special instructions (string, optional)
+   *     - isSubstitution: Whether this is a substitution (boolean, optional)
+   *     - originalItemId: Original item ID if substitution (number, optional)
+   *     - isExtra: Whether this is a paid extra (boolean, optional)
+   *   - notes: Order notes (string, optional)
+   *
+   * Response:
+   * - 201: Orders created successfully
+   * - 400: Validation errors or insufficient stock
+   * - 401: User not authenticated
+   * - 403: User lacks permission to create orders
+   * - 404: Menu item or table not found
+   * - 500: Server error during creation
+   *
+   * Business Logic:
+   * - All orders created atomically (all succeed or all fail)
+   * - Combo pricing applied for corrientazo orders
+   * - Stock validated for all items across all orders
+   * - Stock deducted for all TRACKED items
+   * - Returns table total for easy billing
+   */
+  batchCreateOrders = asyncHandler(async (req: Request, res: Response) => {
+    const data: BatchCreateOrderBodyInput = req.body;
+    const waiterId = req.user.id;
+
+    const result = await this.orderService.batchCreateOrders(waiterId, data);
+
+    res.status(HttpStatus.CREATED).json({
+      success: true,
+      message: `${result.orders.length} orders created successfully`,
+      data: {
+        createdOrders: result.orders,
+        tableTotal: result.tableTotal,
+      },
     });
   });
 }

@@ -18,6 +18,13 @@ export function createMenuItemFixture(
     initialStock: 100,
     lowStockAlert: 5,
     autoMarkUnavailable: true,
+    // CORRIENTAZO SPECIFIC FIELDS
+    isProtein: false,
+    proteinIcon: null,
+    isPlateComponent: false,
+    componentType: null,
+    comboPrice: null,
+    isPremium: false,
     deleted: false,
     deletedAt: null,
     createdAt: new Date("2024-01-01T00:00:00.000Z"),

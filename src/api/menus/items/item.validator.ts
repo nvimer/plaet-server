@@ -32,6 +32,17 @@ export const createItemSchema = z.object({
     isExtra: z.boolean(),
     isAvailable: z.boolean(),
     imageUrl: z.string().optional(),
+    // CORRIENTAZO SPECIFIC FIELDS
+    isProtein: z.boolean().optional(),
+    proteinIcon: z
+      .enum(["beef", "fish", "chicken", "pork", "other"])
+      .optional(),
+    isPlateComponent: z.boolean().optional(),
+    componentType: z
+      .enum(["soup", "principle", "salad", "additional"])
+      .optional(),
+    comboPrice: z.coerce.number().optional(),
+    isPremium: z.boolean().optional(),
   }),
 });
 
@@ -54,6 +65,31 @@ export const menuItemSearchSchema = z.object({
       .enum(["true", "false"])
       .transform((val) => val === "true")
       .optional(),
+  }),
+});
+
+/**
+ * Validation Schema for Corrientazo Menu Item Filters
+ *
+ * Validates query parameters for filtering menu items by corrientazo-specific fields.
+ * Supports filtering by protein status, plate component status, and component type.
+ */
+export const corrientazoFilterSchema = z.object({
+  query: z.object({
+    isProtein: z
+      .enum(["true", "false"])
+      .transform((val) => val === "true")
+      .optional(),
+    isPlateComponent: z
+      .enum(["true", "false"])
+      .transform((val) => val === "true")
+      .optional(),
+    componentType: z
+      .enum(["soup", "principle", "salad", "additional"])
+      .optional(),
+    category: z.string().optional(),
+    minPrice: z.coerce.number().optional(),
+    maxPrice: z.coerce.number().optional(),
   }),
 });
 
@@ -155,3 +191,6 @@ export type RemoveStockInput = z.infer<typeof removeStockSchema>;
 export type RemoveStockBodyInput = z.infer<typeof removeStockSchema>["body"];
 export type InventoryTypeInput = z.infer<typeof inventoryTypeSchema>["body"];
 export type StockHistoryParams = z.infer<typeof stockHistorySchema>["query"];
+export type CorrientazoFilterParams = z.infer<
+  typeof corrientazoFilterSchema
+>["query"];

@@ -7,6 +7,7 @@ import {
   InventoryTypeInput,
   MenuItemSearchParams,
   RemoveStockBodyInput,
+  CorrientazoFilterParams,
 } from "./item.validator";
 import { ItemRepositoryInterface } from "./interfaces/item.repository.interface";
 import itemRepository from "./item.repository";
@@ -109,6 +110,22 @@ export class ItemService implements ItemServiceInterface {
   ): Promise<PaginatedResponse<MenuItem>> {
     // Degelete to repository layer for search functionality
     return await this.itemRepository.search(params);
+  }
+
+  /**
+   * Retrieves Menu Items filtered by corrientazo-specific criteria
+   *
+   * Business logic method for fetching proteins, plate components, and extras
+   * for corrientazo order creation. Supports filtering by multiple criteria
+   * including protein status, component type, and price ranges.
+   *
+   * @param params - Filter parameters including isProtein, isPlateComponent, etc.
+   * @returns Paginated list of filtered menu items with category info
+   */
+  async getCorrientazoItems(
+    params: PaginationParams & CorrientazoFilterParams,
+  ): Promise<PaginatedResponse<MenuItem>> {
+    return await this.itemRepository.findByCorrientazoFilters(params);
   }
 
   /**

@@ -103,6 +103,78 @@ class ItemController {
   });
 
   /**
+   * GET /items/corrientazo
+   *
+   * Retrieves menu items filtered by corrientazo-specific criteria.
+   * This endpoint is used for corrientazo (set lunch) order creation
+   * to get proteins, plate components, and extras.
+   *
+   * Query Parameters:
+   * - page: Page number (optional, defaults to 1)
+   * - limit: Number of items per page (optional, defaults to 20)
+   * - isProtein: Filter by protein status (true/false, optional)
+   * - isPlateComponent: Filter by plate component status (true/false, optional)
+   * - componentType: Filter by component type ("soup", "principle", "salad", "additional")
+   * - category: Filter by category name (optional)
+   * - minPrice: Minimum price filter (optional)
+   * - maxPrice: Maximum price filter (optional)
+   *
+   * Response:
+   * - 200: Filtered menu items retrieved successfully
+   * - 400: Invalid filter parameters
+   * - 500: Server error during retrieval
+   */
+  getCorrientazoItems = asyncHandler(async (req: Request, res: Response) => {
+    const page = Number(req.query.page) || DEFAULT_PAGE;
+    const limit = Number(req.query.limit) || DEFAULT_LIMIT;
+    const isProtein =
+      req.query.isProtein === "true"
+        ? true
+        : req.query.isProtein === "false"
+          ? false
+          : undefined;
+    const isPlateComponent =
+      req.query.isPlateComponent === "true"
+        ? true
+        : req.query.isPlateComponent === "false"
+          ? false
+          : undefined;
+    const componentType = req.query.componentType as
+      | "soup"
+      | "principle"
+      | "salad"
+      | "additional"
+      | undefined;
+    const category = req.query.category as string | undefined;
+    const minPrice = req.query.minPrice
+      ? Number(req.query.minPrice)
+      : undefined;
+    const maxPrice = req.query.maxPrice
+      ? Number(req.query.maxPrice)
+      : undefined;
+
+    const params = {
+      page,
+      limit,
+      isProtein,
+      isPlateComponent,
+      componentType,
+      category,
+      minPrice,
+      maxPrice,
+    };
+
+    const menuItems = await this.itemService.getCorrientazoItems(params);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Corrientazo items retrieved successfully",
+      data: menuItems.data,
+      meta: menuItems.meta,
+    });
+  });
+
+  /**
    * GET /items/:id
    *
    * Retrieves detailed information about a specific menu item by its ID.

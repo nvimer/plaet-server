@@ -10,6 +10,7 @@ import {
   menuItemSearchSchema,
   removeStockSchema,
   stockHistorySchema,
+  corrientazoFilterSchema,
 } from "./item.validator";
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
 import { authJwt } from "../../../middlewares/auth.middleware";
@@ -33,6 +34,18 @@ router.get(
   validate(menuItemSearchSchema),
   validate(paginationQuerySchema),
   itemController.searchMenuItems,
+);
+
+/**
+ * GET /items/corrientazo
+ * Retrieves menu items filtered by corrientazo-specific criteria.
+ * Used for corrientazo (set lunch) order creation.
+ */
+router.get(
+  "/corrientazo",
+  validate(corrientazoFilterSchema),
+  validate(paginationQuerySchema),
+  itemController.getCorrientazoItems,
 );
 
 /**
