@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-import prisma from "../../../database/prisma";
+import { getPrismaClient } from "../../database/prisma";
 import {
   DailyMenuRepositoryInterface,
   DailyMenuWithId,
@@ -12,7 +11,11 @@ import {
  * Handles all database operations for daily menu management
  */
 export class DailyMenuRepository implements DailyMenuRepositoryInterface {
-  constructor(private prismaClient: PrismaClient = prisma) {}
+  private prismaClient: ReturnType<typeof getPrismaClient>;
+
+  constructor() {
+    this.prismaClient = getPrismaClient();
+  }
 
   /**
    * Find daily menu by specific date

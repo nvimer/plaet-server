@@ -1,20 +1,19 @@
 import request from "supertest";
-import { app } from "../../../app";
-import { getTestDatabase } from "../../tests/shared/test-database";
+import app from "../../../../app";
+import {
+  connectTestDatabase,
+  disconnectTestDatabase,
+} from "../../../../tests/shared/test-database";
 
 describe("Customers Integration Tests", () => {
   let testDb: any;
 
   beforeAll(async () => {
-    testDb = await getTestDatabase();
-  });
-
-  beforeEach(async () => {
-    await testDb.clearDatabase();
+    await connectTestDatabase();
   });
 
   afterAll(async () => {
-    await testDb.disconnect();
+    await disconnectTestDatabase();
   });
 
   describe("POST /api/v1/customers", () => {
