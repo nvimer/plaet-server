@@ -13,11 +13,11 @@ NODE_ENV = "production"
 PORT = "8080"
 
 # Database Configuration (Railway PostgreSQL)
-DATABASE_URL = "${{postgresql.DATABASE_URL}"
+DATABASE_URL = "${{RAILWAY_POSTGRESQL_DATABASE_URL}}"
 
 # Application Configuration
 APP_URL = "${{RAILWAY_PUBLIC_DOMAIN}/api/v1"
-JWT_SECRET = "${{secrets.JWT_SECRET}"
+JWT_SECRET = "${{RAILWAY_TOKEN_JWT_SECRET}"
 SALT_ROUNDS = "10"
 JWT_ACCESS_EXPIRATION_MINUTES = "30"
 JWT_ACCESS_EXPIRATION_DAYS = "7"
