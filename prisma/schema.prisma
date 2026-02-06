@@ -460,3 +460,24 @@ model DailyTicketBookCode {
   @@unique([customerId, date])
   @@map("daily_ticket_book_codes")
 }
+
+/**
+ * DailyMenu Model
+ * Stores the daily menu configuration for corrientazo/lunch service.
+ * Each day has one active menu with side, soup, drink and optional dessert.
+ */
+model DailyMenu {
+  id        String   @id @default(uuid())
+  date      DateTime @unique @db.Date
+  side      String   // Side dish of the day (frijoles, lentejas, etc.)
+  soup      String   // Soup of the day
+  drink     String   // Drink of the day (juice)
+  dessert   String?  // Optional dessert
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([isActive])
+  @@map("daily_menus")
+}

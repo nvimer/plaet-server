@@ -8,6 +8,7 @@ import menusRouter from "./menus/menus.route";
 import profilesRouter from "./profiles/profile.route";
 import ordersRouter from "./orders/order.route";
 import { customerRoutes } from "./customers/customer.route";
+import dailyMenuRouter from "./daily-menu/daily-menu.route";
 
 /**
  * Main API Router for v1 endpoints.
@@ -54,5 +55,10 @@ router.use("/profile", profilesRouter);
  */
 router.use("/orders", ordersRouter);
 router.use("/customers", customerRoutes);
+
+/**
+ * Daily Menu Routes
+ */
+router.use("/daily-menu", dailyMenuRouter);
 
 export default router;
