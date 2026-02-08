@@ -3,21 +3,34 @@ import { logger } from "../config/logger";
 import tokenService from "../api/auth/tokens/token.service";
 
 /**
+ * Routes that don't require token validation (public routes)
+ */
+const PUBLIC_AUTH_ROUTES = [
+  "/api/v1/auth/login",
+  "/api/v1/auth/register",
+  "/api/v1/auth/forgot-password",
+  "/api/v1/auth/reset-password",
+];
+
+/**
  * Token Blacklisting Middleware
  *
  * This middleware checks if a token is blacklisted
  * before allowing access to protected routes.
  *
- * It should be used AFTER passport.initialize() but BEFORE
- * authJwt middleware or any protected route.
+ * Security Notes:
+ * - Only exempts login/register routes (NOT logout)
+ * - Logout is protected and requires valid token
+ * - All other routes require non-blacklisted token
  */
 export const tokenBlacklistMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction,
 ): void => {
-  // Skip token check for authentication routes (login, register, etc.)
-  if (req.path.startsWith("/api/v1/auth")) {
+  // Skip token check for public authentication routes only
+  // IMPORTANT: Logout is NOT exempt - requires valid token
+  if (PUBLIC_AUTH_ROUTES.includes(req.path)) {
     next();
     return;
   }

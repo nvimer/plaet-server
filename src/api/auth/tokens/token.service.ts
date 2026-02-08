@@ -80,19 +80,25 @@ export class TokenService implements TokenServiceInterface {
   /**
    * Generates a complete authentication token pair for a user.
    * This method creates both access and refresh tokens, saves
-   * the refresh token to the database, and returns the token pair.
+   * BOTH tokens to the database, and returns the token pair.
    *
    * Token Generation Process:
-   * - Creates access token with short expiration (minutes)
-   * - Creates refresh token with long expiration (days)
-   * - Saves refresh token to database for tracking
+   * - Creates access token with short expiration (minutes) - Stored in DB
+   * - Creates refresh token with long expiration (days) - Stored in DB
+   * - Saves BOTH tokens to database for complete blacklisting support
    * - Returns both tokens with expiration information
+   *
+   * Security Note:
+   * - Both tokens are persisted to enable complete session revocation
+   * - Access tokens are short-lived (30 min) but tracked for security
+   * - Blacklisting affects both tokens for complete session termination
+   * - DB overhead is acceptable for security guarantees
    *
    * Token Configuration:
    * - Access token: Short-lived for API authentication
    * - Refresh token: Long-lived for session renewal
    * - Expiration times configured via environment variables
-   * - Refresh tokens stored for revocation capability
+   * - Both tokens stored for complete revocation capability
    */
   async generateAuthToken(id: string): Promise<AuthTokenResponseInput> {
     const accessTokenExpires = moment().add(
@@ -116,7 +122,8 @@ export class TokenService implements TokenServiceInterface {
       TokenType.REFRESH,
     );
 
-    // Save both access and refresh tokens to database for blacklisting
+    // Save BOTH tokens to database for complete blacklisting support
+    // This is necessary for complete session revocation on logout
     await Promise.all([
       this.saveToken(id, accessToken, TokenType.ACCESS, accessTokenExpires),
       this.saveToken(id, refreshToken, TokenType.REFRESH, refreshTokenExpires),
