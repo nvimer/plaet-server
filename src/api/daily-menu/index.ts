@@ -7,7 +7,7 @@ export { default as dailyMenuRoutes } from "./daily-menu.route";
 // Export types from interfaces
 export type {
   DailyMenuRepositoryInterface,
-  DailyMenuWithId,
+  DailyMenuWithRelations,
   CreateDailyMenuData,
   UpdateDailyMenuData,
 } from "./interfaces/daily-menu.repository.interface";

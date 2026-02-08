@@ -1,43 +1,80 @@
 /**
- * DailyMenu Repository Interface
- * Defines the contract for daily menu data access operations
+ * DailyMenu Repository Interface - Updated for simplified schema
+ * Defines database operations for daily menu management
  */
 
+import { DailyMenu, MenuCategory, MenuItem } from "@prisma/client";
+
 /**
- * DailyMenu data structure with ID
+ * DailyMenu with all item relations populated
  */
-export interface DailyMenuWithId {
-  id: string;
-  date: Date;
-  side: string;
-  soup: string;
-  drink: string;
-  dessert: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type DailyMenuWithRelations = DailyMenu & {
+  soupCategory: MenuCategory | null;
+  principleCategory: MenuCategory | null;
+  proteinCategory: MenuCategory | null;
+  drinkCategory: MenuCategory | null;
+  extraCategory: MenuCategory | null;
+  soupOption1: MenuItem | null;
+  soupOption2: MenuItem | null;
+  principleOption1: MenuItem | null;
+  principleOption2: MenuItem | null;
+  proteinOption1: MenuItem | null;
+  proteinOption2: MenuItem | null;
+  proteinOption3: MenuItem | null;
+  drinkOption1: MenuItem | null;
+  drinkOption2: MenuItem | null;
+  extraOption1: MenuItem | null;
+  extraOption2: MenuItem | null;
+};
 
 /**
  * Data for creating a daily menu
  */
 export interface CreateDailyMenuData {
   date: Date;
-  side: string;
-  soup: string;
-  drink: string;
-  dessert?: string;
   isActive?: boolean;
+  basePrice?: number;
+  premiumProteinPrice?: number;
+  soupCategoryId?: number | null;
+  principleCategoryId?: number | null;
+  proteinCategoryId?: number | null;
+  drinkCategoryId?: number | null;
+  extraCategoryId?: number | null;
+  soupOption1Id?: number | null;
+  soupOption2Id?: number | null;
+  principleOption1Id?: number | null;
+  principleOption2Id?: number | null;
+  proteinOption1Id?: number | null;
+  proteinOption2Id?: number | null;
+  proteinOption3Id?: number | null;
+  drinkOption1Id?: number | null;
+  drinkOption2Id?: number | null;
+  extraOption1Id?: number | null;
+  extraOption2Id?: number | null;
 }
 
 /**
  * Data for updating a daily menu
  */
 export interface UpdateDailyMenuData {
-  side?: string;
-  soup?: string;
-  drink?: string;
-  dessert?: string | null;
+  basePrice?: number;
+  premiumProteinPrice?: number;
+  soupCategoryId?: number | null;
+  principleCategoryId?: number | null;
+  proteinCategoryId?: number | null;
+  drinkCategoryId?: number | null;
+  extraCategoryId?: number | null;
+  soupOption1Id?: number | null;
+  soupOption2Id?: number | null;
+  principleOption1Id?: number | null;
+  principleOption2Id?: number | null;
+  proteinOption1Id?: number | null;
+  proteinOption2Id?: number | null;
+  proteinOption3Id?: number | null;
+  drinkOption1Id?: number | null;
+  drinkOption2Id?: number | null;
+  extraOption1Id?: number | null;
+  extraOption2Id?: number | null;
   isActive?: boolean;
 }
 
@@ -47,38 +84,22 @@ export interface UpdateDailyMenuData {
  */
 export interface DailyMenuRepositoryInterface {
   /**
-   * Find daily menu by specific date
-   * @param date - Date to search for
-   * @returns Daily menu or null if not found
+   * Find daily menu by specific date with all relations
    */
-  findByDate(date: Date): Promise<DailyMenuWithId | null>;
+  findByDate(date: Date): Promise<DailyMenuWithRelations | null>;
 
   /**
-   * Find or create daily menu for a specific date
-   * If menu doesn't exist, creates a default one
-   * @param date - Date to find or create
-   * @returns Existing or newly created daily menu
+   * Get current daily menu (today) with all relations
    */
-  findOrCreateByDate(date: Date): Promise<DailyMenuWithId>;
-
-  /**
-   * Get current daily menu (today)
-   * @returns Today's menu or null
-   */
-  getCurrent(): Promise<DailyMenuWithId | null>;
-
-  /**
-   * Update daily menu for a specific date
-   * @param date - Date to update
-   * @param data - Menu data to update
-   * @returns Updated daily menu
-   */
-  updateByDate(date: Date, data: UpdateDailyMenuData): Promise<DailyMenuWithId>;
+  getCurrent(): Promise<DailyMenuWithRelations | null>;
 
   /**
    * Create new daily menu
-   * @param data - Menu data to create
-   * @returns Created daily menu
    */
-  create(data: CreateDailyMenuData): Promise<DailyMenuWithId>;
+  create(data: CreateDailyMenuData): Promise<DailyMenuWithRelations>;
+
+  /**
+   * Update daily menu for a specific date
+   */
+  updateByDate(date: Date, data: UpdateDailyMenuData): Promise<DailyMenuWithRelations>;
 }

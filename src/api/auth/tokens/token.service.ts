@@ -8,6 +8,7 @@ import { AuthTokenResponseInput, PayloadInput } from "./token.validation";
 import { Token, TokenType } from "@prisma/client";
 import { config } from "../../../config";
 import tokenRepository from "./token.repository";
+import { logger } from "../../../config/logger";
 
 /**
  * Token Service
@@ -19,7 +20,7 @@ export class TokenService implements TokenServiceInterface {
   constructor(private tokenRepository: TokenRepositoryInterface) {}
 
   /**
-   * Generates a JWT token with the specified parameters.
+   * Generates a JWT token with specified parameters.
    * This private method creates and signs JWT tokens with
    * a customized payload containing user identification
    * and token metadata.
@@ -36,15 +37,16 @@ export class TokenService implements TokenServiceInterface {
     type: TokenType,
     secret: string = config.jwtSecret,
   ): string {
-    // create a personalizate payload where save necesary values for token in auth user.
-    const payload: PayloadInput = {
+    // create a personalize payload where save necessary values for token in auth user.
+    const payload = {
       sub: id,
       iat: moment().unix(),
       exp: expires.unix(),
       type,
     };
-    // sign the transaction qith payload values and secret value
-    return jwt.sign(payload, secret);
+    // sign the transaction with payload values and secret value
+    const token = jwt.sign(payload, secret);
+    return token;
   }
 
   /**
@@ -78,19 +80,25 @@ export class TokenService implements TokenServiceInterface {
   /**
    * Generates a complete authentication token pair for a user.
    * This method creates both access and refresh tokens, saves
-   * the refresh token to the database, and returns the token pair.
+   * BOTH tokens to the database, and returns the token pair.
    *
    * Token Generation Process:
-   * - Creates access token with short expiration (minutes)
-   * - Creates refresh token with long expiration (days)
-   * - Saves refresh token to database for tracking
+   * - Creates access token with short expiration (minutes) - Stored in DB
+   * - Creates refresh token with long expiration (days) - Stored in DB
+   * - Saves BOTH tokens to database for complete blacklisting support
    * - Returns both tokens with expiration information
+   *
+   * Security Note:
+   * - Both tokens are persisted to enable complete session revocation
+   * - Access tokens are short-lived (30 min) but tracked for security
+   * - Blacklisting affects both tokens for complete session termination
+   * - DB overhead is acceptable for security guarantees
    *
    * Token Configuration:
    * - Access token: Short-lived for API authentication
    * - Refresh token: Long-lived for session renewal
    * - Expiration times configured via environment variables
-   * - Refresh tokens stored for revocation capability
+   * - Both tokens stored for complete revocation capability
    */
   async generateAuthToken(id: string): Promise<AuthTokenResponseInput> {
     const accessTokenExpires = moment().add(
@@ -114,12 +122,13 @@ export class TokenService implements TokenServiceInterface {
       TokenType.REFRESH,
     );
 
-    await this.saveToken(
-      id,
-      refreshToken,
-      TokenType.REFRESH,
-      refreshTokenExpires,
-    );
+    // Save BOTH tokens to database for complete blacklisting support
+    // This is necessary for complete session revocation on logout
+    await Promise.all([
+      this.saveToken(id, accessToken, TokenType.ACCESS, accessTokenExpires),
+      this.saveToken(id, refreshToken, TokenType.REFRESH, refreshTokenExpires),
+    ]);
+
     return {
       access: {
         token: accessToken,
@@ -133,18 +142,40 @@ export class TokenService implements TokenServiceInterface {
   }
 
   /**
-   * Logs out a user by deleting all their refresh tokens
-   * This invalidated all active sessions for the user.
+   * Logs out a user by blacklisting all their tokens
+   * This invalidates both access and refresh tokens for the user.
    *
    * Logout Process
-   * - Deletes all refresh tokens from database
-   * - User must re-authenticated to get new tokens
-   * - Access tokens remain valid until expiration
+   * - Blacklists all active tokens (access and refresh)
+   * - User must re-authenticate to get new tokens
+   * - Prevents token reuse after logout
    *
    * @param userId - User identifier
    */
   async logout(userId: string): Promise<void> {
-    await this.tokenRepository.deleteRefreshTokenByUserId(userId);
+    logger.info(`[LOGOUT] Blacklisting all tokens for user ${userId}`);
+    const result = await this.tokenRepository.blacklistAllUserTokens(userId);
+    logger.info(`[LOGOUT] Blacklisted ${result} tokens for user ${userId}`);
+  }
+
+  /**
+   * Checks if a token is blacklisted
+   *
+   * @param token - Token string to check
+   * @returns true if token is blacklisted, false otherwise
+   */
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    const tokenRecord = await this.tokenRepository.findByToken(token);
+    if (!tokenRecord) {
+      logger.warn(
+        `[BLACKLIST] Token not found in DB: ${token.substring(0, 20)}...`,
+      );
+      return false;
+    }
+    logger.info(
+      `[BLACKLIST] Token ${token.substring(0, 20)}... is blacklisted: ${tokenRecord.blacklisted}`,
+    );
+    return tokenRecord.blacklisted || false;
   }
 }
 

@@ -53,6 +53,23 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   /**
+   * Retrieves all menu items by category ID.
+   * Returns only non-deleted and available items.
+   */
+  async findByCategory(categoryId: number): Promise<MenuItem[]> {
+    return await prisma.menuItem.findMany({
+      where: {
+        categoryId,
+        deleted: false,
+        isAvailable: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  }
+
+  /**
    * Retrieves a menu item by ID for update within a transaction
    *
    * This method is used within transactions to ensure proper locking
@@ -158,20 +175,9 @@ class ItemRepository implements ItemRepositoryInterface {
       isAvailable: true,
     };
 
-    // Add protein filter
-    if (isProtein !== undefined) {
-      whereConditions.isProtein = isProtein;
-    }
-
-    // Add plate component filter
-    if (isPlateComponent !== undefined) {
-      whereConditions.isPlateComponent = isPlateComponent;
-    }
-
-    // Add component type filter
-    if (componentType) {
-      whereConditions.componentType = componentType;
-    }
+    // Note: Fields isProtein, isPlateComponent, componentType were removed from schema
+    // Use category-based filtering instead
+    // TODO: Implement alternative filtering logic if needed
 
     // Add category filter
     if (category) {

@@ -80,6 +80,15 @@ router.get("/low-stock", authJwt, itemController.getLowStock);
 router.get("/out-of-stock", authJwt, itemController.getOutOfStock);
 
 /**
+ * GET /items/by-category/:categoryId
+ * Retrieves all menu items belonging to a specific category.
+ */
+router.get(
+  "/by-category/:categoryId",
+  itemController.getItemsByCategory,
+);
+
+/**
  * GET /items/:id
  * Retrieves a specific menu item by its ID
  */

@@ -8,8 +8,8 @@ import {
 } from "./daily-menu.validator";
 
 /**
- * DailyMenu Controller
- * Handles HTTP requests for daily menu management
+ * DailyMenu Controller - Updated for Item-Based Daily Menu
+ * Handles HTTP requests for daily menu management with MenuItem references
  */
 export class DailyMenuController {
   constructor(
@@ -18,7 +18,7 @@ export class DailyMenuController {
 
   /**
    * GET /daily-menu/current
-   * Get today's daily menu
+   * Get today's daily menu with full item details
    */
   getTodayMenu = asyncHandler(async (_req: Request, res: Response) => {
     const menu = await this.service.getTodayMenu();
@@ -41,7 +41,7 @@ export class DailyMenuController {
 
   /**
    * GET /daily-menu/:date
-   * Get daily menu for a specific date
+   * Get daily menu for a specific date with full item details
    */
   getMenuByDate = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
@@ -75,7 +75,7 @@ export class DailyMenuController {
 
   /**
    * PUT /daily-menu
-   * Update or create daily menu for today
+   * Update or create daily menu for today with item references
    */
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
@@ -91,7 +91,7 @@ export class DailyMenuController {
 
   /**
    * PUT /daily-menu/:date
-   * Update or create daily menu for a specific date
+   * Update or create daily menu for a specific date with item references
    */
   updateMenuByDate = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;

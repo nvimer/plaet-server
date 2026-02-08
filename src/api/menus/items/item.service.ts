@@ -97,6 +97,14 @@ export class ItemService implements ItemServiceInterface {
   }
 
   /**
+   * Retrieves all menu items by category ID.
+   * Returns available and non-deleted items only.
+   */
+  async findMenuItemsByCategory(categoryId: number): Promise<MenuItem[]> {
+    return this.itemRepository.findByCategory(categoryId);
+  }
+
+  /**
    * Creates a new menu item in the system with the provided information.
    * This method handles item creation with validation and
    * ensures proper data structure and category association.

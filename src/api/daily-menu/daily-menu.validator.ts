@@ -1,30 +1,40 @@
 import { z } from "zod";
 
 /**
- * DailyMenu Validator Schemas
- * Zod validation schemas for daily menu endpoints
+ * DailyMenu Validator Schemas - Updated for Item-Based Daily Menu
+ * Zod validation schemas for daily menu endpoints with MenuItem references
  */
 
 /**
- * Schema for updating daily menu body
+ * Schema for item option input
+ */
+const itemOptionSchema = z.object({
+  option1Id: z.number().int().positive().optional().nullable(),
+  option2Id: z.number().int().positive().optional().nullable(),
+  option3Id: z.number().int().positive().optional().nullable(),
+});
+
+/**
+ * Schema for updating daily menu configuration
  */
 export const updateDailyMenuBodySchema = z.object({
-  side: z
-    .string()
-    .min(1, "Side dish is required")
-    .max(200, "Side dish must be less than 200 characters"),
-  soup: z
-    .string()
-    .min(1, "Soup is required")
-    .max(200, "Soup must be less than 200 characters"),
-  drink: z
-    .string()
-    .min(1, "Drink is required")
-    .max(200, "Drink must be less than 200 characters"),
-  dessert: z
-    .string()
-    .max(200, "Dessert must be less than 200 characters")
-    .optional(),
+  // Prices
+  basePrice: z.number().positive().optional(),
+  premiumProteinPrice: z.number().positive().optional(),
+
+  // Category IDs
+  soupCategoryId: z.number().int().positive().optional().nullable(),
+  principleCategoryId: z.number().int().positive().optional().nullable(),
+  proteinCategoryId: z.number().int().positive().optional().nullable(),
+  drinkCategoryId: z.number().int().positive().optional().nullable(),
+  extraCategoryId: z.number().int().positive().optional().nullable(),
+
+  // Item options for each category
+  soupOptions: itemOptionSchema.optional(),
+  principleOptions: itemOptionSchema.optional(),
+  proteinOptions: itemOptionSchema.optional(),
+  drinkOptions: itemOptionSchema.optional(),
+  extraOptions: itemOptionSchema.optional(),
 });
 
 /**

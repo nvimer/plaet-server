@@ -61,18 +61,43 @@ class AuthController {
 
     const token = await this.tokenService.generateAuthToken(user.id);
 
+    // Set httpOnly cookies for secure token storage
+    res.cookie("accessToken", token.access.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 60 * 1000, // 30 minutes
+      path: "/",
+    });
+
+    res.cookie("refreshToken", token.refresh.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
+    // Return user data (tokens are in cookies)
     res.status(HttpStatus.OK).json({
       success: true,
-      message: "Token created successfully",
-      data: token,
+      message: "Login successful",
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      },
     });
   });
 
   /**
    * POST /auth/logout
    *
-   * Logs out authenticated user by invalidating refresh tokens.
-   * This endpoint requieres authentication and uses the user ID from the JWT token.
+   * Logs out authenticated user by invalidating all tokens.
+   * This endpoint requires authentication and uses user ID from JWT token.
    *
    * Authentication: Required (JWT token)
    */
@@ -80,6 +105,21 @@ class AuthController {
     const userId = req.user?.id;
 
     await this.tokenService.logout(userId);
+
+    // Clear httpOnly cookies
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
 
     res.status(HttpStatus.OK).json({
       success: true,

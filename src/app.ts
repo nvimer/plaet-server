@@ -6,6 +6,7 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import cors, { CorsOptions } from "cors";
+import cookieParser from "cookie-parser";
 import { logger } from "./config/logger";
 import { requestLogger } from "./middlewares/morgan.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
@@ -13,6 +14,7 @@ import apiRouter from "./api/routes";
 import { notFoundHandler } from "./middlewares/notFound.middleware";
 import passport from "passport";
 import { jwtStrategy } from "./strategies/passport-jwt.strategy";
+import { tokenBlacklistMiddleware } from "./middlewares/tokenBlacklist.middleware";
 import swaggerDocs from "./config/swagger";
 import { config } from "./config";
 
@@ -26,8 +28,15 @@ const app: Application = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Cookie parser for httpOnly cookies
+app.use(cookieParser());
+
 // cors config
-const whitelist = [`http://localhost:${port}`, config.allowedOrigins];
+const whitelist = [
+  `http://localhost:${port}`,
+  "http://localhost:5173",
+  ...config.allowedOrigins.split(",").map((origin) => origin.trim()),
+];
 
 const corsOptions: CorsOptions = {
   origin: function (
@@ -59,7 +68,7 @@ if (process.env.NODE_ENV === "production") {
     }),
   );
 } else {
-  app.use(cors());
+  app.use(cors(corsOptions));
 }
 
 // Swagger Documentation
@@ -70,6 +79,9 @@ requestLogger(app);
 // Strategies for auth users
 passport.use(jwtStrategy);
 app.use(passport.initialize());
+
+// Token blacklist check (before auth middleware)
+app.use(tokenBlacklistMiddleware);
 
 // API Routes
 app.use("/api/v1", apiRouter);
