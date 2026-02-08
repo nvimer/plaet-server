@@ -8,6 +8,7 @@ import { Moment } from "moment";
 export interface TokenServiceInterface {
   generateAuthToken(id: string): Promise<AuthTokenResponseInput>;
   logout(userId: string): Promise<void>;
+  isTokenBlacklisted(token: string): Promise<boolean>;
 }
 
 /**
@@ -23,4 +24,6 @@ export interface TokenRepositoryInterface {
   ): Promise<Token>;
 
   deleteRefreshTokenByUserId(userId: string): Promise<number>;
+  blacklistAllUserTokens(userId: string): Promise<number>;
+  findByToken(token: string): Promise<Token | null>;
 }

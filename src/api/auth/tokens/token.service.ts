@@ -133,18 +133,29 @@ export class TokenService implements TokenServiceInterface {
   }
 
   /**
-   * Logs out a user by deleting all their refresh tokens
-   * This invalidated all active sessions for the user.
+   * Logs out a user by blacklisting all their tokens
+   * This invalidates both access and refresh tokens for the user.
    *
    * Logout Process
-   * - Deletes all refresh tokens from database
-   * - User must re-authenticated to get new tokens
-   * - Access tokens remain valid until expiration
+   * - Blacklists all active tokens (access and refresh)
+   * - User must re-authenticate to get new tokens
+   * - Prevents token reuse after logout
    *
    * @param userId - User identifier
    */
   async logout(userId: string): Promise<void> {
-    await this.tokenRepository.deleteRefreshTokenByUserId(userId);
+    await this.tokenRepository.blacklistAllUserTokens(userId);
+  }
+
+  /**
+   * Checks if a token is blacklisted
+   *
+   * @param token - Token string to check
+   * @returns true if token is blacklisted, false otherwise
+   */
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    const tokenRecord = await this.tokenRepository.findByToken(token);
+    return tokenRecord?.blacklisted || false;
   }
 }
 

@@ -34,6 +34,24 @@ class TokenRepository implements TokenRepositoryInterface {
     });
     return result.count;
   }
+
+  async blacklistAllUserTokens(userId: string): Promise<number> {
+    const result = await prisma.token.updateMany({
+      where: {
+        userId,
+        blacklisted: false,
+        expires: { gte: new Date() },
+      },
+      data: { blacklisted: true },
+    });
+    return result.count;
+  }
+
+  async findByToken(token: string): Promise<Token | null> {
+    return await prisma.token.findFirst({
+      where: { token },
+    });
+  }
 }
 
 export default new TokenRepository();
