@@ -45,8 +45,8 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       isActive: menuAny.isActive ?? true,
       basePrice: Number(menuAny.basePrice ?? 10000),
       premiumProteinPrice: Number(menuAny.premiumProteinPrice ?? 11000),
-      createdAt: menu.createdAt,
-      updatedAt: menu.updatedAt,
+      createdAt: menu.createdAt || new Date(),
+      updatedAt: menu.updatedAt || new Date(),
 
       // Categories
       soupCategory: menu.soupCategory,
@@ -129,7 +129,9 @@ export class DailyMenuService implements DailyMenuServiceInterface {
   /**
    * Update or create daily menu for today
    */
-  async updateTodayMenu(data: UpdateDailyMenuInput): Promise<DailyMenuResponse> {
+  async updateTodayMenu(
+    data: UpdateDailyMenuInput,
+  ): Promise<DailyMenuResponse> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -163,7 +165,10 @@ export class DailyMenuService implements DailyMenuServiceInterface {
     const repositoryData = this.transformInput(data);
 
     if (existingMenu) {
-      const updated = await this.repository.updateByDate(normalizedDate, repositoryData);
+      const updated = await this.repository.updateByDate(
+        normalizedDate,
+        repositoryData,
+      );
       return this.toResponse(updated);
     } else {
       const created = await this.repository.create({

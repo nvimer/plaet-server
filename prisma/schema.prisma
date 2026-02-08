@@ -211,13 +211,6 @@ model MenuCategory {
 
   items MenuItem[]
 
-  // Relations for daily menu configuration
-  dailyMenuSoups     DailyMenu[] @relation("DailyMenuSoups")
-  dailyMenuPrinciples DailyMenu[] @relation("DailyMenuPrinciples")
-  dailyMenuProteins  DailyMenu[] @relation("DailyMenuProteins")
-  dailyMenuDrinks    DailyMenu[] @relation("DailyMenuDrinks")
-  dailyMenuExtras    DailyMenu[] @relation("DailyMenuExtras")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
@@ -246,18 +239,7 @@ model MenuItem {
   lowStockAlert       Int?    @default(5) @map("low_stock_alert")
   autoMarkUnavailable Boolean @default(true) @map("auto_mark_unavailable)")
 
-  // Relations - Daily Menu options (each option has unique relation name)
-  dailyMenuAsSoupOption1     DailyMenu[] @relation("DailyMenuSoupOption1")
-  dailyMenuAsSoupOption2     DailyMenu[] @relation("DailyMenuSoupOption2")
-  dailyMenuAsPrincipleOption1 DailyMenu[] @relation("DailyMenuPrincipleOption1")
-  dailyMenuAsPrincipleOption2 DailyMenu[] @relation("DailyMenuPrincipleOption2")
-  dailyMenuAsProteinOption1  DailyMenu[] @relation("DailyMenuProteinOption1")
-  dailyMenuAsProteinOption2  DailyMenu[] @relation("DailyMenuProteinOption2")
-  dailyMenuAsProteinOption3  DailyMenu[] @relation("DailyMenuProteinOption3")
-  dailyMenuAsDrinkOption1    DailyMenu[] @relation("DailyMenuDrinkOption1")
-  dailyMenuAsDrinkOption2    DailyMenu[] @relation("DailyMenuDrinkOption2")
-  dailyMenuAsExtraOption1    DailyMenu[] @relation("DailyMenuExtraOption1")
-  dailyMenuAsExtraOption2    DailyMenu[] @relation("DailyMenuExtraOption2")
+  // Relations
   orderItems          OrderItem[]
   stockAdjustments    StockAdjustment[]
 
@@ -485,55 +467,25 @@ model DailyMenu {
   basePrice          Decimal  @default(10000.00) @db.Decimal(10, 2) @map("base_price") // Price for standard proteins (chicken, pork)
   premiumProteinPrice Decimal @default(11000.00) @db.Decimal(10, 2) @map("premium_protein_price") // Price for premium proteins (beef, fish)
 
-  // Category references (for grouping/organization)
+  // Category references (just IDs - no relations needed)
   soupCategoryId     Int?          @map("soup_category_id")
-  soupCategory       MenuCategory? @relation("DailyMenuSoups", fields: [soupCategoryId], references: [id])
-  
   principleCategoryId Int?          @map("principle_category_id")
-  principleCategory   MenuCategory? @relation("DailyMenuPrinciples", fields: [principleCategoryId], references: [id])
-  
   proteinCategoryId  Int?          @map("protein_category_id")
-  proteinCategory    MenuCategory? @relation("DailyMenuProteins", fields: [proteinCategoryId], references: [id])
-  
   drinkCategoryId    Int?          @map("drink_category_id")
-  drinkCategory      MenuCategory? @relation("DailyMenuDrinks", fields: [drinkCategoryId], references: [id])
-  
   extraCategoryId    Int?          @map("extra_category_id")
-  extraCategory      MenuCategory? @relation("DailyMenuExtras", fields: [extraCategoryId], references: [id])
 
-  // Available items for today (up to 2 options each, except protein which can have more)
+  // Available items for today (just IDs - queried manually in code)
   soupOption1Id     Int?      @map("soup_option_1_id")
-  soupOption1       MenuItem? @relation("DailyMenuSoupOption1", fields: [soupOption1Id], references: [id])
-  
   soupOption2Id     Int?      @map("soup_option_2_id")
-  soupOption2       MenuItem? @relation("DailyMenuSoupOption2", fields: [soupOption2Id], references: [id])
-  
   principleOption1Id Int?      @map("principle_option_1_id")
-  principleOption1   MenuItem? @relation("DailyMenuPrincipleOption1", fields: [principleOption1Id], references: [id])
-  
   principleOption2Id Int?      @map("principle_option_2_id")
-  principleOption2   MenuItem? @relation("DailyMenuPrincipleOption2", fields: [principleOption2Id], references: [id])
-  
   proteinOption1Id  Int?      @map("protein_option_1_id")
-  proteinOption1    MenuItem? @relation("DailyMenuProteinOption1", fields: [proteinOption1Id], references: [id])
-  
   proteinOption2Id  Int?      @map("protein_option_2_id")
-  proteinOption2    MenuItem? @relation("DailyMenuProteinOption2", fields: [proteinOption2Id], references: [id])
-  
   proteinOption3Id  Int?      @map("protein_option_3_id")
-  proteinOption3    MenuItem? @relation("DailyMenuProteinOption3", fields: [proteinOption3Id], references: [id])
-  
   drinkOption1Id    Int?      @map("drink_option_1_id")
-  drinkOption1      MenuItem? @relation("DailyMenuDrinkOption1", fields: [drinkOption1Id], references: [id])
-  
   drinkOption2Id    Int?      @map("drink_option_2_id")
-  drinkOption2      MenuItem? @relation("DailyMenuDrinkOption2", fields: [drinkOption2Id], references: [id])
-  
   extraOption1Id    Int?      @map("extra_option_1_id")
-  extraOption1      MenuItem? @relation("DailyMenuExtraOption1", fields: [extraOption1Id], references: [id])
-  
   extraOption2Id    Int?      @map("extra_option_2_id")
-  extraOption2      MenuItem? @relation("DailyMenuExtraOption2", fields: [extraOption2Id], references: [id])
 
   @@index([date])
   @@index([isActive])

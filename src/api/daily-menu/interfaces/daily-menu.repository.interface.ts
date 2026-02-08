@@ -1,5 +1,5 @@
 /**
- * DailyMenu Repository Interface - Updated for Item-Based Daily Menu
+ * DailyMenu Repository Interface - Updated for simplified schema
  * Defines database operations for daily menu management
  */
 

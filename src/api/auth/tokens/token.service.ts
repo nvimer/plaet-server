@@ -19,7 +19,7 @@ export class TokenService implements TokenServiceInterface {
   constructor(private tokenRepository: TokenRepositoryInterface) {}
 
   /**
-   * Generates a JWT token with the specified parameters.
+   * Generates a JWT token with specified parameters.
    * This private method creates and signs JWT tokens with
    * a customized payload containing user identification
    * and token metadata.
@@ -37,17 +37,14 @@ export class TokenService implements TokenServiceInterface {
     secret: string = config.jwtSecret,
   ): string {
     // create a personalize payload where save necessary values for token in auth user.
-    const payload: PayloadInput = {
+    const payload = {
       sub: id,
       iat: moment().unix(),
       exp: expires.unix(),
       type,
-      token: "", // Will be set after signing
     };
     // sign the transaction with payload values and secret value
     const token = jwt.sign(payload, secret);
-    // Update payload with the generated token for blacklisting reference
-    payload.token = token;
     return token;
   }
 
@@ -118,12 +115,12 @@ export class TokenService implements TokenServiceInterface {
       TokenType.REFRESH,
     );
 
-    await this.saveToken(
-      id,
-      refreshToken,
-      TokenType.REFRESH,
-      refreshTokenExpires,
-    );
+    // Save both access and refresh tokens to database for blacklisting
+    await Promise.all([
+      this.saveToken(id, accessToken, TokenType.ACCESS, accessTokenExpires),
+      this.saveToken(id, refreshToken, TokenType.REFRESH, refreshTokenExpires),
+    ]);
+
     return {
       access: {
         token: accessToken,

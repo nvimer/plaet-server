@@ -7,14 +7,16 @@ import {
 import userService from "../api/users/user.service";
 import { PayloadInput } from "../api/auth/tokens/token.validation";
 import { config } from "../config";
-import tokenService from "../api/auth/tokens/token.service";
 
 // define options for strategy jwt
 // extract jwt from header or cookie
 const options: StrategyOptions = {
   jwtFromRequest: ExtractJwt.fromExtractors([
     ExtractJwt.fromAuthHeaderAsBearerToken(),
-    (req) => req?.cookies?.accessToken, // Extract from httpOnly cookie
+    (req) => {
+      // Extract from httpOnly cookie
+      return req?.cookies?.accessToken || req?.cookies?.refreshToken;
+    },
   ]),
   secretOrKey: config.jwtSecret,
   // can user issuer and audience for major security
@@ -26,14 +28,6 @@ const options: StrategyOptions = {
 // if user exists, return user with his roles and permissions, if not found user, return error
 const jwtVerify: VerifyCallback = async (payload: PayloadInput, done) => {
   try {
-    // Check if token is blacklisted
-    const isBlacklisted = await tokenService.isTokenBlacklisted(
-      payload.token || "",
-    );
-    if (isBlacklisted) {
-      return done(null, false);
-    }
-
     const user = await userService.findUserWithRolesAndPermissions(payload.sub);
     if (user) {
       done(null, user);

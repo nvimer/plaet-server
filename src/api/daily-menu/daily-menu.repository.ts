@@ -5,10 +5,11 @@ import {
   CreateDailyMenuData,
   UpdateDailyMenuData,
 } from "./interfaces/daily-menu.repository.interface";
+import { MenuItem, MenuCategory } from "@prisma/client";
 
 /**
- * DailyMenu Repository Implementation - Updated for Item-Based Daily Menu
- * Handles all database operations for daily menu management with full item relations
+ * DailyMenu Repository Implementation - Simplified version
+ * Uses manual queries to fetch related items instead of Prisma relations
  */
 export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   private prismaClient: ReturnType<typeof getPrismaClient>;
@@ -18,26 +19,80 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   }
 
   /**
-   * Include all relations for daily menu query
+   * Fetch menu items by their IDs
    */
-  private get includeRelations() {
+  private async fetchMenuItems(ids: (number | null | undefined)[]): Promise<MenuItem[]> {
+    const validIds = ids.filter((id): id is number => id !== null && id !== undefined);
+    if (validIds.length === 0) return [];
+    
+    return this.prismaClient.menuItem.findMany({
+      where: { id: { in: validIds } },
+    });
+  }
+
+  /**
+   * Fetch category by ID
+   */
+  private async fetchCategory(id: number | null | undefined): Promise<MenuCategory | null> {
+    if (!id) return null;
+    return this.prismaClient.menuCategory.findUnique({
+      where: { id },
+    });
+  }
+
+  /**
+   * Build DailyMenuWithRelations from raw data
+   */
+  private async buildWithRelations(menu: any): Promise<DailyMenuWithRelations> {
+    // Fetch all items and categories in parallel
+    const [
+      soupItems,
+      principleItems,
+      proteinItems,
+      drinkItems,
+      extraItems,
+      soupCategory,
+      principleCategory,
+      proteinCategory,
+      drinkCategory,
+      extraCategory,
+    ] = await Promise.all([
+      this.fetchMenuItems([menu.soupOption1Id, menu.soupOption2Id]),
+      this.fetchMenuItems([menu.principleOption1Id, menu.principleOption2Id]),
+      this.fetchMenuItems([menu.proteinOption1Id, menu.proteinOption2Id, menu.proteinOption3Id]),
+      this.fetchMenuItems([menu.drinkOption1Id, menu.drinkOption2Id]),
+      this.fetchMenuItems([menu.extraOption1Id, menu.extraOption2Id]),
+      this.fetchCategory(menu.soupCategoryId),
+      this.fetchCategory(menu.principleCategoryId),
+      this.fetchCategory(menu.proteinCategoryId),
+      this.fetchCategory(menu.drinkCategoryId),
+      this.fetchCategory(menu.extraCategoryId),
+    ]);
+
+    // Map items by their IDs for easy lookup
+    const itemMap = new Map<number, MenuItem>();
+    [...soupItems, ...principleItems, ...proteinItems, ...drinkItems, ...extraItems].forEach(item => {
+      itemMap.set(item.id, item);
+    });
+
     return {
-      soupCategory: true,
-      principleCategory: true,
-      proteinCategory: true,
-      drinkCategory: true,
-      extraCategory: true,
-      soupOption1: true,
-      soupOption2: true,
-      principleOption1: true,
-      principleOption2: true,
-      proteinOption1: true,
-      proteinOption2: true,
-      proteinOption3: true,
-      drinkOption1: true,
-      drinkOption2: true,
-      extraOption1: true,
-      extraOption2: true,
+      ...menu,
+      soupCategory,
+      principleCategory,
+      proteinCategory,
+      drinkCategory,
+      extraCategory,
+      soupOption1: menu.soupOption1Id ? itemMap.get(menu.soupOption1Id) || null : null,
+      soupOption2: menu.soupOption2Id ? itemMap.get(menu.soupOption2Id) || null : null,
+      principleOption1: menu.principleOption1Id ? itemMap.get(menu.principleOption1Id) || null : null,
+      principleOption2: menu.principleOption2Id ? itemMap.get(menu.principleOption2Id) || null : null,
+      proteinOption1: menu.proteinOption1Id ? itemMap.get(menu.proteinOption1Id) || null : null,
+      proteinOption2: menu.proteinOption2Id ? itemMap.get(menu.proteinOption2Id) || null : null,
+      proteinOption3: menu.proteinOption3Id ? itemMap.get(menu.proteinOption3Id) || null : null,
+      drinkOption1: menu.drinkOption1Id ? itemMap.get(menu.drinkOption1Id) || null : null,
+      drinkOption2: menu.drinkOption2Id ? itemMap.get(menu.drinkOption2Id) || null : null,
+      extraOption1: menu.extraOption1Id ? itemMap.get(menu.extraOption1Id) || null : null,
+      extraOption2: menu.extraOption2Id ? itemMap.get(menu.extraOption2Id) || null : null,
     };
   }
 
@@ -50,10 +105,11 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
 
     const menu = await this.prismaClient.dailyMenu.findUnique({
       where: { date: normalizedDate },
-      include: this.includeRelations,
     });
 
-    return menu as DailyMenuWithRelations | null;
+    if (!menu) return null;
+
+    return this.buildWithRelations(menu);
   }
 
   /**
@@ -78,10 +134,9 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
         ...data,
         date: normalizedDate,
       },
-      include: this.includeRelations,
     });
 
-    return created as DailyMenuWithRelations;
+    return this.buildWithRelations(created);
   }
 
   /**
@@ -100,10 +155,9 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
         ...data,
         updatedAt: new Date(),
       },
-      include: this.includeRelations,
     });
 
-    return updated as DailyMenuWithRelations;
+    return this.buildWithRelations(updated);
   }
 }
 

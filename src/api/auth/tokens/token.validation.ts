@@ -44,7 +44,6 @@ export const payloadSchema = z.object({
   iat: z.coerce.number(),
   exp: z.coerce.number(),
   type: tokenType,
-  token: z.string().optional(),
 });
 
 export type TokenValidationInput = z.infer<typeof tokenValidationSchema>;
