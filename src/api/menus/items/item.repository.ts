@@ -53,6 +53,23 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   /**
+   * Retrieves all menu items by category ID.
+   * Returns only non-deleted and available items.
+   */
+  async findByCategory(categoryId: number): Promise<MenuItem[]> {
+    return await prisma.menuItem.findMany({
+      where: {
+        categoryId,
+        deleted: false,
+        isAvailable: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  }
+
+  /**
    * Retrieves a menu item by ID for update within a transaction
    *
    * This method is used within transactions to ensure proper locking

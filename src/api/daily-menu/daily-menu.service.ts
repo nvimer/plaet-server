@@ -3,14 +3,17 @@ import {
   DailyMenuServiceInterface,
   UpdateDailyMenuInput,
   DailyMenuResponse,
+  MenuItemOption,
 } from "./interfaces/daily-menu.service.interface";
 import {
   DailyMenuRepositoryInterface,
+  DailyMenuWithRelations,
 } from "./interfaces/daily-menu.repository.interface";
+import { MenuItem } from "@prisma/client";
 
 /**
- * DailyMenu Service Implementation
- * Contains business logic for daily menu operations
+ * DailyMenu Service Implementation - Updated for Item-Based Daily Menu
+ * Contains business logic for daily menu operations with MenuItem references
  */
 export class DailyMenuService implements DailyMenuServiceInterface {
   constructor(
@@ -18,19 +21,109 @@ export class DailyMenuService implements DailyMenuServiceInterface {
   ) {}
 
   /**
-   * Get today's daily menu
+   * Transform MenuItem to MenuItemOption
    */
-  async getTodayMenu(): Promise<DailyMenuResponse | null> {
-    const menu = await this.repository.getCurrent();
-    return menu;
+  private toMenuItemOption(item: MenuItem | null): MenuItemOption | null {
+    if (!item) return null;
+    return {
+      id: item.id,
+      name: item.name,
+      price: Number(item.price),
+      categoryId: item.categoryId,
+    };
   }
 
   /**
-   * Get daily menu for a specific date
+   * Transform database model to API response
+   */
+  private toResponse(menu: DailyMenuWithRelations): DailyMenuResponse {
+    // NOTE: After running migration, remove 'as any' casts
+    const menuAny = menu as any;
+    return {
+      id: menuAny.id,
+      date: menuAny.date,
+      isActive: menuAny.isActive ?? true,
+      basePrice: Number(menuAny.basePrice ?? 10000),
+      premiumProteinPrice: Number(menuAny.premiumProteinPrice ?? 11000),
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+
+      // Categories
+      soupCategory: menu.soupCategory,
+      principleCategory: menu.principleCategory,
+      proteinCategory: menu.proteinCategory,
+      drinkCategory: menu.drinkCategory,
+      extraCategory: menu.extraCategory,
+
+      // Item options
+      soupOptions: [
+        this.toMenuItemOption(menu.soupOption1),
+        this.toMenuItemOption(menu.soupOption2),
+      ].filter(Boolean) as MenuItemOption[],
+
+      principleOptions: [
+        this.toMenuItemOption(menu.principleOption1),
+        this.toMenuItemOption(menu.principleOption2),
+      ].filter(Boolean) as MenuItemOption[],
+
+      proteinOptions: [
+        this.toMenuItemOption(menu.proteinOption1),
+        this.toMenuItemOption(menu.proteinOption2),
+        this.toMenuItemOption(menu.proteinOption3),
+      ].filter(Boolean) as MenuItemOption[],
+
+      drinkOptions: [
+        this.toMenuItemOption(menu.drinkOption1),
+        this.toMenuItemOption(menu.drinkOption2),
+      ].filter(Boolean) as MenuItemOption[],
+
+      extraOptions: [
+        this.toMenuItemOption(menu.extraOption1),
+        this.toMenuItemOption(menu.extraOption2),
+      ].filter(Boolean) as MenuItemOption[],
+    };
+  }
+
+  /**
+   * Get today's daily menu with full item details
+   */
+  async getTodayMenu(): Promise<DailyMenuResponse | null> {
+    const menu = await this.repository.getCurrent();
+    return menu ? this.toResponse(menu) : null;
+  }
+
+  /**
+   * Get daily menu for a specific date with full item details
    */
   async getMenuByDate(date: Date): Promise<DailyMenuResponse | null> {
     const menu = await this.repository.findByDate(date);
-    return menu;
+    return menu ? this.toResponse(menu) : null;
+  }
+
+  /**
+   * Transform input data to repository format
+   */
+  private transformInput(data: UpdateDailyMenuInput) {
+    return {
+      basePrice: data.basePrice,
+      premiumProteinPrice: data.premiumProteinPrice,
+      soupCategoryId: data.soupCategoryId,
+      principleCategoryId: data.principleCategoryId,
+      proteinCategoryId: data.proteinCategoryId,
+      drinkCategoryId: data.drinkCategoryId,
+      extraCategoryId: data.extraCategoryId,
+      soupOption1Id: data.soupOptions?.option1Id,
+      soupOption2Id: data.soupOptions?.option2Id,
+      principleOption1Id: data.principleOptions?.option1Id,
+      principleOption2Id: data.principleOptions?.option2Id,
+      proteinOption1Id: data.proteinOptions?.option1Id,
+      proteinOption2Id: data.proteinOptions?.option2Id,
+      proteinOption3Id: data.proteinOptions?.option3Id,
+      drinkOption1Id: data.drinkOptions?.option1Id,
+      drinkOption2Id: data.drinkOptions?.option2Id,
+      extraOption1Id: data.extraOptions?.option1Id,
+      extraOption2Id: data.extraOptions?.option2Id,
+    };
   }
 
   /**
@@ -40,22 +133,19 @@ export class DailyMenuService implements DailyMenuServiceInterface {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Check if menu exists for today
     const existingMenu = await this.repository.findByDate(today);
+    const repositoryData = this.transformInput(data);
 
     if (existingMenu) {
-      // Update existing menu
-      return this.repository.updateByDate(today, {
-        ...data,
-        isActive: true,
-      });
+      const updated = await this.repository.updateByDate(today, repositoryData);
+      return this.toResponse(updated);
     } else {
-      // Create new menu
-      return this.repository.create({
+      const created = await this.repository.create({
         date: today,
-        ...data,
+        ...repositoryData,
         isActive: true,
       });
+      return this.toResponse(created);
     }
   }
 
@@ -69,22 +159,19 @@ export class DailyMenuService implements DailyMenuServiceInterface {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    // Check if menu exists for the date
     const existingMenu = await this.repository.findByDate(normalizedDate);
+    const repositoryData = this.transformInput(data);
 
     if (existingMenu) {
-      // Update existing menu
-      return this.repository.updateByDate(normalizedDate, {
-        ...data,
-        isActive: true,
-      });
+      const updated = await this.repository.updateByDate(normalizedDate, repositoryData);
+      return this.toResponse(updated);
     } else {
-      // Create new menu
-      return this.repository.create({
+      const created = await this.repository.create({
         date: normalizedDate,
-        ...data,
+        ...repositoryData,
         isActive: true,
       });
+      return this.toResponse(created);
     }
   }
 }

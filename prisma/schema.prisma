@@ -199,6 +199,10 @@ model Table {
   @@map("tables")
 }
 
+/**
+ * MenuCategory Model
+ * Categories for organizing menu items (e.g., Sopas, Principios, Proteínas, etc.)
+ */
 model MenuCategory {
   id          Int     @id @default(autoincrement())
   name        String  @unique
@@ -207,12 +211,23 @@ model MenuCategory {
 
   items MenuItem[]
 
+  // Relations for daily menu configuration
+  dailyMenuSoups     DailyMenu[] @relation("DailyMenuSoups")
+  dailyMenuPrinciples DailyMenu[] @relation("DailyMenuPrinciples")
+  dailyMenuProteins  DailyMenu[] @relation("DailyMenuProteins")
+  dailyMenuDrinks    DailyMenu[] @relation("DailyMenuDrinks")
+  dailyMenuExtras    DailyMenu[] @relation("DailyMenuExtras")
+
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
   @@map("menu_categories")
 }
 
+/**
+ * MenuItem Model
+ * Simplified - removed unused fields for corrientazo
+ */
 model MenuItem {
   id         Int          @id @default(autoincrement())
   categoryId Int          @map("category_id")
@@ -221,27 +236,24 @@ model MenuItem {
   name        String
   description String?
   price       Decimal @db.Decimal(10, 2)
-  isExtra     Boolean @default(false) @map("is_extra")
   isAvailable Boolean @default(true) @map("is_available")
   imageUrl    String? @map("image_url")
 
+  // Inventory management
   inventoryType       String  @default("UNLIMITED") @map("inventory_type")
   stockQuantity       Int?    @map("stock_quantity")
   initialStock        Int?    @map("initial_stock")
   lowStockAlert       Int?    @default(5) @map("low_stock_alert")
   autoMarkUnavailable Boolean @default(true) @map("auto_mark_unavailable)")
 
-  // CORRIENTAZO SPECIFIC FIELDS
-  isProtein        Boolean  @default(false) @map("is_protein")
-  proteinIcon      String?  @map("protein_icon") // "beef" | "fish" | "chicken" | "pork" | "other"
-  isPlateComponent Boolean  @default(false) @map("is_plate_component")
-  componentType    String?  @map("component_type") // "soup" | "principle" | "salad" | "additional"
-  comboPrice       Decimal? @db.Decimal(10, 2) @map("combo_price")
-  isPremium        Boolean  @default(false) @map("is_premium")
-
-  dailyMenuOptions DailyMenuOption[]
-  orderItems       OrderItem[]
-  stockAdjustments StockAdjustment[]
+  // Relations
+  dailyMenuAsSoup     DailyMenu[] @relation("DailyMenuSoupItems")
+  dailyMenuAsPrinciple DailyMenu[] @relation("DailyMenuPrincipleItems")
+  dailyMenuAsProtein  DailyMenu[] @relation("DailyMenuProteinItems")
+  dailyMenuAsDrink    DailyMenu[] @relation("DailyMenuDrinkItems")
+  dailyMenuAsExtra    DailyMenu[] @relation("DailyMenuExtraItems")
+  orderItems          OrderItem[]
+  stockAdjustments    StockAdjustment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -270,22 +282,6 @@ model StockAdjustment {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("stock_adjustments")
-}
-
-model DailyMenuOption {
-  id   Int      @id @default(autoincrement())
-  date DateTime @db.Date
-
-  menuItemId Int      @map("menu_item_id")
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-
-  optionType String @map("option_type")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@unique([date, optionType])
-  @@map("daily_menu_options")
 }
 
 model Order {
@@ -327,12 +323,6 @@ model OrderItem {
   quantity     Int
   priceAtOrder Decimal @map("price_at_order") @db.Decimal(10, 2)
   notes        String?
-
-  // CORRIENTAZO SPECIFIC FIELDS
-  isSubstitution Boolean @default(false) @map("is_substitution")
-  originalItemId Int?    @map("original_item_id")
-  isExtra        Boolean @default(false) @map("is_extra")
-  isFreeSubstitution Boolean @default(false) @map("is_free_substitution")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -475,19 +465,69 @@ model DailyTicketBookCode {
 
 /**
  * DailyMenu Model
- * Stores the daily menu configuration for corrientazo/lunch service.
- * Each day has one active menu with side, soup, drink and optional dessert.
+ * Redesigned to store references to actual MenuItems
+ * Each day can have multiple options for soup, principle, protein, drink, and extra
  */
 model DailyMenu {
   id        String   @id @default(uuid())
   date      DateTime @unique @db.Date
-  side      String   // Side dish of the day (frijoles, lentejas, etc.)
-  soup      String   // Soup of the day
-  drink     String   // Drink of the day (juice)
-  dessert   String?  // Optional dessert
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Price configuration based on protein selection
+  basePrice          Decimal  @default(10000.00) @db.Decimal(10, 2) @map("base_price") // Price for standard proteins (chicken, pork)
+  premiumProteinPrice Decimal @default(11000.00) @db.Decimal(10, 2) @map("premium_protein_price") // Price for premium proteins (beef, fish)
+
+  // Category references (for grouping/organization)
+  soupCategoryId     Int?          @map("soup_category_id")
+  soupCategory       MenuCategory? @relation("DailyMenuSoups", fields: [soupCategoryId], references: [id])
+  
+  principleCategoryId Int?          @map("principle_category_id")
+  principleCategory   MenuCategory? @relation("DailyMenuPrinciples", fields: [principleCategoryId], references: [id])
+  
+  proteinCategoryId  Int?          @map("protein_category_id")
+  proteinCategory    MenuCategory? @relation("DailyMenuProteins", fields: [proteinCategoryId], references: [id])
+  
+  drinkCategoryId    Int?          @map("drink_category_id")
+  drinkCategory      MenuCategory? @relation("DailyMenuDrinks", fields: [drinkCategoryId], references: [id])
+  
+  extraCategoryId    Int?          @map("extra_category_id")
+  extraCategory      MenuCategory? @relation("DailyMenuExtras", fields: [extraCategoryId], references: [id])
+
+  // Available items for today (up to 2 options each, except protein which can have more)
+  soupOption1Id     Int?      @map("soup_option_1_id")
+  soupOption1       MenuItem? @relation("DailyMenuSoupItems", fields: [soupOption1Id], references: [id])
+  
+  soupOption2Id     Int?      @map("soup_option_2_id")
+  soupOption2       MenuItem? @relation("DailyMenuSoupItems", fields: [soupOption2Id], references: [id])
+  
+  principleOption1Id Int?      @map("principle_option_1_id")
+  principleOption1   MenuItem? @relation("DailyMenuPrincipleItems", fields: [principleOption1Id], references: [id])
+  
+  principleOption2Id Int?      @map("principle_option_2_id")
+  principleOption2   MenuItem? @relation("DailyMenuPrincipleItems", fields: [principleOption2Id], references: [id])
+  
+  proteinOption1Id  Int?      @map("protein_option_1_id")
+  proteinOption1    MenuItem? @relation("DailyMenuProteinItems", fields: [proteinOption1Id], references: [id])
+  
+  proteinOption2Id  Int?      @map("protein_option_2_id")
+  proteinOption2    MenuItem? @relation("DailyMenuProteinItems", fields: [proteinOption2Id], references: [id])
+  
+  proteinOption3Id  Int?      @map("protein_option_3_id")
+  proteinOption3    MenuItem? @relation("DailyMenuProteinItems", fields: [proteinOption3Id], references: [id])
+  
+  drinkOption1Id    Int?      @map("drink_option_1_id")
+  drinkOption1      MenuItem? @relation("DailyMenuDrinkItems", fields: [drinkOption1Id], references: [id])
+  
+  drinkOption2Id    Int?      @map("drink_option_2_id")
+  drinkOption2      MenuItem? @relation("DailyMenuDrinkItems", fields: [drinkOption2Id], references: [id])
+  
+  extraOption1Id    Int?      @map("extra_option_1_id")
+  extraOption1      MenuItem? @relation("DailyMenuExtraItems", fields: [extraOption1Id], references: [id])
+  
+  extraOption2Id    Int?      @map("extra_option_2_id")
+  extraOption2      MenuItem? @relation("DailyMenuExtraItems", fields: [extraOption2Id], references: [id])
 
   @@index([date])
   @@index([isActive])

@@ -27,7 +27,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // cors config
-const whitelist = [`http://localhost:${port}`, config.allowedOrigins];
+const whitelist = [
+  `http://localhost:${port}`,
+  "http://localhost:5173",
+  ...config.allowedOrigins.split(",").map((origin) => origin.trim()),
+];
 
 const corsOptions: CorsOptions = {
   origin: function (
@@ -59,7 +63,7 @@ if (process.env.NODE_ENV === "production") {
     }),
   );
 } else {
-  app.use(cors());
+  app.use(cors(corsOptions));
 }
 
 // Swagger Documentation

@@ -20,6 +20,7 @@ import {
 export interface ItemRepositoryInterface {
   findAll(params: PaginationParams): Promise<PaginatedResponse<MenuItem>>;
   findById(id: number): Promise<MenuItem | null>;
+  findByCategory(categoryId: number): Promise<MenuItem[]>;
   findByIdForUpdate(
     tx: import("../../../../types/prisma-transaction.types").PrismaTransaction,
     itemId: number,

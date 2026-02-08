@@ -206,6 +206,41 @@ class ItemController {
   });
 
   /**
+   * GET /items/by-category/:categoryId
+   *
+   * Retrieves all menu items belonging to a specific category.
+   * Returns only available and non-deleted items.
+   *
+   * URL Parameters:
+   * - categoryId: Category ID (integer, required)
+   *
+   * Response:
+   * - 200: Category items retrieved successfully
+   * - 400: Invalid category ID format
+   * - 404: Category not found
+   * - 500: Server error during retrieval
+   */
+  getItemsByCategory = asyncHandler(async (req: Request, res: Response) => {
+    const categoryId = Number(req.params.categoryId);
+
+    if (isNaN(categoryId) || categoryId <= 0) {
+      res.status(HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid category ID format",
+      });
+      return;
+    }
+
+    const menuItems = await this.itemService.findMenuItemsByCategory(categoryId);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Category items retrieved successfully",
+      data: menuItems,
+    });
+  });
+
+  /**
    * POST /items
    *
    * Creates a new menu item in the system with the provided information.

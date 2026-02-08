@@ -1,14 +1,14 @@
 import { getPrismaClient } from "../../database/prisma";
 import {
   DailyMenuRepositoryInterface,
-  DailyMenuWithId,
+  DailyMenuWithRelations,
   CreateDailyMenuData,
   UpdateDailyMenuData,
 } from "./interfaces/daily-menu.repository.interface";
 
 /**
- * DailyMenu Repository Implementation
- * Handles all database operations for daily menu management
+ * DailyMenu Repository Implementation - Updated for Item-Based Daily Menu
+ * Handles all database operations for daily menu management with full item relations
  */
 export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   private prismaClient: ReturnType<typeof getPrismaClient>;
@@ -18,47 +18,48 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   }
 
   /**
-   * Find daily menu by specific date
+   * Include all relations for daily menu query
    */
-  async findByDate(date: Date): Promise<DailyMenuWithId | null> {
-    // Normalize date to remove time component
+  private get includeRelations() {
+    return {
+      soupCategory: true,
+      principleCategory: true,
+      proteinCategory: true,
+      drinkCategory: true,
+      extraCategory: true,
+      soupOption1: true,
+      soupOption2: true,
+      principleOption1: true,
+      principleOption2: true,
+      proteinOption1: true,
+      proteinOption2: true,
+      proteinOption3: true,
+      drinkOption1: true,
+      drinkOption2: true,
+      extraOption1: true,
+      extraOption2: true,
+    };
+  }
+
+  /**
+   * Find daily menu by specific date with all relations
+   */
+  async findByDate(date: Date): Promise<DailyMenuWithRelations | null> {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
     const menu = await this.prismaClient.dailyMenu.findUnique({
-      where: {
-        date: normalizedDate,
-      },
+      where: { date: normalizedDate },
+      include: this.includeRelations,
     });
 
-    return menu as DailyMenuWithId | null;
+    return menu as DailyMenuWithRelations | null;
   }
 
   /**
-   * Find or create daily menu for a specific date
-   * Creates a default menu if it doesn't exist
+   * Get current daily menu (today) with all relations
    */
-  async findOrCreateByDate(date: Date): Promise<DailyMenuWithId> {
-    const existingMenu = await this.findByDate(date);
-
-    if (existingMenu) {
-      return existingMenu;
-    }
-
-    // Create default menu if not exists
-    return this.create({
-      date,
-      side: "Not configured",
-      soup: "Not configured",
-      drink: "Not configured",
-      isActive: true,
-    });
-  }
-
-  /**
-   * Get current daily menu (today)
-   */
-  async getCurrent(): Promise<DailyMenuWithId | null> {
+  async getCurrent(): Promise<DailyMenuWithRelations | null> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -66,32 +67,9 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   }
 
   /**
-   * Update daily menu for a specific date
-   */
-  async updateByDate(
-    date: Date,
-    data: UpdateDailyMenuData,
-  ): Promise<DailyMenuWithId> {
-    const normalizedDate = new Date(date);
-    normalizedDate.setHours(0, 0, 0, 0);
-
-    const updated = await this.prismaClient.dailyMenu.update({
-      where: {
-        date: normalizedDate,
-      },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
-    });
-
-    return updated as DailyMenuWithId;
-  }
-
-  /**
    * Create new daily menu
    */
-  async create(data: CreateDailyMenuData): Promise<DailyMenuWithId> {
+  async create(data: CreateDailyMenuData): Promise<DailyMenuWithRelations> {
     const normalizedDate = new Date(data.date);
     normalizedDate.setHours(0, 0, 0, 0);
 
@@ -100,9 +78,32 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
         ...data,
         date: normalizedDate,
       },
+      include: this.includeRelations,
     });
 
-    return created as DailyMenuWithId;
+    return created as DailyMenuWithRelations;
+  }
+
+  /**
+   * Update daily menu for a specific date
+   */
+  async updateByDate(
+    date: Date,
+    data: UpdateDailyMenuData,
+  ): Promise<DailyMenuWithRelations> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const updated = await this.prismaClient.dailyMenu.update({
+      where: { date: normalizedDate },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+      include: this.includeRelations,
+    });
+
+    return updated as DailyMenuWithRelations;
   }
 }
 
