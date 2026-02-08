@@ -63,9 +63,9 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
         }
       }
 
-      // if authetication is ok, add user to req.user
+      // if authentication is ok, add user to req.user
       req.user = user;
-      // passs to next Middleware
+      // pass to next Middleware
       next();
     },
   )(req, res, next);

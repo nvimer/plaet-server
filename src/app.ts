@@ -6,6 +6,7 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import cors, { CorsOptions } from "cors";
+import cookieParser from "cookie-parser";
 import { logger } from "./config/logger";
 import { requestLogger } from "./middlewares/morgan.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
@@ -13,6 +14,7 @@ import apiRouter from "./api/routes";
 import { notFoundHandler } from "./middlewares/notFound.middleware";
 import passport from "passport";
 import { jwtStrategy } from "./strategies/passport-jwt.strategy";
+import { tokenBlacklistMiddleware } from "./middlewares/tokenBlacklist.middleware";
 import swaggerDocs from "./config/swagger";
 import { config } from "./config";
 
@@ -25,6 +27,9 @@ const app: Application = express();
 // Body parser in JSON petition and URL Encoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Cookie parser for httpOnly cookies
+app.use(cookieParser());
 
 // cors config
 const whitelist = [
@@ -74,6 +79,9 @@ requestLogger(app);
 // Strategies for auth users
 passport.use(jwtStrategy);
 app.use(passport.initialize());
+
+// Token blacklist check (before auth middleware)
+app.use(tokenBlacklistMiddleware);
 
 // API Routes
 app.use("/api/v1", apiRouter);

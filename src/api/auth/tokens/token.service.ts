@@ -8,6 +8,7 @@ import { AuthTokenResponseInput, PayloadInput } from "./token.validation";
 import { Token, TokenType } from "@prisma/client";
 import { config } from "../../../config";
 import tokenRepository from "./token.repository";
+import { logger } from "../../../config/logger";
 
 /**
  * Token Service
@@ -145,7 +146,9 @@ export class TokenService implements TokenServiceInterface {
    * @param userId - User identifier
    */
   async logout(userId: string): Promise<void> {
-    await this.tokenRepository.blacklistAllUserTokens(userId);
+    logger.info(`[LOGOUT] Blacklisting all tokens for user ${userId}`);
+    const result = await this.tokenRepository.blacklistAllUserTokens(userId);
+    logger.info(`[LOGOUT] Blacklisted ${result} tokens for user ${userId}`);
   }
 
   /**
@@ -156,7 +159,16 @@ export class TokenService implements TokenServiceInterface {
    */
   async isTokenBlacklisted(token: string): Promise<boolean> {
     const tokenRecord = await this.tokenRepository.findByToken(token);
-    return tokenRecord?.blacklisted || false;
+    if (!tokenRecord) {
+      logger.warn(
+        `[BLACKLIST] Token not found in DB: ${token.substring(0, 20)}...`,
+      );
+      return false;
+    }
+    logger.info(
+      `[BLACKLIST] Token ${token.substring(0, 20)}... is blacklisted: ${tokenRecord.blacklisted}`,
+    );
+    return tokenRecord.blacklisted || false;
   }
 }
 
