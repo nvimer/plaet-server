@@ -175,20 +175,9 @@ class ItemRepository implements ItemRepositoryInterface {
       isAvailable: true,
     };
 
-    // Add protein filter
-    if (isProtein !== undefined) {
-      whereConditions.isProtein = isProtein;
-    }
-
-    // Add plate component filter
-    if (isPlateComponent !== undefined) {
-      whereConditions.isPlateComponent = isPlateComponent;
-    }
-
-    // Add component type filter
-    if (componentType) {
-      whereConditions.componentType = componentType;
-    }
+    // Note: Fields isProtein, isPlateComponent, componentType were removed from schema
+    // Use category-based filtering instead
+    // TODO: Implement alternative filtering logic if needed
 
     // Add category filter
     if (category) {

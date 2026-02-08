@@ -36,7 +36,7 @@ const tokenType = z.enum(
 /**
  * JWT payload validation schema
  *
- * Validates the structure of JWT token payloads to ensure
+ * Validates structure of JWT token payloads to ensure
  * they contain all required fields with proper types.
  */
 export const payloadSchema = z.object({
@@ -44,6 +44,7 @@ export const payloadSchema = z.object({
   iat: z.coerce.number(),
   exp: z.coerce.number(),
   type: tokenType,
+  token: z.string().optional(),
 });
 
 export type TokenValidationInput = z.infer<typeof tokenValidationSchema>;

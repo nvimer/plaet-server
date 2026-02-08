@@ -36,15 +36,19 @@ export class TokenService implements TokenServiceInterface {
     type: TokenType,
     secret: string = config.jwtSecret,
   ): string {
-    // create a personalizate payload where save necesary values for token in auth user.
+    // create a personalize payload where save necessary values for token in auth user.
     const payload: PayloadInput = {
       sub: id,
       iat: moment().unix(),
       exp: expires.unix(),
       type,
+      token: "", // Will be set after signing
     };
-    // sign the transaction qith payload values and secret value
-    return jwt.sign(payload, secret);
+    // sign the transaction with payload values and secret value
+    const token = jwt.sign(payload, secret);
+    // Update payload with the generated token for blacklisting reference
+    payload.token = token;
+    return token;
   }
 
   /**

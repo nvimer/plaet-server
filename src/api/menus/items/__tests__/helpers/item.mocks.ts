@@ -6,6 +6,7 @@ export function createMockItemRepository(): jest.Mocked<ItemRepositoryInterface>
   return {
     findAll: jest.fn(),
     findById: jest.fn(),
+    findByCategory: jest.fn(),
     findByIdForUpdate: jest.fn(),
     create: jest.fn(),
     search: jest.fn(),
@@ -28,6 +29,7 @@ export function createMockItemService(): jest.Mocked<ItemServiceInterface> {
   return {
     findAllMenuItems: jest.fn(),
     findMenuItemById: jest.fn(),
+    findMenuItemsByCategory: jest.fn(),
     createItem: jest.fn(),
     searchMenuItems: jest.fn(),
     getSetLunchItems: jest.fn(),

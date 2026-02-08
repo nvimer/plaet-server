@@ -421,30 +421,25 @@ export class OrderService implements OrderServiceInterface {
     items: OrderItemInput[],
     menuItems: MenuItem[],
   ): number {
-    // Find the protein item (if any)
-    const proteinItem = items.find((item) => {
-      const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-      return menuItem?.isProtein;
-    });
-
-    if (proteinItem) {
-      // SetLunch pricing: start with protein's combo price
-      const proteinMenuItem = menuItems.find(
-        (mi) => mi.id === proteinItem.menuItemId,
-      );
-      let total = Number(
-        proteinMenuItem?.comboPrice || proteinMenuItem?.price || 0,
-      );
-
-      // Add paid extras (non-protein items with price > 0)
-      const extras = items.filter((item) => {
+    // Find the most expensive item (assumed to be the main protein)
+    const sortedItems = items
+      .map((item) => {
         const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-        return !menuItem?.isProtein && Number(menuItem?.price || 0) > 0;
-      });
+        return { ...item, menuItem, price: Number(menuItem?.price || 0) };
+      })
+      .sort((a, b) => b.price - a.price);
+
+    const mainItem = sortedItems[0];
+
+    if (mainItem) {
+      // SetLunch pricing: start with main item price
+      let total = mainItem.price;
+
+      // Add paid extras (other items with price > 0)
+      const extras = sortedItems.slice(1).filter((item) => item.price > 0);
 
       extras.forEach((item) => {
-        const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-        total += Number(menuItem?.price || 0) * item.quantity;
+        total += item.price * item.quantity;
       });
 
       return total;
