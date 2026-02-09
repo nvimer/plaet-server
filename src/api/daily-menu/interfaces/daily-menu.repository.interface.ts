@@ -101,5 +101,8 @@ export interface DailyMenuRepositoryInterface {
   /**
    * Update daily menu for a specific date
    */
-  updateByDate(date: Date, data: UpdateDailyMenuData): Promise<DailyMenuWithRelations>;
+  updateByDate(
+    date: Date,
+    data: UpdateDailyMenuData,
+  ): Promise<DailyMenuWithRelations>;
 }

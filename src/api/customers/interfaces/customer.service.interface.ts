@@ -1,4 +1,4 @@
-import { Customer, Prisma } from "@prisma/client";
+import { Customer } from "@prisma/client";
 
 export interface CreateCustomerData {
   firstName: string;

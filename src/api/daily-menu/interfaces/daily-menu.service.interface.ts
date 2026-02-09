@@ -3,7 +3,7 @@
  * Defines business logic operations for daily menu management with MenuItem references
  */
 
-import { MenuItem, MenuCategory } from "@prisma/client";
+import { MenuCategory } from "@prisma/client";
 
 /**
  * Menu item option with full details
@@ -26,14 +26,14 @@ export interface DailyMenuResponse {
   premiumProteinPrice: number;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Categories
   soupCategory: MenuCategory | null;
   principleCategory: MenuCategory | null;
   proteinCategory: MenuCategory | null;
   drinkCategory: MenuCategory | null;
   extraCategory: MenuCategory | null;
-  
+
   // Item options
   soupOptions: MenuItemOption[];
   principleOptions: MenuItemOption[];
@@ -58,14 +58,14 @@ export interface UpdateDailyMenuInput {
   // Prices
   basePrice?: number;
   premiumProteinPrice?: number;
-  
+
   // Category IDs
   soupCategoryId?: number | null;
   principleCategoryId?: number | null;
   proteinCategoryId?: number | null;
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
-  
+
   // Item options
   soupOptions?: DailyMenuItemOptionInput;
   principleOptions?: DailyMenuItemOptionInput;
@@ -105,5 +105,8 @@ export interface DailyMenuServiceInterface {
    * @param data - Menu configuration data
    * @returns Updated menu
    */
-  updateMenuByDate(date: Date, data: UpdateDailyMenuInput): Promise<DailyMenuResponse>;
+  updateMenuByDate(
+    date: Date,
+    data: UpdateDailyMenuInput,
+  ): Promise<DailyMenuResponse>;
 }

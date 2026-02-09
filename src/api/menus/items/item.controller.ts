@@ -231,7 +231,8 @@ class ItemController {
       return;
     }
 
-    const menuItems = await this.itemService.findMenuItemsByCategory(categoryId);
+    const menuItems =
+      await this.itemService.findMenuItemsByCategory(categoryId);
 
     res.status(HttpStatus.OK).json({
       success: true,

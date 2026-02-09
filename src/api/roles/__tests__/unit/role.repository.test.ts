@@ -52,7 +52,7 @@ import { createRoleFixture } from "../helpers";
 describe("RoleRepository", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default transaction mock
     mockTransaction.mockImplementation(async (callback) => {
       const mockTx = {

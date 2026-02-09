@@ -65,6 +65,115 @@ npm run test:db:status       # Check test DB status
 - TypeScript recommended + Prettier integration
 - Unused vars: warn (ignore `_` prefix)
 - `no-console`: warn (use Winston logger)
+- **Strings: ALWAYS use double quotes (`"`)** - Single quotes will fail
+- **Semicolons: ALWAYS required at end of statements**
+- **Trailing commas: Use `all` (include in multi-line objects/arrays)**
+- **Tab width: 2 spaces**
+- **Max line length: 80 characters**
+
+### ESLint Commands Reference
+
+```bash
+# Check all ESLint issues
+npm run eslint-check-only
+
+# Auto-fix ESLint issues where possible
+npm run eslint-fix
+
+# Format with Prettier only
+npm run prettier
+
+# Check specific file
+npx eslint src/path/to/file.ts
+
+# Fix specific file
+npx eslint src/path/to/file.ts --fix
+```
+
+### Common ESLint Errors & Fixes
+
+| Error                               | Cause                 | Solution                               |
+| ----------------------------------- | --------------------- | -------------------------------------- |
+| `prettier/prettier`                 | Formatting mismatch   | Run `npm run prettier` or fix manually |
+| `quotes`                            | Using single quotes   | Replace `'` with `"`                   |
+| `no-console`                        | Using `console.log()` | Use `logger.info()` from Winston       |
+| `unused vars`                       | Declared but unused   | Remove variable or prefix with `_`     |
+| `@typescript-eslint/no-unused-vars` | Unused parameters     | Prefix with `_` (e.g., `_req`)         |
+
+### Code Formatting Rules
+
+**Strings:**
+
+```typescript
+// ❌ INCORRECT
+const name = "John";
+const message = `Hello ${name}`;
+
+// ✅ CORRECT
+const name = "John";
+const message = `Hello ${name}`; // Template literals OK for interpolation
+```
+
+**Objects & Arrays (Trailing Commas):**
+
+```typescript
+// ❌ INCORRECT
+const user = {
+  name: "John",
+  email: "john@example.com", // Missing trailing comma
+};
+
+// ✅ CORRECT
+const user = {
+  name: "John",
+  email: "john@example.com", // Trailing comma present
+};
+```
+
+**Function Parameters:**
+
+```typescript
+// ❌ INCORRECT - Unused parameter without underscore
+app.use((req, res, next) => { ... });
+
+// ✅ CORRECT - Prefix unused params with underscore
+app.use((_req, res, next) => { ... });
+```
+
+**Logging (Never use console in production code):**
+
+```typescript
+// ❌ INCORRECT
+console.log("User logged in");
+
+// ✅ CORRECT
+import { logger } from "./config/logger";
+logger.info("User logged in");
+```
+
+### Files to Exclude from ESLint
+
+The following files/dirs are excluded in `.eslintignore`:
+
+- `dist/` - Compiled output
+- `coverage/` - Test coverage reports
+- `node_modules/` - Dependencies
+- `*.js` in coverage directories
+
+### Pre-Commit Checklist
+
+Before committing code, always run:
+
+```bash
+npm run eslint-check-only
+```
+
+If there are errors, fix them with:
+
+```bash
+npm run eslint-fix  # Auto-fixes formatting issues
+# Then manually fix remaining issues
+```
 
 ### Naming Conventions
 

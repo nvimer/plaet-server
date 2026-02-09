@@ -123,7 +123,7 @@ describe("OrderService - Basic Tests", () => {
       mockPrismaClient.$transaction.mockImplementation(async (callback) => {
         return await callback(mockTx);
       });
-      
+
       // Mock repository methods used within transaction
       mockOrderRepository.create.mockResolvedValue(orderWithItems as any);
       mockOrderRepository.updateTotal.mockResolvedValue(undefined as any);
@@ -314,7 +314,7 @@ describe("OrderService - Basic Tests", () => {
 
       mockPrismaClient.order.findUnique.mockResolvedValue(existingOrder);
       mockItemService.revertStockForOrder.mockResolvedValue(undefined);
-      
+
       // Mock the transaction to return the cancelled order
       // Create a mockTx that will be used in the transaction callback
       const mockTx = {
@@ -322,7 +322,7 @@ describe("OrderService - Basic Tests", () => {
           update: jest.fn().mockResolvedValue(cancelledOrder),
         },
       };
-      
+
       // Override the beforeEach mock for this specific test
       mockPrismaClient.$transaction.mockImplementation(async (callback) => {
         return await callback(mockTx);

@@ -52,6 +52,4 @@ export const dailyMenuDateParamSchema = z.object({
 export type UpdateDailyMenuBodyInput = z.infer<
   typeof updateDailyMenuBodySchema
 >;
-export type UpdateDailyMenuDateInput = z.infer<
-  typeof dailyMenuDateParamSchema
->;
+export type UpdateDailyMenuDateInput = z.infer<typeof dailyMenuDateParamSchema>;

@@ -1,4 +1,4 @@
-import { Customer } from "@prisma/client";
+import { Customer, Prisma } from "@prisma/client";
 import { CustomerRepository } from "./customer.repository";
 import {
   ICustomerService,
@@ -226,7 +226,7 @@ export class CustomerService implements ICustomerService {
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: Prisma.CustomerUpdateInput = {};
 
     if (data.firstName !== undefined) {
       updateData.firstName = data.firstName.trim();

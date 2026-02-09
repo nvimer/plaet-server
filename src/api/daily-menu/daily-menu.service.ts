@@ -37,14 +37,12 @@ export class DailyMenuService implements DailyMenuServiceInterface {
    * Transform database model to API response
    */
   private toResponse(menu: DailyMenuWithRelations): DailyMenuResponse {
-    // NOTE: After running migration, remove 'as any' casts
-    const menuAny = menu as any;
     return {
-      id: menuAny.id,
-      date: menuAny.date,
-      isActive: menuAny.isActive ?? true,
-      basePrice: Number(menuAny.basePrice ?? 10000),
-      premiumProteinPrice: Number(menuAny.premiumProteinPrice ?? 11000),
+      id: menu.id,
+      date: menu.date,
+      isActive: menu.isActive ?? true,
+      basePrice: Number(menu.basePrice ?? 10000),
+      premiumProteinPrice: Number(menu.premiumProteinPrice ?? 11000),
       createdAt: menu.createdAt || new Date(),
       updatedAt: menu.updatedAt || new Date(),
 

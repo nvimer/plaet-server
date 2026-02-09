@@ -101,12 +101,12 @@ describe("PermissionService - Unit Tests", () => {
       mockPermissionRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        permissionService.findPermissionById(id),
-      ).rejects.toThrow(CustomError);
-      await expect(
-        permissionService.findPermissionById(id),
-      ).rejects.toThrow(`Permission with ID ${id} not found`);
+      await expect(permissionService.findPermissionById(id)).rejects.toThrow(
+        CustomError,
+      );
+      await expect(permissionService.findPermissionById(id)).rejects.toThrow(
+        `Permission with ID ${id} not found`,
+      );
 
       try {
         await permissionService.findPermissionById(id);
@@ -155,12 +155,12 @@ describe("PermissionService - Unit Tests", () => {
       mockPermissionRepository.findByName.mockResolvedValue(existing);
 
       // Act & Assert
-      await expect(
-        permissionService.createPermission(input),
-      ).rejects.toThrow(CustomError);
-      await expect(
-        permissionService.createPermission(input),
-      ).rejects.toThrow(`A permission with the name '${input.name}' already exists`);
+      await expect(permissionService.createPermission(input)).rejects.toThrow(
+        CustomError,
+      );
+      await expect(permissionService.createPermission(input)).rejects.toThrow(
+        `A permission with the name '${input.name}' already exists`,
+      );
 
       try {
         await permissionService.createPermission(input);
@@ -240,7 +240,9 @@ describe("PermissionService - Unit Tests", () => {
       ).rejects.toThrow(CustomError);
       await expect(
         permissionService.updatePermission(id, input),
-      ).rejects.toThrow(`A permission with the name '${input.name}' already exists`);
+      ).rejects.toThrow(
+        `A permission with the name '${input.name}' already exists`,
+      );
 
       // Reset mocks for second assertion
       mockPermissionRepository.findById.mockResolvedValue(existing);

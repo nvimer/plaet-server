@@ -320,7 +320,7 @@ describe("ItemRepository", () => {
           { itemId: 2, quantity: 50, lowStockAlert: 5 },
         ],
       };
-      
+
       const mockTx = {
         menuItem: {
           update: jest.fn().mockResolvedValue({}),
@@ -329,7 +329,7 @@ describe("ItemRepository", () => {
           createMany: mockStockAdjustmentCreateMany,
         },
       };
-      
+
       mockStockAdjustmentCreateMany.mockResolvedValue({ count: 2 });
       mockTransaction.mockImplementation((callback) => {
         return callback(mockTx);

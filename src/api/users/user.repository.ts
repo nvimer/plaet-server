@@ -39,7 +39,9 @@ class BasicUserRepository implements UserRepositoryInterface {
    * - Excludes soft-deleted users (deleted: false)
    * - Counts total users for pagination metadata
    */
-  async findAll(params: PaginationParams): Promise<PaginatedResponse<UserWithRoles>> {
+  async findAll(
+    params: PaginationParams,
+  ): Promise<PaginatedResponse<UserWithRoles>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
 
@@ -47,10 +49,7 @@ class BasicUserRepository implements UserRepositoryInterface {
     const [users, total] = await Promise.all([
       client.user.findMany({
         where: { deleted: false },
-        orderBy: [
-          { firstName: "asc" },
-          { lastName: "asc" },
-        ],
+        orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         include: {
           roles: {
             include: {
@@ -61,7 +60,7 @@ class BasicUserRepository implements UserRepositoryInterface {
         skip,
         take: limit,
       }),
-        client.user.count({
+      client.user.count({
         where: { deleted: false },
       }),
     ]);
@@ -105,10 +104,7 @@ class BasicUserRepository implements UserRepositoryInterface {
     const [users, total] = await Promise.all([
       client.user.findMany({
         where,
-        orderBy: [
-          { firstName: "asc" },
-          { lastName: "asc" },
-        ],
+        orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         include: {
           roles: {
             include: {
