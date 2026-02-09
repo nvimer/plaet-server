@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import prisma from "../src/database/prisma";
 
 async function checkTokens() {

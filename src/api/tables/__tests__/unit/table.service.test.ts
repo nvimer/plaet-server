@@ -7,10 +7,7 @@ import {
   PaginationParams,
   PaginatedResponse,
 } from "../../../../interfaces/pagination.interfaces";
-import {
-  CreateTableInput,
-  UpdateTableInput,
-} from "../../table.validator";
+import { CreateTableInput, UpdateTableInput } from "../../table.validator";
 
 describe("TableService - Unit Tests", () => {
   let tableService: TableService;

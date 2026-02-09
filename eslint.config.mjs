@@ -5,6 +5,23 @@ import prettierConfig from "eslint-config-prettier"; // La configuración que de
 
 export default [
   {
+    // --- ignores ---
+    // Archivos y directorios que ESLint debe ignorar completamente.
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "scripts/**",
+      "prisma/migrations/**",
+      "prisma/seed*.ts",
+      "src/tests/**",
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "*.log",
+      ".env*",
+    ],
+
     // --- files ---
     // Especifica a qué archivos se aplica este bloque de configuración.
     // "**/*.ts" significa "todos los archivos con extensión .ts en cualquier subcarpeta".

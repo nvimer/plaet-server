@@ -18,6 +18,4 @@ export type {
   DailyMenuResponse,
 } from "./interfaces/daily-menu.service.interface";
 
-export type {
-  UpdateDailyMenuBodyInput,
-} from "./daily-menu.validator";
+export type { UpdateDailyMenuBodyInput } from "./daily-menu.validator";

@@ -24,7 +24,10 @@ jest.setTimeout(30000);
  */
 beforeAll(async () => {
   // Only connect to database for integration/e2e tests
-  if (process.env.TEST_TYPE === "integration" || process.env.TEST_TYPE === "e2e") {
+  if (
+    process.env.TEST_TYPE === "integration" ||
+    process.env.TEST_TYPE === "e2e"
+  ) {
     try {
       await connectTestDatabase();
       logger.info("✅ Test database connected");
@@ -39,7 +42,10 @@ beforeAll(async () => {
  * Global teardown - runs once after all tests
  */
 afterAll(async () => {
-  if (process.env.TEST_TYPE === "integration" || process.env.TEST_TYPE === "e2e") {
+  if (
+    process.env.TEST_TYPE === "integration" ||
+    process.env.TEST_TYPE === "e2e"
+  ) {
     try {
       await disconnectTestDatabase();
       logger.info("✅ Test database disconnected");
@@ -54,7 +60,10 @@ afterAll(async () => {
  * Only runs for integration/e2e tests to ensure clean state
  */
 beforeEach(async () => {
-  if (process.env.TEST_TYPE === "integration" || process.env.TEST_TYPE === "e2e") {
+  if (
+    process.env.TEST_TYPE === "integration" ||
+    process.env.TEST_TYPE === "e2e"
+  ) {
     try {
       await cleanupAllTestData();
     } catch (error) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from "@prisma/client";
 import { logger } from "../config/logger";
 
@@ -152,8 +153,11 @@ export function getPrismaClient(): any {
   if (process.env.NODE_ENV === "test") {
     // For all tests (unit, integration, E2E), use test database client
     // Dynamic import to avoid circular dependencies
-    const { getTestDatabaseClient } = require("../tests/shared/test-database");
-    return getTestDatabaseClient();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const testDbModule = require("../tests/shared/test-database") as {
+      getTestDatabaseClient: () => any;
+    };
+    return testDbModule.getTestDatabaseClient();
   }
   return prisma;
 }

@@ -59,7 +59,7 @@ const runE2ETests = process.env.TEST_TYPE === "e2e";
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.body.success).toBe(true);
     expect(loginResponse.body.data).toBeDefined();
-    
+
     // Token structure: { access: { token: string, expires: string }, refresh: { token: string, expires: string } }
     expect(loginResponse.body.data.access).toBeDefined();
     expect(loginResponse.body.data.access.token).toBeDefined();

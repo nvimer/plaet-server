@@ -7,13 +7,13 @@ import { RoleServiceInterface } from "../../../roles/interfaces/role.service.int
  */
 export function createMockUserRepository(): jest.Mocked<UserRepositoryInterface> {
   return {
-  findAll: jest.fn(),
-  search: jest.fn(),
-  findByEmail: jest.fn(),
-  findById: jest.fn(),
-  create: jest.fn(),
-  update: jest.fn(),
-  findUserWithPermissions: jest.fn(),
+    findAll: jest.fn(),
+    search: jest.fn(),
+    findByEmail: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    findUserWithPermissions: jest.fn(),
   };
 }
 

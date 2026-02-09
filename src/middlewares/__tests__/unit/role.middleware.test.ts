@@ -52,9 +52,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 
@@ -93,9 +93,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.WAITER, RoleName.ADMIN]);
 
@@ -143,9 +143,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 
@@ -228,9 +228,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.ADMIN]);
 
@@ -256,9 +256,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 
@@ -285,9 +285,9 @@ describe("Role Middleware - Unit Tests", () => {
       const serviceError = new Error("Service error");
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockRejectedValue(
-        serviceError,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockRejectedValue(serviceError);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 
@@ -315,9 +315,9 @@ describe("Role Middleware - Unit Tests", () => {
       );
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockRejectedValue(
-        customError,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockRejectedValue(customError);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 
@@ -356,9 +356,9 @@ describe("Role Middleware - Unit Tests", () => {
       });
 
       mockRequest.user = user;
-      (userService.findUserWithRolesAndPermissions as jest.Mock).mockResolvedValue(
-        user,
-      );
+      (
+        userService.findUserWithRolesAndPermissions as jest.Mock
+      ).mockResolvedValue(user);
 
       const middleware = roleMiddleware([RoleName.WAITER]);
 

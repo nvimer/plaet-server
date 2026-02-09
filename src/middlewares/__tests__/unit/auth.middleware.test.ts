@@ -37,11 +37,7 @@ describe("Auth Middleware - Unit Tests", () => {
       middlewareMockScenarios.authenticatedUser(mockAuthenticate, user);
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -59,11 +55,7 @@ describe("Auth Middleware - Unit Tests", () => {
       middlewareMockScenarios.authenticatedUser(mockAuthenticate, user);
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -79,11 +71,7 @@ describe("Auth Middleware - Unit Tests", () => {
       middlewareMockScenarios.authenticationFailed(mockAuthenticate);
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -105,11 +93,7 @@ describe("Auth Middleware - Unit Tests", () => {
       );
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -140,11 +124,7 @@ describe("Auth Middleware - Unit Tests", () => {
       );
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -161,14 +141,13 @@ describe("Auth Middleware - Unit Tests", () => {
     it("should call next() with error when passport returns an error", async () => {
       // Arrange
       const passportError = new Error("Passport authentication error");
-      middlewareMockScenarios.authenticationError(mockAuthenticate, passportError);
+      middlewareMockScenarios.authenticationError(
+        mockAuthenticate,
+        passportError,
+      );
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
@@ -183,11 +162,7 @@ describe("Auth Middleware - Unit Tests", () => {
       middlewareMockScenarios.authenticationFailed(mockAuthenticate);
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       expect(mockAuthenticate).toHaveBeenCalledWith(
@@ -202,11 +177,7 @@ describe("Auth Middleware - Unit Tests", () => {
       middlewareMockScenarios.authenticationFailed(mockAuthenticate);
 
       // Act
-      authJwt(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext,
-      );
+      authJwt(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
       expect(mockAuthenticate).toHaveBeenCalledWith(

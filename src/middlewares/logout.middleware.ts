@@ -1,5 +1,4 @@
 import passport from "passport";
-import { logger } from "../config/logger";
 import { Request, Response, NextFunction } from "express";
 
 /**
@@ -13,21 +12,25 @@ export const logoutMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): void => {
   passport.authenticate(
     "jwt",
     { session: false },
-    (err: Error | null, user: Express.User | false, info: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (err: Error | null, user: Express.User | false, _info: any) => {
       // Only check if there's a token, don't verify validity or blacklist
       if (!user && !err) {
-        return next();
+        next();
+        return;
       }
 
       if (err) {
-        return next(err);
+        next(err);
+        return;
       }
 
       // Add user to request for logout controller
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (req as any).user = user;
       next();
     },

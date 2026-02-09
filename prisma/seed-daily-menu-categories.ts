@@ -1,59 +1,62 @@
+/* eslint-disable no-console */
 /**
  * Daily Menu Categories Seed
- * 
+ *
  * Creates default categories for the daily lunch menu system.
  * These categories organize menu items for the daily menu configuration.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 const DAILY_MENU_CATEGORIES = [
   {
-    name: 'Sopas',
-    description: 'Sopas del día para el almuerzo ejecutivo',
+    name: "Sopas",
+    description: "Sopas del día para el almuerzo ejecutivo",
     order: 1,
   },
   {
-    name: 'Principios',
-    description: 'Acompañamientos principales (frijoles, lentejas, garbanzos, etc.)',
+    name: "Principios",
+    description:
+      "Acompañamientos principales (frijoles, lentejas, garbanzos, etc.)",
     order: 2,
   },
   {
-    name: 'Proteínas',
-    description: 'Carnes y proteínas para el almuerzo (pollo, cerdo, res, pescado)',
+    name: "Proteínas",
+    description:
+      "Carnes y proteínas para el almuerzo (pollo, cerdo, res, pescado)",
     order: 3,
   },
   {
-    name: 'Arroz',
-    description: 'Arroz y carbohidratos base',
+    name: "Arroz",
+    description: "Arroz y carbohidratos base",
     order: 4,
   },
   {
-    name: 'Ensaladas',
-    description: 'Ensaladas y vegetales',
+    name: "Ensaladas",
+    description: "Ensaladas y vegetales",
     order: 5,
   },
   {
-    name: 'Jugos',
-    description: 'Bebidas y jugos del día',
+    name: "Jugos",
+    description: "Bebidas y jugos del día",
     order: 6,
   },
   {
-    name: 'Extras',
-    description: 'Acompañamientos adicionales (plátano, papa, etc.)',
+    name: "Extras",
+    description: "Acompañamientos adicionales (plátano, papa, etc.)",
     order: 7,
   },
   {
-    name: 'Postres',
-    description: 'Postres del día (actualmente inactivo)',
+    name: "Postres",
+    description: "Postres del día (actualmente inactivo)",
     order: 8,
   },
 ];
 
 async function seedDailyMenuCategories() {
-  console.log('🌱 Seeding Daily Menu Categories...\n');
+  console.log("🌱 Seeding Daily Menu Categories...\n");
 
   for (const category of DAILY_MENU_CATEGORIES) {
     try {
@@ -76,14 +79,14 @@ async function seedDailyMenuCategories() {
     }
   }
 
-  console.log('\n🎉 Daily Menu Categories seed completed!');
+  console.log("\n🎉 Daily Menu Categories seed completed!");
 }
 
 async function main() {
   try {
     await seedDailyMenuCategories();
   } catch (error) {
-    console.error('Failed to seed daily menu categories:', error);
+    console.error("Failed to seed daily menu categories:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

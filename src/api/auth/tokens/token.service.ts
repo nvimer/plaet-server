@@ -4,7 +4,7 @@ import {
   TokenRepositoryInterface,
   TokenServiceInterface,
 } from "./token.interface";
-import { AuthTokenResponseInput, PayloadInput } from "./token.validation";
+import { AuthTokenResponseInput } from "./token.validation";
 import { Token, TokenType } from "@prisma/client";
 import { config } from "../../../config";
 import tokenRepository from "./token.repository";

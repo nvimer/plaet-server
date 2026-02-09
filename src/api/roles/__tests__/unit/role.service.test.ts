@@ -9,10 +9,7 @@ import {
   PaginationParams,
   PaginatedResponse,
 } from "../../../../interfaces/pagination.interfaces";
-import {
-  CreateRoleInput,
-  UpdateRoleInput,
-} from "../../role.validator";
+import { CreateRoleInput, UpdateRoleInput } from "../../role.validator";
 
 describe("RoleService - Unit Tests", () => {
   let roleService: RoleService;

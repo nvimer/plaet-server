@@ -37,10 +37,7 @@ class CategoryRepository implements CategoryRepositoryInterface {
     const [menuCategories, total] = await Promise.all([
       prisma.menuCategory.findMany({
         where: { deleted: false }, // Only include non-deleted categories
-        orderBy: [
-          { order: "asc" },
-          { name: "asc" },
-        ], // Primary sort by order, secondary by name
+        orderBy: [{ order: "asc" }, { name: "asc" }], // Primary sort by order, secondary by name
         skip, // Skip records for pagination
         take: limit, // Limit number of records returned
       }),
@@ -155,10 +152,7 @@ class CategoryRepository implements CategoryRepositoryInterface {
     const [menuCategories, total] = await Promise.all([
       prisma.menuCategory.findMany({
         where: whereConditions,
-        orderBy: [
-          { order: "asc" },
-          { name: "asc" },
-        ],
+        orderBy: [{ order: "asc" }, { name: "asc" }],
         skip,
         take: limit,
       }),
