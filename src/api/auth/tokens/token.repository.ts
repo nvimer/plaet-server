@@ -52,6 +52,13 @@ class TokenRepository implements TokenRepositoryInterface {
       where: { token },
     });
   }
+
+  async blacklistToken(token: string): Promise<void> {
+    await prisma.token.updateMany({
+      where: { token },
+      data: { blacklisted: true },
+    });
+  }
 }
 
 export default new TokenRepository();
