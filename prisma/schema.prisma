@@ -144,6 +144,18 @@ model User {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
+  // Email verification fields
+  emailVerified   Boolean  @default(false) @map("email_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+
+  // Account lockout fields (brute force protection)
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastFailedLogin     DateTime? @map("last_failed_login")
+
+  // Password history and tracking
+  passwordChangedAt DateTime? @default(now()) @map("password_changed_at")
+
   @@map("users")
 }
 

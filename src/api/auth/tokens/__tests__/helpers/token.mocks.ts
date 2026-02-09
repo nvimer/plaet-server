@@ -7,6 +7,7 @@ export function createMockTokenRepository(): jest.Mocked<TokenRepositoryInterfac
     deleteRefreshTokenByUserId: jest.fn(),
     blacklistAllUserTokens: jest.fn(),
     findByToken: jest.fn(),
+    blacklistToken: jest.fn(),
   };
 }
 
