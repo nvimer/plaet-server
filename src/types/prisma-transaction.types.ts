@@ -24,5 +24,5 @@ export type PrismaTransaction = TransactionCallback extends (
 ) => Promise<infer _R>
   ? T
   : TransactionCallback extends (tx: infer T) => infer _R
-  ? T
-  : never;
+    ? T
+    : never;

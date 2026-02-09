@@ -7,7 +7,6 @@ import {
   customerIdSchema,
   phoneSearchSchema,
 } from "./customer.validator";
-import { CustomError } from "../../types/custom-errors";
 
 /**
  * Customer controller (thin architecture)

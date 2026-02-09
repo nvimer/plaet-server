@@ -64,7 +64,7 @@ class ItemRepository implements ItemRepositoryInterface {
         isAvailable: true,
       },
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
     });
   }
@@ -157,16 +157,7 @@ class ItemRepository implements ItemRepositoryInterface {
   async findBySetLunchFilters(
     params: PaginationParams & SetLunchFilterParams,
   ): Promise<PaginatedResponse<MenuItem>> {
-    const {
-      page,
-      limit,
-      isProtein,
-      isPlateComponent,
-      componentType,
-      category,
-      minPrice,
-      maxPrice,
-    } = params;
+    const { page, limit, category, minPrice, maxPrice } = params;
     const skip = (page - 1) * limit;
 
     // Build where conditions

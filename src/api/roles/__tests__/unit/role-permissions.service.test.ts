@@ -43,13 +43,10 @@ describe("RolePermissionService - Unit Tests", () => {
     it("should return role with permissions when role exists", async () => {
       // Arrange
       const id = 1;
-      const roleWithPermissions = createRoleWithPermissionsFixture(
-        { id },
-        [
-          { id: 1, name: "permission:read" },
-          { id: 2, name: "permission:write" },
-        ],
-      );
+      const roleWithPermissions = createRoleWithPermissionsFixture({ id }, [
+        { id: 1, name: "permission:read" },
+        { id: 2, name: "permission:write" },
+      ]);
 
       mockRoleRepository.findRoleWithPermissions.mockResolvedValue(
         roleWithPermissions as Role,
@@ -118,9 +115,10 @@ describe("RolePermissionService - Unit Tests", () => {
       expect(mockRoleRepository.findRoleWithPermissions).toHaveBeenCalledWith(
         roleId,
       );
-      expect(
-        mockRoleRepository.assignPermissionsToRole,
-      ).toHaveBeenCalledWith(roleId, permissionIds);
+      expect(mockRoleRepository.assignPermissionsToRole).toHaveBeenCalledWith(
+        roleId,
+        permissionIds,
+      );
       expect(result).toEqual(roleWithPermissions);
     });
 
@@ -139,9 +137,7 @@ describe("RolePermissionService - Unit Tests", () => {
         rolePermissionService.assignPermissionsToRole(roleId, permissionIds),
       ).rejects.toThrow(`Role with ID ${roleId} not found.`);
 
-      expect(
-        mockRoleRepository.assignPermissionsToRole,
-      ).not.toHaveBeenCalled();
+      expect(mockRoleRepository.assignPermissionsToRole).not.toHaveBeenCalled();
     });
   });
 
@@ -172,9 +168,10 @@ describe("RolePermissionService - Unit Tests", () => {
       expect(mockRoleRepository.findRoleWithPermissions).toHaveBeenCalledWith(
         roleId,
       );
-      expect(
-        mockRoleRepository.removePermissionsFromRole,
-      ).toHaveBeenCalledWith(roleId, permissionIds);
+      expect(mockRoleRepository.removePermissionsFromRole).toHaveBeenCalledWith(
+        roleId,
+        permissionIds,
+      );
       expect(result).toEqual(roleWithRemovedPermissions);
     });
 
@@ -204,14 +201,12 @@ describe("RolePermissionService - Unit Tests", () => {
       // Arrange
       const params: PaginationParams = { page: 1, limit: 10 };
       const roles = [
-        createRoleWithPermissionsFixture(
-          { id: 1 },
-          [{ id: 1, name: "permission:read" }],
-        ),
-        createRoleWithPermissionsFixture(
-          { id: 2 },
-          [{ id: 2, name: "permission:write" }],
-        ),
+        createRoleWithPermissionsFixture({ id: 1 }, [
+          { id: 1, name: "permission:read" },
+        ]),
+        createRoleWithPermissionsFixture({ id: 2 }, [
+          { id: 2, name: "permission:write" },
+        ]),
       ];
       const expectedResponse = createPaginatedResponse(roles);
 
@@ -220,12 +215,13 @@ describe("RolePermissionService - Unit Tests", () => {
       );
 
       // Act
-      const result = await rolePermissionService.getRolesWithPermissions(params);
+      const result =
+        await rolePermissionService.getRolesWithPermissions(params);
 
       // Assert
-      expect(
-        mockRoleRepository.getRolesWithPermissions,
-      ).toHaveBeenCalledWith(params);
+      expect(mockRoleRepository.getRolesWithPermissions).toHaveBeenCalledWith(
+        params,
+      );
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(2);
     });
@@ -240,7 +236,8 @@ describe("RolePermissionService - Unit Tests", () => {
       );
 
       // Act
-      const result = await rolePermissionService.getRolesWithPermissions(params);
+      const result =
+        await rolePermissionService.getRolesWithPermissions(params);
 
       // Assert
       expect(result.data).toHaveLength(0);

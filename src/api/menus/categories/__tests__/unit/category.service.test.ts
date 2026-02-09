@@ -138,7 +138,9 @@ describe("CategoryService - Unit Tests", () => {
       const result = await categoryService.createCategory(input);
 
       // Assert
-      expect(mockCategoryRepository.findByName).toHaveBeenCalledWith(input.name);
+      expect(mockCategoryRepository.findByName).toHaveBeenCalledWith(
+        input.name,
+      );
       expect(mockCategoryRepository.create).toHaveBeenCalledWith(input);
       expect(result).toEqual(created);
     });
@@ -209,12 +211,12 @@ describe("CategoryService - Unit Tests", () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        categoryService.updateCategory(id, input),
-      ).rejects.toThrow(CustomError);
-      await expect(
-        categoryService.updateCategory(id, input),
-      ).rejects.toThrow(`Menu Category ID ${id} not found`);
+      await expect(categoryService.updateCategory(id, input)).rejects.toThrow(
+        CustomError,
+      );
+      await expect(categoryService.updateCategory(id, input)).rejects.toThrow(
+        `Menu Category ID ${id} not found`,
+      );
 
       expect(mockCategoryRepository.update).not.toHaveBeenCalled();
     });
@@ -235,12 +237,12 @@ describe("CategoryService - Unit Tests", () => {
       mockCategoryRepository.findByName.mockResolvedValue(conflicting);
 
       // Act & Assert
-      await expect(
-        categoryService.updateCategory(id, input),
-      ).rejects.toThrow(CustomError);
-      await expect(
-        categoryService.updateCategory(id, input),
-      ).rejects.toThrow(`Category with name "${input.name}" already exists`);
+      await expect(categoryService.updateCategory(id, input)).rejects.toThrow(
+        CustomError,
+      );
+      await expect(categoryService.updateCategory(id, input)).rejects.toThrow(
+        `Category with name "${input.name}" already exists`,
+      );
 
       try {
         await categoryService.updateCategory(id, input);
@@ -367,12 +369,10 @@ describe("CategoryService - Unit Tests", () => {
       const input: BulkCategoryInput = { ids: [] };
 
       // Act & Assert
-      await expect(
-        categoryService.bulkDeleteCategories(input),
-      ).rejects.toThrow(CustomError);
-      await expect(
-        categoryService.bulkDeleteCategories(input),
-      ).rejects.toThrow(
+      await expect(categoryService.bulkDeleteCategories(input)).rejects.toThrow(
+        CustomError,
+      );
+      await expect(categoryService.bulkDeleteCategories(input)).rejects.toThrow(
         "At least one category ID must be provided for bulk deletion",
       );
 

@@ -9,9 +9,7 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  transformIgnorePatterns: [
-    "node_modules/(?!(@faker-js|.*\\.mjs$))",
-  ],
+  transformIgnorePatterns: ["node_modules/(?!(@faker-js|.*\\.mjs$))"],
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/**/index.ts",

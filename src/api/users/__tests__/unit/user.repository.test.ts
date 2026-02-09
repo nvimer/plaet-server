@@ -129,10 +129,7 @@ describe("UserRepository", () => {
       // Assert
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: [
-            { firstName: "asc" },
-            { lastName: "asc" },
-          ],
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
           include: {
             roles: {
               include: {
@@ -393,14 +390,26 @@ describe("UserRepository", () => {
     it("should search users by firstName, lastName, or email", async () => {
       // Arrange
       const mockUsers: UserWithRoles[] = [
-        createUserWithRolesFixture({ firstName: "John", lastName: "Doe", email: "john@example.com" }),
-        createUserWithRolesFixture({ firstName: "Jane", lastName: "Smith", email: "jane@example.com" }),
+        createUserWithRolesFixture({
+          firstName: "John",
+          lastName: "Doe",
+          email: "john@example.com",
+        }),
+        createUserWithRolesFixture({
+          firstName: "Jane",
+          lastName: "Smith",
+          email: "jane@example.com",
+        }),
       ];
       mockFindMany.mockResolvedValue(mockUsers);
       mockCount.mockResolvedValue(2);
 
       // Act
-      const result = await userRepository.search({ page: 1, limit: 10, search: "john" });
+      const result = await userRepository.search({
+        page: 1,
+        limit: 10,
+        search: "john",
+      });
 
       // Assert
       expect(result.data).toHaveLength(2);
@@ -475,10 +484,7 @@ describe("UserRepository", () => {
       // Assert
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: [
-            { firstName: "asc" },
-            { lastName: "asc" },
-          ],
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         }),
       );
     });

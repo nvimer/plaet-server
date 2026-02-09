@@ -22,7 +22,7 @@ import {
   StockAdjustmentType,
 } from "../../../types/prisma.types";
 import { PrismaTransaction } from "../../../types/prisma-transaction.types";
-import prisma, { getPrismaClient } from "../../../database/prisma";
+import { getPrismaClient } from "../../../database/prisma";
 
 /**
  * Menu Item Service

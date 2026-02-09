@@ -26,7 +26,6 @@ import itemService from "../menus/items/item.service";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
-import { v4 as uuidv4 } from "uuid";
 
 export class OrderService implements OrderServiceInterface {
   constructor(
@@ -556,7 +555,6 @@ export class OrderService implements OrderServiceInterface {
         );
 
         // Prepare order data with prices and setLunch fields
-        const orderId = uuidv4();
         const preparedItems = orderItems.map((item) => {
           const menuItem = orderMenuItems.find(
             (mi) => mi.id === item.menuItemId,

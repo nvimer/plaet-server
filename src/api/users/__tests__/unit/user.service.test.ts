@@ -518,11 +518,19 @@ describe("UserServices", () => {
       // Arrange
       const mockUsers: UserWithRoles[] = [
         {
-          ...createMockUser({ id: "id-1", email: "user1@example.com", firstName: "John" }),
+          ...createMockUser({
+            id: "id-1",
+            email: "user1@example.com",
+            firstName: "John",
+          }),
           roles: [],
         },
         {
-          ...createMockUser({ id: "id-2", email: "user2@example.com", firstName: "Jane" }),
+          ...createMockUser({
+            id: "id-2",
+            email: "user2@example.com",
+            firstName: "Jane",
+          }),
           roles: [],
         },
       ];
