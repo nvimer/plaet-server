@@ -177,6 +177,211 @@ export class TokenService implements TokenServiceInterface {
     );
     return tokenRecord.blacklisted || false;
   }
+
+  /**
+   * Generates a password reset token for a user
+   *
+   * @param userId - User identifier
+   * @returns Reset token string
+   */
+  async generatePasswordResetToken(userId: string): Promise<string> {
+    const expires = moment().add(1, "hour"); // 1 hour validity
+    const resetToken = this.generateToken(
+      userId,
+      expires,
+      TokenType.RESET_PASSWORD,
+    );
+
+    await this.saveToken(userId, resetToken, TokenType.RESET_PASSWORD, expires);
+
+    logger.info(`[PASSWORD_RESET] Generated reset token for user ${userId}`);
+    return resetToken;
+  }
+
+  /**
+   * Verifies a password reset token
+   *
+   * @param token - Reset token to verify
+   * @returns Object with userId and validity status
+   */
+  async verifyPasswordResetToken(
+    token: string,
+  ): Promise<{ userId: string | null; isValid: boolean }> {
+    const tokenRecord = await this.tokenRepository.findByToken(token);
+
+    if (!tokenRecord) {
+      logger.warn("[PASSWORD_RESET] Token not found");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.type !== TokenType.RESET_PASSWORD) {
+      logger.warn("[PASSWORD_RESET] Invalid token type");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.blacklisted) {
+      logger.warn("[PASSWORD_RESET] Token is blacklisted");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.expires < new Date()) {
+      logger.warn("[PASSWORD_RESET] Token has expired");
+      return { userId: null, isValid: false };
+    }
+
+    logger.info(`[PASSWORD_RESET] Valid token for user ${tokenRecord.userId}`);
+    return { userId: tokenRecord.userId, isValid: true };
+  }
+
+  /**
+   * Blacklists a specific token (used after password reset)
+   *
+   * @param token - Token to blacklist
+   */
+  async blacklistToken(token: string): Promise<void> {
+    await this.tokenRepository.blacklistToken(token);
+    logger.info("[BLACKLIST] Token manually blacklisted");
+  }
+
+  /**
+   * Generates an email verification token for a user
+   *
+   * @param userId - User identifier
+   * @returns Verification token string
+   */
+  async generateEmailVerificationToken(userId: string): Promise<string> {
+    const expires = moment().add(24, "hours"); // 24 hours validity
+    const verificationToken = this.generateToken(
+      userId,
+      expires,
+      TokenType.VERIFY_EMAIL,
+    );
+
+    await this.saveToken(
+      userId,
+      verificationToken,
+      TokenType.VERIFY_EMAIL,
+      expires,
+    );
+
+    logger.info(
+      `[EMAIL_VERIFY] Generated verification token for user ${userId}`,
+    );
+    return verificationToken;
+  }
+
+  /**
+   * Verifies an email verification token
+   *
+   * @param token - Verification token to verify
+   * @returns Object with userId and validity status
+   */
+  async verifyEmailVerificationToken(
+    token: string,
+  ): Promise<{ userId: string | null; isValid: boolean }> {
+    const tokenRecord = await this.tokenRepository.findByToken(token);
+
+    if (!tokenRecord) {
+      logger.warn("[EMAIL_VERIFY] Token not found");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.type !== TokenType.VERIFY_EMAIL) {
+      logger.warn("[EMAIL_VERIFY] Invalid token type");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.blacklisted) {
+      logger.warn("[EMAIL_VERIFY] Token is blacklisted");
+      return { userId: null, isValid: false };
+    }
+
+    if (tokenRecord.expires < new Date()) {
+      logger.warn("[EMAIL_VERIFY] Token has expired");
+      return { userId: null, isValid: false };
+    }
+
+    logger.info(`[EMAIL_VERIFY] Valid token for user ${tokenRecord.userId}`);
+    return { userId: tokenRecord.userId, isValid: true };
+  }
+
+  /**
+   * Refreshes access and refresh tokens using a valid refresh token.
+   * Implements token rotation for enhanced security.
+   *
+   * Security Features:
+   * - Validates refresh token type and expiration
+   * - Checks blacklist status
+   * - Blacklists old refresh token (rotation)
+   * - Generates new token pair
+   * - Detects token reuse attempts
+   *
+   * @param refreshToken - Current refresh token
+   * @returns New token pair or null if invalid
+   */
+  async refreshTokens(
+    refreshToken: string,
+  ): Promise<AuthTokenResponseInput | null> {
+    const tokenRecord = await this.tokenRepository.findByToken(refreshToken);
+
+    if (!tokenRecord) {
+      logger.warn("[REFRESH] Token not found");
+      return null;
+    }
+
+    if (tokenRecord.type !== TokenType.REFRESH) {
+      logger.warn(`[REFRESH] Invalid token type: ${tokenRecord.type}`);
+      return null;
+    }
+
+    if (tokenRecord.blacklisted) {
+      // Potential token reuse attack - blacklist all user tokens
+      logger.warn(
+        `[REFRESH] Token reuse detected for user ${tokenRecord.userId}. Blacklisting all tokens.`,
+      );
+      await this.logout(tokenRecord.userId);
+      return null;
+    }
+
+    if (tokenRecord.expires < new Date()) {
+      logger.warn("[REFRESH] Token has expired");
+      return null;
+    }
+
+    // Blacklist old refresh token (rotation)
+    await this.tokenRepository.blacklistToken(refreshToken);
+    logger.info(`[REFRESH] Rotated token for user ${tokenRecord.userId}`);
+
+    // Generate new token pair
+    const newTokens = await this.generateAuthToken(tokenRecord.userId);
+
+    logger.info(
+      `[REFRESH] New tokens generated for user ${tokenRecord.userId}`,
+    );
+    return newTokens;
+  }
+
+  /**
+   * Validates a refresh token without rotating it.
+   * Used for checking token validity before operations.
+   *
+   * @param refreshToken - Refresh token to validate
+   * @returns User ID if valid, null otherwise
+   */
+  async validateRefreshToken(refreshToken: string): Promise<string | null> {
+    const tokenRecord = await this.tokenRepository.findByToken(refreshToken);
+
+    if (
+      !tokenRecord ||
+      tokenRecord.type !== TokenType.REFRESH ||
+      tokenRecord.blacklisted ||
+      tokenRecord.expires < new Date()
+    ) {
+      return null;
+    }
+
+    return tokenRecord.userId;
+  }
 }
 
 export default new TokenService(tokenRepository);

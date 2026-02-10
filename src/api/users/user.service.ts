@@ -14,6 +14,7 @@ import {
   PaginationParams,
   PaginatedResponse,
 } from "../../interfaces/pagination.interfaces";
+import { logger } from "../../config/logger";
 
 /**
  * User Service
@@ -250,6 +251,77 @@ export class UserServices implements UserServiceInterface {
       );
     }
     return user;
+  }
+
+  /**
+   * Update user password
+   *
+   * @param id - User ID
+   * @param newPassword - New plain text password (will be hashed)
+   * @returns Updated user without password
+   * @throws CustomError - If user is not found
+   */
+  async updatePassword(id: string, newPassword: string): Promise<User> {
+    await this.findByIdOrFail(id);
+
+    const hashedPassword = await hasherUtils.hash(newPassword);
+
+    const updatedUser = await this.userRepository.update(id, {
+      password: hashedPassword,
+    });
+
+    logger.info(`[USER] Password updated for user ${id}`);
+
+    const { password: _password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword as User;
+  }
+
+  /**
+   * Verify user email
+   *
+   * @param id - User ID
+   * @returns Updated user
+   * @throws CustomError - If user is not found
+   */
+  async verifyEmail(id: string): Promise<User> {
+    await this.findByIdOrFail(id);
+
+    // Use type assertion since fields were added to schema but Prisma Client needs regeneration
+    const updatedUser = await this.userRepository.update(id, {
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    } as any);
+
+    logger.info(`[USER] Email verified for user ${id}`);
+
+    const { password: _password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword as User;
+  }
+
+  /**
+   * Update user account lockout status
+   * Used by auth service for failed login tracking
+   *
+   * @param id - User ID
+   * @param data - Lockout data (failedLoginAttempts, lockedUntil, lastFailedLogin)
+   * @returns Updated user
+   */
+  async updateLockoutStatus(
+    id: string,
+    data: {
+      failedLoginAttempts?: number;
+      lockedUntil?: Date | null;
+      lastFailedLogin?: Date | null;
+    },
+  ): Promise<User> {
+    await this.findByIdOrFail(id);
+
+    const updatedUser = await this.userRepository.update(id, data as any);
+
+    logger.info(`[USER] Lockout status updated for user ${id}`);
+
+    const { password: _password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword as User;
   }
 }
 

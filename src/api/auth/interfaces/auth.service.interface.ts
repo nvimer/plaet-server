@@ -5,4 +5,5 @@ import { LoginInput } from "../auth.validator";
  */
 export interface AuthServiceInterface {
   login(data: LoginInput): Promise<User>;
+  validatePassword(email: string, password: string): Promise<boolean>;
 }
