@@ -7,6 +7,7 @@ A robust, enterprise-level backend API for managing restaurant operations, built
 **✅ Production-Ready** - Fully configured for Railway deployment
 **🏗️ Architecture** - Enterprise-level patterns and best practices
 **🚀 Deploy Ready** - Complete CI/CD pipeline configured
+**🔐 Security** - Enterprise-grade authentication system
 
 ---
 
@@ -22,6 +23,30 @@ A robust, enterprise-level backend API for managing restaurant operations, built
 - **Environment validation** with Zod schemas
 - **Winston logging** with structured error handling
 
+### 🔐 Enterprise Authentication System
+
+Complete authentication module with enterprise-grade security:
+
+- **✅ User Registration** - With automatic email verification
+- **✅ User Login** - JWT tokens in httpOnly cookies
+- **✅ User Logout** - Complete token blacklisting
+- **✅ Password Reset** - Secure flow with email (1 hour expiry)
+- **✅ Change Password** - With current password verification
+- **✅ Email Verification** - Automatic on registration
+- **✅ Token Refresh** - With token rotation
+- **✅ Account Lockout** - After 5 failed attempts (15 min)
+- **✅ Rate Limiting** - On all public endpoints
+- **✅ Strong Password Policy** - 12+ chars, complexity rules
+
+**Security Features:**
+
+- **httpOnly Cookies** - Tokens not accessible via JavaScript
+- **Token Blacklisting** - Complete session revocation
+- **Token Rotation** - Refresh tokens rotated on use
+- **Brute Force Protection** - Account lockout after failed attempts
+- **Email Enumeration Prevention** - Generic success messages
+- **Audit Logging** - All auth operations logged
+
 ### 🛡️ Security Features
 
 - **JWT authentication** with configurable expiration
@@ -30,6 +55,7 @@ A robust, enterprise-level backend API for managing restaurant operations, built
 - **Helmet security headers** for production
 - **Password hashing** with bcrypt (configurable rounds)
 - **Input validation** with Zod schemas
+- **Rate limiting** on all auth endpoints
 
 ### 🗄️ Database Features
 
@@ -132,9 +158,9 @@ npm run start        # Start production server
 
 ```bash
 npm run prisma:generate    # Generate Prisma client
-npm run prisma:migrate       # Run database migrations
-npm run prisma:seed         # Seed database with initial data
-npm run prisma:reset        # Reset database (development only)
+npm run prisma:migrate     # Run database migrations
+npm run prisma:seed        # Seed database with initial data
+npm run prisma:reset       # Reset database (development only)
 ```
 
 ### Code Quality
@@ -162,17 +188,28 @@ npm run test:e2e           # Run end-to-end tests
 ```
 src/
 ├── api/                     # API routes and business logic
-│   ├── auth/               # Authentication routes
-│   ├── customers/           # Customer management
+│   ├── auth/               # Authentication module (complete)
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   ├── auth.route.ts
+│   │   ├── auth.validator.ts
+│   │   └── tokens/         # Token management
+│   ├── customers/          # Customer management
 │   ├── menus/              # Menu and inventory
-│   ├── orders/              # Order processing
-│   ├── roles/               # Role management
-│   ├── tables/              # Table management
-│   └── users/               # User management
+│   ├── orders/             # Order processing
+│   ├── roles/              # Role management
+│   ├── tables/             # Table management
+│   └── users/              # User management
 ├── config/                  # Configuration management
+│   ├── email.ts            # Email service
+│   ├── logger.ts           # Winston logger
+│   └── swagger.ts          # API documentation
 ├── database/                # Database connection and utilities
 ├── interfaces/              # TypeScript interface definitions
 ├── middlewares/             # Express middleware
+│   ├── auth.middleware.ts  # JWT authentication
+│   ├── rateLimit.middleware.ts  # Rate limiting
+│   └── tokenBlacklist.middleware.ts  # Token blacklisting
 ├── strategies/              # Passport authentication strategies
 ├── types/                   # Custom TypeScript types
 ├── utils/                   # Utility functions
@@ -191,17 +228,26 @@ src/
 NODE_ENV=production
 PORT=8080
 APP_URL=https://your-domain.railway.app/api/v1
+CLIENT_URL=https://your-frontend.com
 
 # Database
 DATABASE_URL=postgresql://username:password@host:port/database
 
 # JWT Authentication
-JWT_SECRET=your-secure-jwt-secret-32-chars
+JWT_SECRET=your-secure-jwt-secret-32-chars-min
 JWT_ACCESS_EXPIRATION_MINUTES=30
 JWT_ACCESS_EXPIRATION_DAYS=7
 
 # Password Hashing
 SALT_ROUNDS=10
+
+# Email Configuration (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+FROM_EMAIL=noreply@yourapp.com
 
 # CORS
 ALLOWED_ORIGINS=https://your-domain.railway.app,https://your-frontend.app
@@ -264,16 +310,119 @@ Production: https://your-domain.railway.app/api/v1
 
 ### Authentication
 
-All protected endpoints require:
+All protected endpoints require JWT token in either:
 
-```bash
-Authorization: Bearer <your-jwt-token>
-```
+- **httpOnly Cookie** (automatically sent by browser)
+- **Authorization Header**: `Bearer <your-jwt-token>`
 
 ### Health Endpoints
 
 - **Health Check**: `/api/health`
 - **API Status**: `/api/v1/health`
+
+---
+
+## 🔐 Authentication Endpoints
+
+### Public Endpoints (No Authentication Required)
+
+```bash
+# Authentication
+POST   /api/v1/auth/register              # User registration + verification email
+POST   /api/v1/auth/login                 # User login (sets httpOnly cookies)
+POST   /api/v1/auth/forgot-password       # Request password reset
+POST   /api/v1/auth/reset-password        # Reset password with token
+POST   /api/v1/auth/verify-email          # Verify email with token
+POST   /api/v1/auth/resend-verification   # Resend verification email
+POST   /api/v1/auth/refresh-token         # Refresh access/refresh tokens
+```
+
+### Protected Endpoints (Authentication Required)
+
+```bash
+POST   /api/v1/auth/logout                # User logout (blacklists tokens)
+POST   /api/v1/auth/change-password       # Change password (invalidates all sessions)
+```
+
+### Example Usage
+
+```bash
+# Register
+ curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "password": "SecurePass123!"
+  }'
+
+# Login (saves cookies)
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"SecurePass123!"}' \
+  -c cookies.txt
+
+# Access protected endpoint
+curl http://localhost:8080/api/v1/profile/me \
+  -b cookies.txt
+
+# Logout
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -b cookies.txt
+```
+
+---
+
+## 📊 Business Endpoints
+
+### Customer Management
+
+```bash
+GET    /api/v1/customers                  # List with pagination
+POST   /api/v1/customers                  # Create customer
+GET    /api/v1/customers/:id              # Get by ID
+PATCH  /api/v1/customers/:id              # Update customer
+DELETE /api/v1/customers/:id              # Delete customer (soft)
+GET    /api/v1/customers/search           # Search customers
+GET    /api/v1/customers/phone/:phone     # Get by phone
+```
+
+### Menu Management
+
+```bash
+# Categories
+GET    /api/v1/menu/categories
+POST   /api/v1/menu/categories
+GET    /api/v1/menu/categories/:id
+PATCH  /api/v1/menu/categories/:id
+DELETE /api/v1/menu/categories/:id
+
+# Menu Items
+GET    /api/v1/menu/items
+POST   /api/v1/menu/items
+GET    /api/v1/menu/items/:id
+PATCH  /api/v1/menu/items/:id
+DELETE /api/v1/menu/items/:id
+
+# Stock Management
+POST   /api/v1/menu/items/stock/reset     # Daily stock reset
+POST   /api/v1/menu/items/:id/stock/add    # Add stock
+POST   /api/v1/menu/items/:id/stock/remove # Remove stock
+GET    /api/v1/menu/items/stock/low        # Low stock items
+GET    /api/v1/menu/items/stock/out        # Out of stock items
+GET    /api/v1/menu/items/:id/stock/history # Stock history
+```
+
+### Order Management
+
+```bash
+GET    /api/v1/orders                      # List orders
+POST   /api/v1/orders                      # Create order
+GET    /api/v1/orders/:id                  # Get order by ID
+PATCH  /api/v1/orders/:id                  # Update order status
+DELETE /api/v1/orders/:id                  # Cancel order
+```
 
 ---
 
@@ -309,67 +458,6 @@ npm run test:coverage
 - **37.52% branches** (comprehensive feature coverage)
 - **63.18% lines** (functional reliability)
 - **49.03% functions** (core functionality covered)
-
----
-
-## 🔒 API Endpoints
-
-### Authentication
-
-```bash
-POST   /api/v1/auth/login          # User login
-POST   /api/v1/auth/register       # User registration
-GET    /api/v1/auth/profile        # Get user profile
-POST   /api/v1/auth/logout         # User logout
-```
-
-### Customer Management
-
-```bash
-GET    /api/v1/customers           # List with pagination
-POST   /api/v1/customers           # Create customer
-GET    /api/v1/customers/:id       # Get by ID
-PATCH   /api/v1/customers/:id       # Update customer
-DELETE /api/v1/customers/:id       # Delete customer (soft)
-GET    /api/v1/customers/search    # Search customers
-GET    /api/v1/customers/phone/:phone # Get by phone
-```
-
-### Menu Management
-
-```bash
-# Categories
-GET    /api/v1/menu/categories
-POST   /api/v1/menu/categories
-GET    /api/v1/menu/categories/:id
-PATCH   /api/v1/menu/categories/:id
-DELETE /api/v1/menu/categories/:id
-
-# Menu Items
-GET    /api/v1/menu/items
-POST   /api/v1/menu/items
-GET    /api/v1/menu/items/:id
-PATCH   /api/v1/menu/items/:id
-DELETE /api/v1/menu/items/:id
-
-# Stock Management
-POST   /api/v1/menu/items/stock/reset     # Daily stock reset
-POST   /api/v1/menu/items/:id/stock/add    # Add stock
-POST   /api/v1/menu/items/:id/stock/remove # Remove stock
-GET    /api/v1/menu/items/stock/low      # Low stock items
-GET    /api/v1/menu/items/stock/out     # Out of stock items
-GET    /api/v1/menu/items/:id/stock/history # Stock history
-```
-
-### Order Management
-
-```bash
-GET    /api/v1/orders               # List orders
-POST   /api/v1/orders               # Create order
-GET    /api/v1/orders/:id           # Get order by ID
-PATCH   /api/v1/orders/:id           # Update order status
-DELETE /api/v1/orders/:id           # Cancel order
-```
 
 ---
 
@@ -425,9 +513,9 @@ develop → main (staging) → production
 
 ```bash
 main        # Production-ready code
-develop      # Feature development
-feature/*    # Individual features
-hotfix/*     # Critical bug fixes
+develop     # Feature development
+feature/*   # Individual features
+hotfix/*    # Critical bug fixes
 ```
 
 ### Commit Convention
@@ -497,6 +585,7 @@ This project is licensed under the **ISC License**.
 - API Design & Documentation
 - Database Schema Design
 - Deployment Configuration
+- Security Implementation
 
 ---
 
@@ -505,6 +594,7 @@ This project is licensed under the **ISC License**.
 ### Documentation
 
 - **API Docs**: Available at `/api/v1/docs`
+- **Authentication Guide**: See `AGENTS.md` (Authentication Module section)
 - **Deployment Guide**: See `README_DEPLOYMENT.md`
 - **Issues**: GitHub Issues for bug reports
 
@@ -516,10 +606,22 @@ This project is licensed under the **ISC License**.
 
 ---
 
-## 🎯 Current Status
+## 🎯 Recent Updates
 
-**Version**: v2.2.0 - Railway Deployment Ready
-**Status**: ✅ Production-Ready, Tests Passing, Architecture Enterprise-Level
-**Deployment**: ⚠️ Pending Railway configuration in dashboard
+### v2.3.0 - Complete Authentication Module
+
+- ✅ Enterprise-grade authentication system
+- ✅ Password reset with email
+- ✅ Email verification flow
+- ✅ Token rotation and blacklisting
+- ✅ Account lockout protection
+- ✅ Swagger documentation for all endpoints
+- ✅ Code cleanup and optimization
+
+### v2.2.0 - Railway Deployment Ready
+
+- ✅ Production-ready configuration
+- ✅ Complete CI/CD pipeline
+- ✅ Enterprise-level architecture
 
 **Ready for Restaurant Management! 🍽**

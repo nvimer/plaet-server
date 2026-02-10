@@ -263,10 +263,60 @@ src/
 Key vars in `.env.example`:
 
 - `DATABASE_URL` - PostgreSQL connection
-- `JWT_SECRET` - JWT signing secret
+- `JWT_SECRET` - JWT signing secret (min 32 chars)
 - `PORT` - Server port
 - `NODE_ENV` - Environment mode
 - `CORS_ORIGIN` - Allowed origins
+- `CLIENT_URL` - Frontend URL for email links
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` - Email configuration
+
+### Project Cleanup Guidelines
+
+**Regular Maintenance:**
+
+```bash
+# Check for unused dependencies
+npm run build
+npm run eslint-check-only
+
+# Clean build artifacts
+rm -rf dist/ coverage/
+
+# Clean install (if needed)
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**What was removed in cleanup:**
+
+- Unused dependencies: `uuid`, `@types/uuid`, `@types/dotenv`
+- Unused files: logout.middleware.ts, repository.interface.ts, etc.
+- Standalone scripts: check-db.ts, check-login.ts, etc.
+- Empty directories: payments/, coverage/, dist/
+- Reorganized @types packages to devDependencies
+
+### Git Workflow Best Practices
+
+**Before committing:**
+
+1. Run `npm run eslint-check-only` - fix any errors
+2. Run `npm run build` - ensure TypeScript compiles
+3. Run `npm test` - ensure tests pass
+4. Review `git status` - only commit intended changes
+5. Write descriptive commit messages
+
+**Commit message format:**
+
+```
+type(scope): description
+
+Body (optional):
+- What changed
+- Why it changed
+- Breaking changes (if any)
+
+Footer: Closes #123
+```
 
 ---
 
