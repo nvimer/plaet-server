@@ -24,25 +24,3 @@ export const authRateLimit = rateLimit({
     });
   },
 });
-
-/**
- * General API rate limiting
- * Prevents API abuse and DDoS attacks
- */
-
-export const apiRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logger.warn(`API rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      success: false,
-      message: "Too many requests from this IP",
-      errorCode: "API_RATE_LIMIT_EXCEEDED",
-      retryAfter: 900, // 15 minutes
-    });
-  },
-});
