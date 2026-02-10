@@ -17,10 +17,12 @@ describe("Customers Integration Tests", () => {
     await connectTestDatabase();
     testDb = getTestDatabaseClient();
 
-    // Create admin role with unique name
-    const adminRole = await testDb.role.create({
-      data: {
-        name: `ADMIN-${Date.now()}`,
+    // Create or get existing admin role
+    const adminRole = await testDb.role.upsert({
+      where: { name: "ADMIN" },
+      update: {},
+      create: {
+        name: "ADMIN",
         description: "Administrator role for testing",
       },
     });
@@ -43,17 +45,11 @@ describe("Customers Integration Tests", () => {
       },
     });
 
-    await testDb.userRole.create({
-      data: {
-        userId: testUser.id,
-        roleId: adminRole.id,
-      },
-    });
-
     // Generate JWT token for test user
+    // The JWT strategy expects 'sub' (subject) field for user ID
     authToken = jwt.sign(
       {
-        id: testUser.id,
+        sub: testUser.id,
         email: testUser.email,
         firstName: testUser.firstName,
         lastName: testUser.lastName,
@@ -70,19 +66,29 @@ describe("Customers Integration Tests", () => {
 
   describe("POST /api/v1/customers", () => {
     it("should create a customer successfully", async () => {
+      const uniqueSuffix =
+        `${Date.now()}${Math.floor(Math.random() * 10000)}`.slice(-9);
       const customerData = {
         firstName: "John",
         lastName: "Doe",
-        phone: "+1234567890",
-        email: "john.doe@example.com",
+        phone: `+57${uniqueSuffix}`,
+        email: `john.doe.${Date.now()}@example.com`,
       };
 
       const response = await request(app)
         .post("/api/v1/customers")
         .set("Authorization", `Bearer ${authToken}`)
-        .send(customerData)
-        .expect(201);
+        .send(customerData);
 
+      if (response.status !== 201) {
+        console.log(
+          "Error:",
+          response.status,
+          JSON.stringify(response.body, null, 2),
+        );
+      }
+
+      expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe("Customer created successfully");
       expect(response.body.data.firstName).toBe(customerData.firstName);
@@ -112,11 +118,15 @@ describe("Customers Integration Tests", () => {
     let createdCustomer: any;
 
     beforeEach(async () => {
+      const uniqueSuffix =
+        Date.now().toString().slice(-3) + Math.floor(Math.random() * 100);
       createdCustomer = await testDb.customer.create({
-        firstName: "John",
-        lastName: "Doe",
-        phone: "+1234567890",
-        email: "john.doe@example.com",
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          phone: `+12345${uniqueSuffix}`,
+          email: "john.doe@example.com",
+        },
       });
     });
 
@@ -145,16 +155,30 @@ describe("Customers Integration Tests", () => {
   describe("GET /api/v1/customers", () => {
     it("should return paginated customers list", async () => {
       // Create multiple customers
+      const uniqueSuffix =
+        Date.now().toString().slice(-3) + Math.floor(Math.random() * 100);
       await testDb.customer.createMany({
         data: [
-          { firstName: "Alice", lastName: "Johnson", phone: "+1111111111" },
-          { firstName: "Bob", lastName: "Smith", phone: "+2222222222" },
-          { firstName: "Charlie", lastName: "Brown", phone: "+3333333333" },
+          {
+            firstName: "Alice",
+            lastName: "Johnson",
+            phone: `+111${uniqueSuffix}1`,
+          },
+          {
+            firstName: "Bob",
+            lastName: "Smith",
+            phone: `+222${uniqueSuffix}2`,
+          },
+          {
+            firstName: "Charlie",
+            lastName: "Brown",
+            phone: `+333${uniqueSuffix}3`,
+          },
         ],
       });
 
       const response = await request(app)
-        .get("/api/v1/customers")
+        .get("/api/v1/customers?limit=2")
         .set("Authorization", `Bearer ${authToken}`)
         .expect(200);
 

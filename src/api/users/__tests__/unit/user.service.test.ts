@@ -40,6 +40,14 @@ describe("UserServices", () => {
     deletedAt: null,
     createdAt: new Date("2023-01-01"),
     updatedAt: new Date("2023-01-01"),
+    // Auth fields
+    emailVerified: true,
+    emailVerifiedAt: new Date("2023-01-01"),
+    failedLoginAttempts: 0,
+    lockedUntil: null,
+    lastFailedLogin: null,
+    passwordChangedAt: new Date("2023-01-01"),
+    ...overrides,
   });
 
   const createPaginatedResponse = <T>(

@@ -17,6 +17,13 @@ export function createUserFixture(overrides: Partial<User> = {}): User {
     deletedAt: null,
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
     updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+    // Auth fields
+    emailVerified: true,
+    emailVerifiedAt: new Date("2024-01-01T00:00:00.000Z"),
+    failedLoginAttempts: 0,
+    lockedUntil: null,
+    lastFailedLogin: null,
+    passwordChangedAt: new Date("2024-01-01T00:00:00.000Z"),
     ...overrides,
   };
 }
