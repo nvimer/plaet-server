@@ -4,7 +4,7 @@ import { Customer } from "@prisma/client";
 
 // Mock dependencies
 jest.mock("../../customer.repository");
-jest.mock("../../database/prisma", () => ({
+jest.mock("../../../../database/prisma", () => ({
   getPrismaClient: jest.fn(),
 }));
 

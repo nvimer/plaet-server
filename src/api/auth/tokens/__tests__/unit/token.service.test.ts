@@ -141,9 +141,18 @@ describe("TokenService - Unit Tests", () => {
       // Act
       await tokenService.generateAuthToken(userId);
 
-      // Assert
-      expect(mockTokenRepository.saveToken).toHaveBeenCalledTimes(1);
-      expect(mockTokenRepository.saveToken).toHaveBeenCalledWith(
+      // Assert - Both access and refresh tokens are saved
+      expect(mockTokenRepository.saveToken).toHaveBeenCalledTimes(2);
+      expect(mockTokenRepository.saveToken).toHaveBeenNthCalledWith(
+        1,
+        userId,
+        accessToken,
+        TokenType.ACCESS,
+        expect.any(Object),
+        false,
+      );
+      expect(mockTokenRepository.saveToken).toHaveBeenNthCalledWith(
+        2,
         userId,
         refreshToken,
         TokenType.REFRESH,
@@ -208,41 +217,41 @@ describe("TokenService - Unit Tests", () => {
   });
 
   describe("logout", () => {
-    it("should delete refresh tokens for user when valid user ID provided", async () => {
+    it("should blacklist all tokens for user when valid user ID provided", async () => {
       // Arrange
       const userId = "user-123";
-      mockTokenRepository.deleteRefreshTokenByUserId.mockResolvedValue(1);
+      mockTokenRepository.blacklistAllUserTokens.mockResolvedValue(2);
 
       // Act
       await tokenService.logout(userId);
 
       // Assert
-      expect(
-        mockTokenRepository.deleteRefreshTokenByUserId,
-      ).toHaveBeenCalledWith(userId);
-      expect(
-        mockTokenRepository.deleteRefreshTokenByUserId,
-      ).toHaveBeenCalledTimes(1);
+      expect(mockTokenRepository.blacklistAllUserTokens).toHaveBeenCalledWith(
+        userId,
+      );
+      expect(mockTokenRepository.blacklistAllUserTokens).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
-    it("should handle case when no refresh tokens exist for user", async () => {
+    it("should handle case when no tokens exist for user", async () => {
       // Arrange
       const userId = "user-123";
-      mockTokenRepository.deleteRefreshTokenByUserId.mockResolvedValue(0);
+      mockTokenRepository.blacklistAllUserTokens.mockResolvedValue(0);
 
       // Act
       await tokenService.logout(userId);
 
       // Assert
-      expect(
-        mockTokenRepository.deleteRefreshTokenByUserId,
-      ).toHaveBeenCalledWith(userId);
+      expect(mockTokenRepository.blacklistAllUserTokens).toHaveBeenCalledWith(
+        userId,
+      );
     });
 
-    it("should throw error when token repository fails to delete", async () => {
+    it("should throw error when token repository fails to blacklist", async () => {
       // Arrange
       const userId = "user-123";
-      mockTokenRepository.deleteRefreshTokenByUserId.mockRejectedValue(
+      mockTokenRepository.blacklistAllUserTokens.mockRejectedValue(
         new Error("Database error"),
       );
 
