@@ -210,22 +210,22 @@ export class TokenService implements TokenServiceInterface {
     const tokenRecord = await this.tokenRepository.findByToken(token);
 
     if (!tokenRecord) {
-      logger.warn(`[PASSWORD_RESET] Token not found`);
+      logger.warn("[PASSWORD_RESET] Token not found");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.type !== TokenType.RESET_PASSWORD) {
-      logger.warn(`[PASSWORD_RESET] Invalid token type`);
+      logger.warn("[PASSWORD_RESET] Invalid token type");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.blacklisted) {
-      logger.warn(`[PASSWORD_RESET] Token is blacklisted`);
+      logger.warn("[PASSWORD_RESET] Token is blacklisted");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.expires < new Date()) {
-      logger.warn(`[PASSWORD_RESET] Token has expired`);
+      logger.warn("[PASSWORD_RESET] Token has expired");
       return { userId: null, isValid: false };
     }
 
@@ -240,7 +240,7 @@ export class TokenService implements TokenServiceInterface {
    */
   async blacklistToken(token: string): Promise<void> {
     await this.tokenRepository.blacklistToken(token);
-    logger.info(`[BLACKLIST] Token manually blacklisted`);
+    logger.info("[BLACKLIST] Token manually blacklisted");
   }
 
   /**
@@ -282,22 +282,22 @@ export class TokenService implements TokenServiceInterface {
     const tokenRecord = await this.tokenRepository.findByToken(token);
 
     if (!tokenRecord) {
-      logger.warn(`[EMAIL_VERIFY] Token not found`);
+      logger.warn("[EMAIL_VERIFY] Token not found");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.type !== TokenType.VERIFY_EMAIL) {
-      logger.warn(`[EMAIL_VERIFY] Invalid token type`);
+      logger.warn("[EMAIL_VERIFY] Invalid token type");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.blacklisted) {
-      logger.warn(`[EMAIL_VERIFY] Token is blacklisted`);
+      logger.warn("[EMAIL_VERIFY] Token is blacklisted");
       return { userId: null, isValid: false };
     }
 
     if (tokenRecord.expires < new Date()) {
-      logger.warn(`[EMAIL_VERIFY] Token has expired`);
+      logger.warn("[EMAIL_VERIFY] Token has expired");
       return { userId: null, isValid: false };
     }
 
@@ -325,7 +325,7 @@ export class TokenService implements TokenServiceInterface {
     const tokenRecord = await this.tokenRepository.findByToken(refreshToken);
 
     if (!tokenRecord) {
-      logger.warn(`[REFRESH] Token not found`);
+      logger.warn("[REFRESH] Token not found");
       return null;
     }
 
@@ -344,7 +344,7 @@ export class TokenService implements TokenServiceInterface {
     }
 
     if (tokenRecord.expires < new Date()) {
-      logger.warn(`[REFRESH] Token has expired`);
+      logger.warn("[REFRESH] Token has expired");
       return null;
     }
 
