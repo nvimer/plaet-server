@@ -1,13 +1,17 @@
-import { MenuItem, StockAdjustment } from "@prisma/client";
+import { MenuItem, StockAdjustment, Prisma } from "@prisma/client";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
 import {
   AddStockBodyInput,
+  BulkInventoryTypeInput,
+  BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
   RemoveStockBodyInput,
   SetLunchFilterParams,
+  UpdateItemInput,
 } from "./item.validator";
 import { ItemRepositoryInterface } from "./interfaces/item.repository.interface";
 import itemRepository from "./item.repository";
@@ -651,6 +655,333 @@ export class ItemService implements ItemServiceInterface {
 
       return await this.itemRepository.updateStockWithData(tx, id, updateData);
     });
+  }
+
+  /**
+   * Updates Menu Item Information
+   *
+   * Service layer method for updating menu item details.
+   * All fields are optional to support partial updates.
+   *
+   * @param id - Menu item identifier
+   * @param data - Update data (all fields optional for partial updates)
+   * @returns Updated menu item
+   * @throws CustomError if item not found
+   */
+  async updateItem(id: number, data: UpdateItemInput): Promise<MenuItem> {
+    // Verify item exists
+    await this.findMenuItemByIdOrFail(id);
+
+    // Build update data with only fields that exist in MenuItem model
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      categoryId?: number;
+      price?: Prisma.Decimal;
+      isAvailable?: boolean;
+      imageUrl?: string | null;
+      inventoryType?: string;
+      stockQuantity?: number | null;
+      initialStock?: number | null;
+      lowStockAlert?: number | null;
+      autoMarkUnavailable?: boolean;
+      updatedAt?: Date;
+    } = { updatedAt: new Date() };
+
+    // Map optional fields that exist in the model
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined)
+      updateData.description = data.description || null;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.price !== undefined)
+      updateData.price = new Prisma.Decimal(data.price);
+    if (data.isAvailable !== undefined)
+      updateData.isAvailable = data.isAvailable;
+    if (data.imageUrl !== undefined)
+      updateData.imageUrl = data.imageUrl || null;
+    if (data.inventoryType !== undefined)
+      updateData.inventoryType = data.inventoryType;
+    if (data.initialStock !== undefined)
+      updateData.initialStock = data.initialStock;
+    if (data.lowStockAlert !== undefined)
+      updateData.lowStockAlert = data.lowStockAlert;
+    if (data.autoMarkUnavailable !== undefined)
+      updateData.autoMarkUnavailable = data.autoMarkUnavailable;
+
+    // Handle inventory type change if provided
+    if (data.inventoryType !== undefined) {
+      const client = getPrismaClient();
+      const existingItem = await client.menuItem.findUnique({ where: { id } });
+      if (existingItem && existingItem.inventoryType !== data.inventoryType) {
+        if (data.inventoryType === InventoryType.UNLIMITED) {
+          updateData.stockQuantity = null;
+          updateData.initialStock = null;
+          updateData.lowStockAlert = null;
+        } else if (data.inventoryType === InventoryType.TRACKED) {
+          updateData.stockQuantity = existingItem.stockQuantity ?? 0;
+          // For TRACKED items, if no initialStock provided, use existingStock
+          // If initialStock is provided, use that value (preserves user input)
+          if (data.initialStock !== undefined) {
+            updateData.initialStock = data.initialStock;
+          } else {
+            updateData.initialStock = existingItem.stockQuantity ?? 0;
+          }
+          updateData.lowStockAlert = data.lowStockAlert ?? 5;
+          updateData.autoMarkUnavailable = data.autoMarkUnavailable ?? true;
+        }
+      }
+    }
+
+    return await this.itemRepository.update(id, updateData);
+  }
+
+  /**
+   * Perform bulk stock update for multiple menu items
+   */
+  async bulkStockUpdate(
+    data: BulkStockUpdateInput,
+    userId?: string,
+  ): Promise<void> {
+    const client = getPrismaClient();
+
+    await client.$transaction(async (tx: PrismaTransaction) => {
+      for (const item of data.items) {
+        const menuItem = await tx.menuItem.findUnique({
+          where: { id: item.menuItemId },
+        });
+
+        if (!menuItem) {
+          throw new CustomError(
+            `Menu item with id ${item.menuItemId} not found`,
+            HttpStatus.NOT_FOUND,
+            "NOT_FOUND",
+          );
+        }
+
+        if (menuItem.inventoryType !== InventoryType.TRACKED) {
+          throw new CustomError(
+            `Menu item ${menuItem.name} is not tracked for inventory`,
+            HttpStatus.BAD_REQUEST,
+            "BAD_REQUEST",
+          );
+        }
+
+        const currentStock = menuItem.stockQuantity || 0;
+        let newStock: number;
+
+        if (item.adjustmentType === "MANUAL_ADD") {
+          newStock = currentStock + item.quantity;
+        } else {
+          newStock = Math.max(0, currentStock - item.quantity);
+        }
+
+        // Update stock
+        await tx.menuItem.update({
+          where: { id: item.menuItemId },
+          data: { stockQuantity: newStock },
+        });
+
+        // Create stock adjustment record
+        await tx.stockAdjustment.create({
+          data: {
+            menuItemId: item.menuItemId,
+            adjustmentType:
+              item.adjustmentType === "MANUAL_ADD"
+                ? StockAdjustmentType.MANUAL_ADD
+                : StockAdjustmentType.MANUAL_REMOVE,
+            previousStock: currentStock,
+            newStock,
+            quantity: item.quantity,
+            reason: item.reason,
+            userId,
+          },
+        });
+
+        // Auto-mark as unavailable if stock reaches 0
+        if (newStock === 0 && menuItem.autoMarkUnavailable) {
+          await tx.menuItem.update({
+            where: { id: item.menuItemId },
+            data: { isAvailable: false },
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Change inventory type for multiple menu items
+   */
+  async bulkInventoryTypeUpdate(data: BulkInventoryTypeInput): Promise<void> {
+    const client = getPrismaClient();
+
+    await client.$transaction(async (tx: PrismaTransaction) => {
+      for (const menuItemId of data.menuItemIds) {
+        const menuItem = await tx.menuItem.findUnique({
+          where: { id: menuItemId },
+        });
+
+        if (!menuItem) {
+          throw new CustomError(
+            `Menu item with id ${menuItemId} not found`,
+            HttpStatus.NOT_FOUND,
+            "NOT_FOUND",
+          );
+        }
+
+        const updateData: any = {
+          inventoryType: data.inventoryType,
+        };
+
+        if (data.inventoryType === InventoryType.UNLIMITED) {
+          updateData.stockQuantity = null;
+          updateData.initialStock = null;
+          updateData.lowStockAlert = null;
+        } else if (data.inventoryType === InventoryType.TRACKED) {
+          updateData.stockQuantity = menuItem.stockQuantity ?? 0;
+          updateData.initialStock =
+            data.initialStock ?? menuItem.stockQuantity ?? 0;
+          updateData.lowStockAlert = data.lowStockAlert ?? 5;
+          updateData.autoMarkUnavailable = true;
+        }
+
+        await tx.menuItem.update({
+          where: { id: menuItemId },
+          data: updateData as any,
+        });
+      }
+    });
+  }
+
+  /**
+   * Generate comprehensive inventory report
+   */
+  async getInventoryReport(params: InventoryReportParams): Promise<any> {
+    const client = getPrismaClient();
+
+    const whereClause: any = {};
+
+    if (params.categoryId) {
+      whereClause.categoryId = params.categoryId;
+    }
+
+    if (params.inventoryType) {
+      whereClause.inventoryType = params.inventoryType;
+    }
+
+    const items = await client.menuItem.findMany({
+      where: whereClause,
+      include: {
+        category: true,
+        stockAdjustments:
+          params.dateFrom || params.dateTo
+            ? {
+                where: {
+                  createdAt: {
+                    gte: params.dateFrom
+                      ? new Date(params.dateFrom)
+                      : undefined,
+                    lte: params.dateTo ? new Date(params.dateTo) : undefined,
+                  },
+                },
+                orderBy: { createdAt: "desc" },
+              }
+            : false,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const report = {
+      summary: {
+        totalItems: items.length,
+        trackedItems: items.filter(
+          (item: MenuItem) => item.inventoryType === InventoryType.TRACKED,
+        ).length,
+        unlimitedItems: items.filter(
+          (item: MenuItem) => item.inventoryType === InventoryType.UNLIMITED,
+        ).length,
+        outOfStock: items.filter(
+          (item: MenuItem) =>
+            item.inventoryType === InventoryType.TRACKED &&
+            (item.stockQuantity || 0) === 0,
+        ).length,
+        lowStock: items.filter(
+          (item: MenuItem) =>
+            item.inventoryType === InventoryType.TRACKED &&
+            (item.stockQuantity || 0) > 0 &&
+            (item.stockQuantity || 0) <= (item.lowStockAlert || 5),
+        ).length,
+      },
+      items: items.map(
+        (
+          item: MenuItem & {
+            category?: { name: string };
+            stockAdjustments?: StockAdjustment[];
+          },
+        ) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category?.name,
+          price: item.price,
+          inventoryType: item.inventoryType,
+          isAvailable: item.isAvailable,
+          stockQuantity: item.stockQuantity,
+          lowStockAlert: item.lowStockAlert,
+          initialStock: item.initialStock,
+          stockStatus:
+            item.inventoryType === InventoryType.TRACKED
+              ? (item.stockQuantity || 0) === 0
+                ? "OUT_OF_STOCK"
+                : (item.stockQuantity || 0) <= (item.lowStockAlert || 5)
+                  ? "LOW_STOCK"
+                  : "IN_STOCK"
+              : "UNLIMITED",
+          recentAdjustments: item.stockAdjustments || [],
+        }),
+      ),
+      generatedAt: new Date().toISOString(),
+    };
+
+    return report;
+  }
+
+  /**
+   * Get summary of current stock status
+   */
+  async getStockSummary(): Promise<{
+    totalTrackedItems: number;
+    outOfStockItems: number;
+    lowStockItems: number;
+    inStockItems: number;
+  }> {
+    const client = getPrismaClient();
+
+    const [trackedItems, outOfStockItems, lowStockItems] = await Promise.all([
+      client.menuItem.count({
+        where: { inventoryType: InventoryType.TRACKED },
+      }),
+      client.menuItem.count({
+        where: {
+          inventoryType: InventoryType.TRACKED,
+          stockQuantity: 0,
+        },
+      }),
+      client.menuItem.count({
+        where: {
+          inventoryType: InventoryType.TRACKED,
+          stockQuantity: {
+            gt: 0,
+            lte: client.menuItem.fields.lowStockAlert.default,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalTrackedItems: trackedItems,
+      outOfStockItems,
+      lowStockItems,
+      inStockItems: trackedItems - outOfStockItems - lowStockItems,
+    };
   }
 }
 
