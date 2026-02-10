@@ -3,12 +3,17 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
 import {
   AddStockBodyInput,
+  BulkInventoryTypeInput,
+  BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
+  UpdateItemInput,
 } from "./item.validator";
 import { HttpStatus } from "../../../utils/httpStatus.enum";
+import { InventoryType } from "../../../types/prisma.types";
 import itemService from "./item.service";
 import {
   DEFAULT_LIMIT,
@@ -527,6 +532,169 @@ class ItemController {
       success: true,
       message: "Inventory Type updated successfully",
       data: item,
+    });
+  });
+
+  /**
+   * PATCH /items/:id
+   *
+   * Updates menu item information. All fields are optional to support
+   * partial updates. This endpoint allows modifying any menu item field
+   * including name, description, price, category, availability, and inventory.
+   *
+   * URL Parameters:
+   * - id: Menu item identifier (positive integer, required)
+   *
+   * Request Body:
+   * - All fields from UpdateItemInput are optional
+   * - name: Item name (string, 1-50 chars)
+   * - description: Item description (string, max 500 chars)
+   * - categoryId: Associated category ID (number, positive)
+   * - price: Item price (number, positive)
+   * - isExtra: Is an extra/add-on (boolean)
+   * - isAvailable: Is available for ordering (boolean)
+   * - imageUrl: Item image URL (string, optional)
+   * - inventoryType: Inventory tracking type ("TRACKED" | "UNLIMITED")
+   * - initialStock: Initial stock quantity (number, non-negative)
+   * - lowStockAlert: Low stock alert threshold (number, non-negative)
+   * - autoMarkUnavailable: Auto-mark unavailable at zero stock (boolean)
+   *
+   * Response:
+   * - 200: Item updated successfully
+   * - 400: Invalid request data
+   * - 404: Menu item not found
+   * - 500: Server error during update
+   */
+  patchItem = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const data: UpdateItemInput = req.body;
+
+    const item = await this.itemService.updateItem(id, data);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Menu Item updated successfully",
+      data: item,
+    });
+  });
+
+  /**
+   * Bulk Stock Update
+   *
+   * Updates stock for multiple menu items at once.
+   * This endpoint is useful for daily stock resets or bulk adjustments.
+   *
+   * Request Body:
+   * - items: Array of stock updates with menuItemId, quantity, adjustmentType, and reason
+   *
+   * Response:
+   * - 200: Stock updated successfully
+   * - 400: Invalid data or items not tracked for inventory
+   * - 404: Menu items not found
+   * - 500: Server error during update
+   */
+  bulkStockUpdate = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as Request & { user?: { id: string } }).user?.id;
+    const data: BulkStockUpdateInput = req.body;
+
+    await this.itemService.bulkStockUpdate(data, userId);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Bulk stock update completed successfully",
+    });
+  });
+
+  /**
+   * Bulk Inventory Type Update
+   *
+   * Changes inventory tracking type for multiple menu items.
+   * This endpoint is useful for initial setup or bulk configuration changes.
+   *
+   * Request Body:
+   * - menuItemIds: Array of menu item IDs to update
+   * - inventoryType: New inventory type ("TRACKED" | "UNLIMITED")
+   * - initialStock: Initial stock for TRACKED items (optional)
+   * - lowStockAlert: Low stock alert threshold for TRACKED items (optional)
+   *
+   * Response:
+   * - 200: Inventory types updated successfully
+   * - 404: Menu items not found
+   * - 500: Server error during update
+   */
+  bulkInventoryTypeUpdate = asyncHandler(
+    async (req: Request, res: Response) => {
+      const data: BulkInventoryTypeInput = req.body;
+
+      await this.itemService.bulkInventoryTypeUpdate(data);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: "Bulk inventory type update completed successfully",
+      });
+    },
+  );
+
+  /**
+   * Inventory Report
+   *
+   * Generates a comprehensive inventory report with filtering options.
+   * This endpoint provides detailed information about current inventory status.
+   *
+   * Query Parameters:
+   * - categoryId: Filter by category (optional)
+   * - inventoryType: Filter by inventory type (optional)
+   * - dateFrom: Filter adjustments from date (optional)
+   * - dateTo: Filter adjustments to date (optional)
+   * - includeOutOfStock: Include out of stock items (default: true)
+   * - includeLowStock: Include low stock items (default: true)
+   *
+   * Response:
+   * - 200: Inventory report generated successfully
+   * - 500: Server error during report generation
+   */
+  getInventoryReport = asyncHandler(async (req: Request, res: Response) => {
+    const params: InventoryReportParams = {
+      categoryId: req.query.categoryId
+        ? Number(req.query.categoryId)
+        : undefined,
+      inventoryType: req.query.inventoryType as InventoryType | undefined,
+      dateFrom: req.query.dateFrom as string,
+      dateTo: req.query.dateTo as string,
+      includeOutOfStock:
+        req.query.includeOutOfStock === "true" ||
+        req.query.includeOutOfStock === undefined,
+      includeLowStock:
+        req.query.includeLowStock === "true" ||
+        req.query.includeLowStock === undefined,
+    };
+
+    const report = await this.itemService.getInventoryReport(params);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Inventory report generated successfully",
+      data: report,
+    });
+  });
+
+  /**
+   * Stock Summary
+   *
+   * Provides a summary of current stock status across all tracked items.
+   * This endpoint gives a quick overview of inventory health.
+   *
+   * Response:
+   * - 200: Stock summary retrieved successfully
+   * - 500: Server error during summary generation
+   */
+  getStockSummary = asyncHandler(async (req: Request, res: Response) => {
+    const summary = await this.itemService.getStockSummary();
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Stock summary retrieved successfully",
+      data: summary,
     });
   });
 }

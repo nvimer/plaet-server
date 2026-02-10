@@ -25,24 +25,26 @@ export const menuItemIdSchema = z.object({
  */
 export const createItemSchema = z.object({
   body: z.object({
-    name: z.string(),
-    description: z.string(),
-    categoryId: z.coerce.number(),
-    price: z.coerce.number(),
-    isExtra: z.boolean(),
-    isAvailable: z.boolean(),
-    imageUrl: z.string().optional(),
-    // SET_LUNCH SPECIFIC FIELDS
-    isProtein: z.boolean().optional(),
-    proteinIcon: z
-      .enum(["beef", "fish", "chicken", "pork", "other"])
-      .optional(),
-    isPlateComponent: z.boolean().optional(),
-    componentType: z
-      .enum(["soup", "principle", "salad", "additional"])
-      .optional(),
-    comboPrice: z.coerce.number().optional(),
-    isPremium: z.boolean().optional(),
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .max(50, "Name cannot exceed 50 characters"),
+    description: z.string().optional().or(z.literal("")),
+    categoryId: z.coerce
+      .number()
+      .int()
+      .positive("Category ID must be a positive number"),
+    price: z.coerce.number().positive("Price must be positive"),
+    isAvailable: z.boolean().optional().default(true),
+    imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
+    // Inventory management fields
+    inventoryType: z
+      .nativeEnum(InventoryType)
+      .optional()
+      .default(InventoryType.UNLIMITED),
+    initialStock: z.coerce.number().int().min(0).optional(),
+    lowStockAlert: z.coerce.number().int().min(0).optional(),
+    autoMarkUnavailable: z.boolean().optional().default(true),
   }),
 });
 
@@ -194,3 +196,90 @@ export type StockHistoryParams = z.infer<typeof stockHistorySchema>["query"];
 export type SetLunchFilterParams = z.infer<
   typeof setLunchFilterSchema
 >["query"];
+
+/**
+ * Validation Schema for Menu Item Update
+ *
+ * Validates the request body for updating menu item information.
+ * All fields are optional to allow partial updates.
+ */
+export const updateItemSchema = z.object({
+  params: idParamsSchema,
+  body: z.object({
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .max(50, "Name cannot exceed 50 characters")
+      .optional(),
+    description: z
+      .string()
+      .max(500, "Description cannot exceed 500 characters")
+      .optional(),
+    categoryId: z.coerce.number().int().positive().optional(),
+    price: z.coerce.number().positive("Price must be positive").optional(),
+    isAvailable: z.boolean().optional(),
+    imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
+    inventoryType: z.nativeEnum(InventoryType).optional(),
+    initialStock: z.coerce.number().int().min(0).optional(),
+    lowStockAlert: z.coerce.number().int().min(0).optional(),
+    autoMarkUnavailable: z.boolean().optional(),
+  }),
+});
+
+export type UpdateItemInput = z.infer<typeof updateItemSchema>["body"];
+
+/**
+ * Validation Schema for Bulk Stock Update
+ *
+ * Validates request body for updating stock for multiple items at once.
+ */
+export const bulkStockUpdateSchema = z.object({
+  body: z.object({
+    items: z
+      .array(
+        z.object({
+          menuItemId: z.coerce.number().int().positive(),
+          quantity: z.coerce.number().int().min(1),
+          adjustmentType: z.enum(["MANUAL_ADD", "MANUAL_REMOVE"]),
+          reason: z.string().optional(),
+        }),
+      )
+      .min(1, "At least one item must be provided"),
+  }),
+});
+
+/**
+ * Validation Schema for Inventory Report Parameters
+ */
+export const inventoryReportSchema = z.object({
+  query: z.object({
+    categoryId: z.coerce.number().int().positive().optional(),
+    inventoryType: z.nativeEnum(InventoryType).optional(),
+    dateFrom: z.string().datetime().optional(),
+    dateTo: z.string().datetime().optional(),
+    includeOutOfStock: z.coerce.boolean().default(true),
+    includeLowStock: z.coerce.boolean().default(true),
+  }),
+});
+
+/**
+ * Validation Schema for Bulk Inventory Type Change
+ */
+export const bulkInventoryTypeSchema = z.object({
+  body: z.object({
+    menuItemIds: z.array(z.coerce.number().int().positive()).min(1),
+    inventoryType: z.nativeEnum(InventoryType),
+    initialStock: z.coerce.number().int().min(0).optional(),
+    lowStockAlert: z.coerce.number().int().min(1).optional(),
+  }),
+});
+
+export type BulkStockUpdateInput = z.infer<
+  typeof bulkStockUpdateSchema
+>["body"];
+export type InventoryReportParams = z.infer<
+  typeof inventoryReportSchema
+>["query"];
+export type BulkInventoryTypeInput = z.infer<
+  typeof bulkInventoryTypeSchema
+>["body"];

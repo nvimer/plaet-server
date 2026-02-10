@@ -19,6 +19,7 @@ export function createMockItemRepository(): jest.Mocked<ItemRepositoryInterface>
     getOutOfStock: jest.fn(),
     getStockHistory: jest.fn(),
     setInventoryType: jest.fn(),
+    update: jest.fn(),
   };
 }
 
@@ -42,6 +43,11 @@ export function createMockItemService(): jest.Mocked<ItemServiceInterface> {
     getOutStock: jest.fn(),
     getStockHistory: jest.fn(),
     setInventoryType: jest.fn(),
+    updateItem: jest.fn(),
+    bulkStockUpdate: jest.fn(),
+    bulkInventoryTypeUpdate: jest.fn(),
+    getInventoryReport: jest.fn(),
+    getStockSummary: jest.fn(),
   };
 }
 

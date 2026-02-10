@@ -53,6 +53,15 @@ enum OrderType {
   WHATSAPP
 }
 
+enum StockAdjustmentType {
+  DAILY_RESET
+  MANUAL_ADD
+  MANUAL_REMOVE
+  ORDER_DEDUCT
+  ORDER_CANCELLED
+  AUTO_BLOCKED
+}
+
 enum PaymentMethod {
   CASH
   NEQUI
@@ -270,9 +279,9 @@ model StockAdjustment {
   menuItemId Int      @map("menu_item_id")
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 
-  adjustmentType String // 'DAILY_RESET' | 'MANUAL_ADD' | 'ORDER_DEDUCT' | "MANUAL_REMOVE" | 'ORDER_CANCELLED'
-  previousStock  Int    @map("previous_stock")
-  newStock       Int    @map("new_stock")
+  adjustmentType StockAdjustmentType @map("adjustment_type")
+  previousStock  Int                @map("previous_stock")
+  newStock       Int                @map("new_stock")
   quantity       Int
 
   reason  String?

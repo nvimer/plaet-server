@@ -272,7 +272,7 @@ class ItemRepository implements ItemRepositoryInterface {
         tx.stockAdjustment.create({
           data: {
             menuItemId: id,
-            adjustmentType,
+            adjustmentType: adjustmentType as StockAdjustmentType,
             previousStock,
             newStock,
             quantity,
@@ -301,7 +301,7 @@ class ItemRepository implements ItemRepositoryInterface {
       prisma.stockAdjustment.create({
         data: {
           menuItemId: id,
-          adjustmentType,
+          adjustmentType: adjustmentType as StockAdjustmentType,
           previousStock,
           newStock,
           quantity,
@@ -487,6 +487,7 @@ class ItemRepository implements ItemRepositoryInterface {
     return await tx.stockAdjustment.create({
       data: {
         ...data,
+        adjustmentType: data.adjustmentType as StockAdjustmentType,
         createdAt: new Date(),
       },
     });
@@ -539,6 +540,26 @@ class ItemRepository implements ItemRepositoryInterface {
           stockQuantity: null,
           initialStock: null,
         }),
+      },
+    });
+  }
+
+  /**
+   * Updates Menu Item Information
+   *
+   * Generic update method for menu item fields.
+   * All fields are optional to support partial updates.
+   *
+   * @param id - Menu item identifier
+   * @param data - Partial menu item data to update
+   * @returns Updated menu item
+   */
+  async update(id: number, data: Partial<MenuItem>): Promise<MenuItem> {
+    return prisma.menuItem.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date(),
       },
     });
   }

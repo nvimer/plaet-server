@@ -1,13 +1,17 @@
 import { MenuItem, StockAdjustment } from "@prisma/client";
 import {
   AddStockBodyInput,
+  BulkInventoryTypeInput,
+  BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
   RemoveStockBodyInput,
   StockHistoryParams,
   SetLunchFilterParams,
+  UpdateItemInput,
 } from "../item.validator";
 import {
   PaginatedResponse,
@@ -58,4 +62,36 @@ export interface ItemServiceInterface {
     params: StockHistoryParams,
   ): Promise<PaginatedResponse<StockAdjustment>>;
   setInventoryType(id: number, data: InventoryTypeInput): Promise<MenuItem>;
+  updateItem(id: number, data: UpdateItemInput): Promise<MenuItem>;
+  bulkStockUpdate(data: BulkStockUpdateInput, userId?: string): Promise<void>;
+  bulkInventoryTypeUpdate(data: BulkInventoryTypeInput): Promise<void>;
+  getInventoryReport(params: InventoryReportParams): Promise<{
+    summary: {
+      totalItems: number;
+      trackedItems: number;
+      unlimitedItems: number;
+      outOfStock: number;
+      lowStock: number;
+    };
+    items: Array<{
+      id: number;
+      name: string;
+      category?: string;
+      price: number;
+      inventoryType: string;
+      isAvailable: boolean;
+      stockQuantity?: number | null;
+      lowStockAlert?: number | null;
+      initialStock?: number | null;
+      stockStatus: string;
+      recentAdjustments: unknown[];
+    }>;
+    generatedAt: string;
+  }>;
+  getStockSummary(): Promise<{
+    totalTrackedItems: number;
+    outOfStockItems: number;
+    lowStockItems: number;
+    inStockItems: number;
+  }>;
 }

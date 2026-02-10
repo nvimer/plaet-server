@@ -73,4 +73,5 @@ export interface ItemRepositoryInterface {
     inventoryType: string,
     lowStockAlert?: number,
   ): Promise<MenuItem>;
+  update(id: number, data: Partial<MenuItem>): Promise<MenuItem>;
 }

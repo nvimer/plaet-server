@@ -3,14 +3,18 @@ import itemController from "./item.controller";
 import { validate } from "../../../middlewares/validation.middleware";
 import {
   addStockSchema,
+  bulkInventoryTypeSchema,
+  bulkStockUpdateSchema,
   createItemSchema,
   dailyStockResetSchema,
+  inventoryReportSchema,
   inventoryTypeSchema,
   menuItemIdSchema,
   menuItemSearchSchema,
   removeStockSchema,
-  stockHistorySchema,
   setLunchFilterSchema,
+  stockHistorySchema,
+  updateItemSchema,
 } from "./item.validator";
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
 import { authJwt } from "../../../middlewares/auth.middleware";
@@ -134,5 +138,52 @@ router.patch(
   validate(inventoryTypeSchema),
   itemController.setInventoryType,
 );
+
+/**
+ * POST /items/bulk-stock-update
+ * Update stock for multiple items at once
+ */
+router.post(
+  "/bulk-stock-update",
+  authJwt,
+  validate(bulkStockUpdateSchema),
+  itemController.bulkStockUpdate,
+);
+
+/**
+ * POST /items/bulk-inventory-type
+ * Change inventory type for multiple items
+ */
+router.post(
+  "/bulk-inventory-type",
+  authJwt,
+  validate(bulkInventoryTypeSchema),
+  itemController.bulkInventoryTypeUpdate,
+);
+
+/**
+ * GET /items/inventory-report
+ * Generate comprehensive inventory report
+ */
+router.get(
+  "/inventory-report",
+  authJwt,
+  validate(inventoryReportSchema),
+  itemController.getInventoryReport,
+);
+
+/**
+ * GET /items/stock-summary
+ * Get summary of current stock status
+ */
+router.get("/stock-summary", authJwt, itemController.getStockSummary);
+
+/**
+ * PATCH /items/:id
+ *
+ * Updates menu item information. All fields are optional to support
+ * partial updates. This endpoint allows modifying any menu item field.
+ */
+router.patch("/:id", validate(updateItemSchema), itemController.patchItem);
 
 export default router;
