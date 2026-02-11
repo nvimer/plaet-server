@@ -493,6 +493,8 @@ model DailyMenu {
   proteinCategoryId  Int?          @map("protein_category_id")
   drinkCategoryId    Int?          @map("drink_category_id")
   extraCategoryId    Int?          @map("extra_category_id")
+  saladCategoryId    Int?          @map("salad_category_id")
+  dessertCategoryId  Int?          @map("dessert_category_id")
 
   // Available items for today (just IDs - queried manually in code)
   soupOption1Id     Int?      @map("soup_option_1_id")
@@ -503,6 +505,10 @@ model DailyMenu {
   drinkOption2Id    Int?      @map("drink_option_2_id")
   extraOption1Id    Int?      @map("extra_option_1_id")
   extraOption2Id    Int?      @map("extra_option_2_id")
+  saladOption1Id    Int?      @map("salad_option_1_id")
+  saladOption2Id    Int?      @map("salad_option_2_id")
+  dessertOption1Id  Int?      @map("dessert_option_1_id")
+  dessertOption2Id  Int?      @map("dessert_option_2_id")
   
   // All available protein IDs for today (array for multiple selections)
   proteinIds        Int[]     @default([]) @map("protein_ids")

@@ -58,21 +58,29 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
       principleItems,
       drinkItems,
       extraItems,
+      saladItems,
+      dessertItems,
       soupCategory,
       principleCategory,
       proteinCategory,
       drinkCategory,
       extraCategory,
+      saladCategory,
+      dessertCategory,
     ] = await Promise.all([
       this.fetchMenuItems([menu.soupOption1Id, menu.soupOption2Id]),
       this.fetchMenuItems([menu.principleOption1Id, menu.principleOption2Id]),
       this.fetchMenuItems([menu.drinkOption1Id, menu.drinkOption2Id]),
       this.fetchMenuItems([menu.extraOption1Id, menu.extraOption2Id]),
+      this.fetchMenuItems([menu.saladOption1Id, menu.saladOption2Id]),
+      this.fetchMenuItems([menu.dessertOption1Id, menu.dessertOption2Id]),
       this.fetchCategory(menu.soupCategoryId),
       this.fetchCategory(menu.principleCategoryId),
       this.fetchCategory(menu.proteinCategoryId),
       this.fetchCategory(menu.drinkCategoryId),
       this.fetchCategory(menu.extraCategoryId),
+      this.fetchCategory(menu.saladCategoryId),
+      this.fetchCategory(menu.dessertCategoryId),
     ]);
 
     // Map items by their IDs for easy lookup
@@ -82,6 +90,8 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
       ...principleItems,
       ...drinkItems,
       ...extraItems,
+      ...saladItems,
+      ...dessertItems,
     ].forEach((item) => {
       itemMap.set(item.id, item);
     });
@@ -93,6 +103,9 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
       proteinCategory,
       drinkCategory,
       extraCategory,
+      saladCategory,
+      dessertCategory,
+      proteinIds: menu.proteinIds || [],
       soupOption1: menu.soupOption1Id
         ? itemMap.get(menu.soupOption1Id) || null
         : null,
@@ -116,6 +129,18 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
         : null,
       extraOption2: menu.extraOption2Id
         ? itemMap.get(menu.extraOption2Id) || null
+        : null,
+      saladOption1: menu.saladOption1Id
+        ? itemMap.get(menu.saladOption1Id) || null
+        : null,
+      saladOption2: menu.saladOption2Id
+        ? itemMap.get(menu.saladOption2Id) || null
+        : null,
+      dessertOption1: menu.dessertOption1Id
+        ? itemMap.get(menu.dessertOption1Id) || null
+        : null,
+      dessertOption2: menu.dessertOption2Id
+        ? itemMap.get(menu.dessertOption2Id) || null
         : null,
     };
   }
@@ -150,17 +175,36 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
    * Create new daily menu
    */
   async create(data: CreateDailyMenuData): Promise<DailyMenuWithRelations> {
-    const normalizedDate = new Date(data.date);
-    normalizedDate.setHours(0, 0, 0, 0);
-
-    const created = await this.prismaClient.dailyMenu.create({
+    const menu = await this.prismaClient.dailyMenu.create({
       data: {
-        ...data,
-        date: normalizedDate,
+        date: data.date,
+        isActive: data.isActive ?? true,
+        basePrice: data.basePrice,
+        premiumProteinPrice: data.premiumProteinPrice,
+        soupCategoryId: data.soupCategoryId,
+        principleCategoryId: data.principleCategoryId,
+        proteinCategoryId: data.proteinCategoryId,
+        drinkCategoryId: data.drinkCategoryId,
+        extraCategoryId: data.extraCategoryId,
+        saladCategoryId: data.saladCategoryId,
+        dessertCategoryId: data.dessertCategoryId,
+        soupOption1Id: data.soupOption1Id,
+        soupOption2Id: data.soupOption2Id,
+        principleOption1Id: data.principleOption1Id,
+        principleOption2Id: data.principleOption2Id,
+        drinkOption1Id: data.drinkOption1Id,
+        drinkOption2Id: data.drinkOption2Id,
+        extraOption1Id: data.extraOption1Id,
+        extraOption2Id: data.extraOption2Id,
+        saladOption1Id: data.saladOption1Id,
+        saladOption2Id: data.saladOption2Id,
+        dessertOption1Id: data.dessertOption1Id,
+        dessertOption2Id: data.dessertOption2Id,
+        proteinIds: data.proteinIds || [],
       },
     });
 
-    return this.buildWithRelations(created);
+    return this.buildWithRelations(menu);
   }
 
   /**
@@ -173,17 +217,37 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const updated = await this.prismaClient.dailyMenu.update({
+    const menu = await this.prismaClient.dailyMenu.update({
       where: { date: normalizedDate },
       data: {
-        ...data,
-        updatedAt: new Date(),
+        basePrice: data.basePrice,
+        premiumProteinPrice: data.premiumProteinPrice,
+        soupCategoryId: data.soupCategoryId,
+        principleCategoryId: data.principleCategoryId,
+        proteinCategoryId: data.proteinCategoryId,
+        drinkCategoryId: data.drinkCategoryId,
+        extraCategoryId: data.extraCategoryId,
+        saladCategoryId: data.saladCategoryId,
+        dessertCategoryId: data.dessertCategoryId,
+        soupOption1Id: data.soupOption1Id,
+        soupOption2Id: data.soupOption2Id,
+        principleOption1Id: data.principleOption1Id,
+        principleOption2Id: data.principleOption2Id,
+        drinkOption1Id: data.drinkOption1Id,
+        drinkOption2Id: data.drinkOption2Id,
+        extraOption1Id: data.extraOption1Id,
+        extraOption2Id: data.extraOption2Id,
+        saladOption1Id: data.saladOption1Id,
+        saladOption2Id: data.saladOption2Id,
+        dessertOption1Id: data.dessertOption1Id,
+        dessertOption2Id: data.dessertOption2Id,
+        proteinIds: data.proteinIds,
+        isActive: data.isActive,
       },
     });
 
-    return this.buildWithRelations(updated);
+    return this.buildWithRelations(menu);
   }
 }
 
-// Export singleton instance
 export default new DailyMenuRepository();

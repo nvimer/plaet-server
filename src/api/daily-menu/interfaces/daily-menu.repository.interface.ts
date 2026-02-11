@@ -14,6 +14,8 @@ export type DailyMenuWithRelations = DailyMenu & {
   proteinCategory: MenuCategory | null;
   drinkCategory: MenuCategory | null;
   extraCategory: MenuCategory | null;
+  saladCategory: MenuCategory | null;
+  dessertCategory: MenuCategory | null;
   soupOption1: MenuItem | null;
   soupOption2: MenuItem | null;
   principleOption1: MenuItem | null;
@@ -24,6 +26,10 @@ export type DailyMenuWithRelations = DailyMenu & {
   drinkOption2: MenuItem | null;
   extraOption1: MenuItem | null;
   extraOption2: MenuItem | null;
+  saladOption1: MenuItem | null;
+  saladOption2: MenuItem | null;
+  dessertOption1: MenuItem | null;
+  dessertOption2: MenuItem | null;
 };
 
 /**
@@ -39,6 +45,8 @@ export interface CreateDailyMenuData {
   proteinCategoryId?: number | null;
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
+  saladCategoryId?: number | null;
+  dessertCategoryId?: number | null;
   soupOption1Id?: number | null;
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
@@ -47,6 +55,10 @@ export interface CreateDailyMenuData {
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;
   extraOption2Id?: number | null;
+  saladOption1Id?: number | null;
+  saladOption2Id?: number | null;
+  dessertOption1Id?: number | null;
+  dessertOption2Id?: number | null;
   proteinIds?: number[];
 }
 
@@ -61,6 +73,8 @@ export interface UpdateDailyMenuData {
   proteinCategoryId?: number | null;
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
+  saladCategoryId?: number | null;
+  dessertCategoryId?: number | null;
   soupOption1Id?: number | null;
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
@@ -69,6 +83,10 @@ export interface UpdateDailyMenuData {
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;
   extraOption2Id?: number | null;
+  saladOption1Id?: number | null;
+  saladOption2Id?: number | null;
+  dessertOption1Id?: number | null;
+  dessertOption2Id?: number | null;
   proteinIds?: number[];
   isActive?: boolean;
 }

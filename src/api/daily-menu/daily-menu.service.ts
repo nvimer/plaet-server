@@ -55,6 +55,8 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       proteinCategory: menu.proteinCategory,
       drinkCategory: menu.drinkCategory,
       extraCategory: menu.extraCategory,
+      saladCategory: menu.saladCategory,
+      dessertCategory: menu.dessertCategory,
 
       // Item options
       soupOptions: [
@@ -77,6 +79,16 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       extraOptions: [
         this.toMenuItemOption(menu.extraOption1),
         this.toMenuItemOption(menu.extraOption2),
+      ].filter(Boolean) as MenuItemOption[],
+      
+      saladOptions: [
+        this.toMenuItemOption(menu.saladOption1),
+        this.toMenuItemOption(menu.saladOption2),
+      ].filter(Boolean) as MenuItemOption[],
+      
+      dessertOptions: [
+        this.toMenuItemOption(menu.dessertOption1),
+        this.toMenuItemOption(menu.dessertOption2),
       ].filter(Boolean) as MenuItemOption[],
     };
   }
@@ -109,6 +121,8 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       proteinCategoryId: data.proteinCategoryId,
       drinkCategoryId: data.drinkCategoryId,
       extraCategoryId: data.extraCategoryId,
+      saladCategoryId: data.saladCategoryId,
+      dessertCategoryId: data.dessertCategoryId,
       soupOption1Id: data.soupOptions?.option1Id,
       soupOption2Id: data.soupOptions?.option2Id,
       principleOption1Id: data.principleOptions?.option1Id,
@@ -117,6 +131,10 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       drinkOption2Id: data.drinkOptions?.option2Id,
       extraOption1Id: data.extraOptions?.option1Id,
       extraOption2Id: data.extraOptions?.option2Id,
+      saladOption1Id: data.saladOptions?.option1Id,
+      saladOption2Id: data.saladOptions?.option2Id,
+      dessertOption1Id: data.dessertOptions?.option1Id,
+      dessertOption2Id: data.dessertOptions?.option2Id,
       proteinIds: data.allProteinIds || [],
     };
   }
