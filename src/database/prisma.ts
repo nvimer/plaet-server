@@ -36,7 +36,7 @@ const _SOFT_DELETE_MODELS = [
 
 type SoftDeleteModelName = (typeof _SOFT_DELETE_MODELS)[number];
 
-// Función helper para crear soft delete handlers con tipos estrictos
+// Helper function to create soft delete handlers with strict types
 const createSoftDeleteHandlers = (modelName: SoftDeleteModelName) => ({
   async delete({
     model: _model,

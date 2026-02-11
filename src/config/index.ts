@@ -9,7 +9,7 @@ const envSchema = z.object({
     .default("development"),
   APP_URL: z.string(),
   DATABASE_URL: z.string(),
-  TEST_DATABASE_URL: z.string().optional(), // Hacer opcional para producción
+  TEST_DATABASE_URL: z.string().optional(), // Make optional for production
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   SALT_ROUNDS: z.coerce.number().default(10),
   JWT_ACCESS_EXPIRATION_MINUTES: z.coerce.number().default(30),
@@ -25,7 +25,7 @@ if (!parsedEnv.success) {
     parsedEnv.error.flatten().fieldErrors,
   );
 
-  // En producción, mostrar variables faltantes específicas
+  // In production, show specific missing variables
   if (process.env.NODE_ENV === "production") {
     logger.error("🔧 Production Environment - Missing Variables:");
 
