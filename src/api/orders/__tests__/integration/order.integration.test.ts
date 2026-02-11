@@ -107,7 +107,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
 
       it("should deduct stock for TRACKED items", async () => {
         // Arrange
-        const initialStock = testMenuItem.stockQuantity!;
+        const stockQuantity = testMenuItem.stockQuantity!;
         const orderQuantity = 5;
 
         const orderData = {
@@ -125,7 +125,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           where: { id: testMenuItem.id },
         });
 
-        expect(updatedItem?.stockQuantity).toBe(initialStock - orderQuantity);
+        expect(updatedItem?.stockQuantity).toBe(stockQuantity - orderQuantity);
       });
 
       it("should reject order with insufficient stock", async () => {
@@ -240,7 +240,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
     describe("cancelOrder", () => {
       it("should cancel order and revert stock", async () => {
         // Arrange
-        const initialStock = testMenuItem.stockQuantity!;
+        const stockQuantity = testMenuItem.stockQuantity!;
         const orderQuantity = 5;
 
         const orderData = {
@@ -255,7 +255,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         const afterOrder = await db.menuItem.findUnique({
           where: { id: testMenuItem.id },
         });
-        expect(afterOrder?.stockQuantity).toBe(initialStock - orderQuantity);
+        expect(afterOrder?.stockQuantity).toBe(stockQuantity - orderQuantity);
 
         // Act - Cancel the order
         const result = await orderService.cancelOrder(order.id);
@@ -267,7 +267,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         const afterCancel = await db.menuItem.findUnique({
           where: { id: testMenuItem.id },
         });
-        expect(afterCancel?.stockQuantity).toBe(initialStock);
+        expect(afterCancel?.stockQuantity).toBe(stockQuantity);
       });
 
       it("should reject cancellation of DELIVERED order", async () => {

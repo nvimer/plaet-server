@@ -451,7 +451,6 @@ describe("ItemRepository", () => {
       const mockUpdatedItem = createItemFixture({
         inventoryType: InventoryType.UNLIMITED,
         stockQuantity: null,
-        initialStock: null,
       });
       mockUpdate.mockResolvedValue(mockUpdatedItem);
 
@@ -465,7 +464,6 @@ describe("ItemRepository", () => {
           inventoryType: "UNLIMITED",
           lowStockAlert: undefined,
           stockQuantity: null,
-          initialStock: null,
         },
       });
     });

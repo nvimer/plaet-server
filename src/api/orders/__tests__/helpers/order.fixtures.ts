@@ -51,7 +51,6 @@ export function createOrderWithItemsFixture(
           categoryId: 1,
           inventoryType: "TRACKED",
           stockQuantity: 50,
-          initialStock: 100,
           lowStockAlert: 5,
           autoMarkUnavailable: true,
         },

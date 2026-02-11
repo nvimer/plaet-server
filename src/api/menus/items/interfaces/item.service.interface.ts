@@ -82,7 +82,6 @@ export interface ItemServiceInterface {
       isAvailable: boolean;
       stockQuantity?: number | null;
       lowStockAlert?: number | null;
-      initialStock?: number | null;
       stockStatus: string;
       recentAdjustments: unknown[];
     }>;

@@ -43,7 +43,6 @@ export async function createTestMenuItem(
       isAvailable: true,
       inventoryType: InventoryType.TRACKED,
       stockQuantity: 50,
-      initialStock: 100,
       lowStockAlert: 5,
       autoMarkUnavailable: true,
       ...overrides,

@@ -90,7 +90,6 @@ paths:
                   imageUrl: "https://cloudinary.com/plaet/items/bandeja-paisa.jpg"
                   inventoryType: "TRACKED"
                   stockQuantity: null
-                  initialStock: null
                   lowStockAlert: 5
                   autoMarkUnavailable: true
                   createdAt: "2025-11-17T10:00:00.000Z"

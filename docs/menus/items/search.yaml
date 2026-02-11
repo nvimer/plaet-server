@@ -55,7 +55,6 @@ paths:
                       imageUrl: "https://cloudinary.com/plaet/items/bandeja-paisa.jpg"
                       inventoryType: "TRACKED"
                       stockQuantity: 18
-                      initialStock: 30
                       lowStockAlert: 5
                       autoMarkUnavailable: true
                       createdAt: "2025-01-15T10:00:00.000Z"
@@ -72,7 +71,6 @@ paths:
                       imageUrl: "https://cloudinary.com/plaet/items/coca-cola.jpg"
                       inventoryType: "UNLIMITED"
                       stockQuantity: null
-                      initialStock: null
                       lowStockAlert: null
                       autoMarkUnavailable: true
                       createdAt: "2025-01-15T10:00:00.000Z"

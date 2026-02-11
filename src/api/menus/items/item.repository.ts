@@ -326,10 +326,9 @@ class ItemRepository implements ItemRepositoryInterface {
    *
    * Operation Flow:
    * 1. Updates stock quantities for all items in batch
-   * 2. Sets initialStock to track daily starting point
-   * 3. Updates low stock alert thresholds
-   * 4. Marks all items as available
-   * 5. Creates audit records for each adjustment
+   * 2. Updates low stock alert thresholds
+   * 3. Marks all items as available
+   * 4. Creates audit records for each adjustment
    */
   async dailyStockReset(menuItems: DailyStockResetInput): Promise<void> {
     await prisma.$transaction(async (tx) => {
@@ -340,7 +339,6 @@ class ItemRepository implements ItemRepositoryInterface {
             where: { id: item.itemId },
             data: {
               stockQuantity: item.quantity,
-              initialStock: item.quantity,
               lowStockAlert: item.lowStockAlert,
               isAvailable: true,
             },
@@ -538,7 +536,6 @@ class ItemRepository implements ItemRepositoryInterface {
         // Clear stock data when switching to UNLIMITED type
         ...(inventoryType === "UNLIMITED" && {
           stockQuantity: null,
-          initialStock: null,
         }),
       },
     });

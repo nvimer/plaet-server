@@ -555,7 +555,6 @@ class ItemController {
    * - isAvailable: Is available for ordering (boolean)
    * - imageUrl: Item image URL (string, optional)
    * - inventoryType: Inventory tracking type ("TRACKED" | "UNLIMITED")
-   * - initialStock: Initial stock quantity (number, non-negative)
    * - lowStockAlert: Low stock alert threshold (number, non-negative)
    * - autoMarkUnavailable: Auto-mark unavailable at zero stock (boolean)
    *
@@ -614,7 +613,6 @@ class ItemController {
    * Request Body:
    * - menuItemIds: Array of menu item IDs to update
    * - inventoryType: New inventory type ("TRACKED" | "UNLIMITED")
-   * - initialStock: Initial stock for TRACKED items (optional)
    * - lowStockAlert: Low stock alert threshold for TRACKED items (optional)
    *
    * Response:

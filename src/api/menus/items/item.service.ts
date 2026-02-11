@@ -208,7 +208,6 @@ export class ItemService implements ItemServiceInterface {
               where: { id: item.itemId },
               data: {
                 stockQuantity: item.quantity,
-                initialStock: item.quantity,
                 lowStockAlert: item.lowStockAlert,
                 isAvailable: true,
                 updatedAt: new Date(),
@@ -638,7 +637,6 @@ export class ItemService implements ItemServiceInterface {
       ) {
         // Clear stock data when converting to UNLIMITED
         updateData.stockQuantity = null;
-        updateData.initialStock = null;
         updateData.lowStockAlert = null;
       } else if (
         previousType === InventoryType.UNLIMITED &&
@@ -646,7 +644,6 @@ export class ItemService implements ItemServiceInterface {
       ) {
         // Set defaults for new TRACKED items
         updateData.stockQuantity = 0;
-        updateData.initialStock = 0;
         updateData.lowStockAlert = data.lowStockAlert || 5;
         updateData.autoMarkUnavailable = true;
       } else if (newType === InventoryType.TRACKED) {
@@ -682,7 +679,6 @@ export class ItemService implements ItemServiceInterface {
       imageUrl?: string | null;
       inventoryType?: string;
       stockQuantity?: number | null;
-      initialStock?: number | null;
       lowStockAlert?: number | null;
       autoMarkUnavailable?: boolean;
       updatedAt?: Date;
@@ -701,8 +697,6 @@ export class ItemService implements ItemServiceInterface {
       updateData.imageUrl = data.imageUrl || null;
     if (data.inventoryType !== undefined)
       updateData.inventoryType = data.inventoryType;
-    if (data.initialStock !== undefined)
-      updateData.initialStock = data.initialStock;
     if (data.lowStockAlert !== undefined)
       updateData.lowStockAlert = data.lowStockAlert;
     if (data.autoMarkUnavailable !== undefined)
@@ -715,17 +709,9 @@ export class ItemService implements ItemServiceInterface {
       if (existingItem && existingItem.inventoryType !== data.inventoryType) {
         if (data.inventoryType === InventoryType.UNLIMITED) {
           updateData.stockQuantity = null;
-          updateData.initialStock = null;
           updateData.lowStockAlert = null;
         } else if (data.inventoryType === InventoryType.TRACKED) {
           updateData.stockQuantity = existingItem.stockQuantity ?? 0;
-          // For TRACKED items, if no initialStock provided, use existingStock
-          // If initialStock is provided, use that value (preserves user input)
-          if (data.initialStock !== undefined) {
-            updateData.initialStock = data.initialStock;
-          } else {
-            updateData.initialStock = existingItem.stockQuantity ?? 0;
-          }
           updateData.lowStockAlert = data.lowStockAlert ?? 5;
           updateData.autoMarkUnavailable = data.autoMarkUnavailable ?? true;
         }
@@ -834,12 +820,9 @@ export class ItemService implements ItemServiceInterface {
 
         if (data.inventoryType === InventoryType.UNLIMITED) {
           updateData.stockQuantity = null;
-          updateData.initialStock = null;
           updateData.lowStockAlert = null;
         } else if (data.inventoryType === InventoryType.TRACKED) {
           updateData.stockQuantity = menuItem.stockQuantity ?? 0;
-          updateData.initialStock =
-            data.initialStock ?? menuItem.stockQuantity ?? 0;
           updateData.lowStockAlert = data.lowStockAlert ?? 5;
           updateData.autoMarkUnavailable = true;
         }
@@ -926,7 +909,6 @@ export class ItemService implements ItemServiceInterface {
           isAvailable: item.isAvailable,
           stockQuantity: item.stockQuantity,
           lowStockAlert: item.lowStockAlert,
-          initialStock: item.initialStock,
           stockStatus:
             item.inventoryType === InventoryType.TRACKED
               ? (item.stockQuantity || 0) === 0

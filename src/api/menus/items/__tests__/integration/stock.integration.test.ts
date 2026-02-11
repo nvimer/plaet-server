@@ -77,7 +77,6 @@ describe("Stock Management Integration Tests", () => {
         where: { id: item1.id },
       });
       expect(updatedItem1?.stockQuantity).toBe(30);
-      expect(updatedItem1?.initialStock).toBe(30);
       expect(updatedItem1?.lowStockAlert).toBe(5);
       expect(updatedItem1?.isAvailable).toBe(true);
 
@@ -464,7 +463,6 @@ describe("Stock Management Integration Tests", () => {
           price: 10000,
           inventoryType: "TRACKED",
           stockQuantity: 30,
-          initialStock: 30,
           lowStockAlert: 5,
           deleted: false,
         },
@@ -478,7 +476,6 @@ describe("Stock Management Integration Tests", () => {
 
       expect(result.inventoryType).toBe("UNLIMITED");
       expect(result.stockQuantity).toBeNull();
-      expect(result.initialStock).toBeNull();
       expect(result.lowStockAlert).toBeNull();
     });
 
@@ -506,7 +503,6 @@ describe("Stock Management Integration Tests", () => {
 
       expect(result.inventoryType).toBe("TRACKED");
       expect(result.stockQuantity).toBe(0);
-      expect(result.initialStock).toBe(0);
       expect(result.lowStockAlert).toBe(10);
       expect(result.autoMarkUnavailable).toBe(true);
     });

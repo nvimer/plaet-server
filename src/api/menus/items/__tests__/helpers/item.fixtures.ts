@@ -14,7 +14,6 @@ export function createMenuItemFixture(
     imageUrl: null,
     inventoryType: InventoryType.TRACKED,
     stockQuantity: 50,
-    initialStock: 100,
     lowStockAlert: 5,
     autoMarkUnavailable: true,
     deleted: false,
@@ -51,7 +50,6 @@ export function createTrackedMenuItemFixture(
   return createMenuItemFixture({
     inventoryType: InventoryType.TRACKED,
     stockQuantity,
-    initialStock: stockQuantity,
     ...overrides,
   });
 }
@@ -65,7 +63,6 @@ export function createUnlimitedMenuItemFixture(
   return createMenuItemFixture({
     inventoryType: InventoryType.UNLIMITED,
     stockQuantity: null,
-    initialStock: null,
     ...overrides,
   });
 }
@@ -142,7 +139,6 @@ export function createBeverageMenuItemFixture(
     price: new Prisma.Decimal("3500"),
     inventoryType: InventoryType.UNLIMITED,
     stockQuantity: null,
-    initialStock: null,
     ...overrides,
   });
 }

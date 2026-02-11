@@ -256,7 +256,6 @@ model MenuItem {
   // Inventory management
   inventoryType       String  @default("UNLIMITED") @map("inventory_type")
   stockQuantity       Int?    @map("stock_quantity")
-  initialStock        Int?    @map("initial_stock")
   lowStockAlert       Int?    @default(5) @map("low_stock_alert")
   autoMarkUnavailable Boolean @default(true) @map("auto_mark_unavailable)")
 

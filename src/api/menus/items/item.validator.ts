@@ -42,7 +42,6 @@ export const createItemSchema = z.object({
       .nativeEnum(InventoryType)
       .optional()
       .default(InventoryType.UNLIMITED),
-    initialStock: z.coerce.number().int().min(0).optional(),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
     autoMarkUnavailable: z.boolean().optional().default(true),
   }),
@@ -220,7 +219,6 @@ export const updateItemSchema = z.object({
     isAvailable: z.boolean().optional(),
     imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
     inventoryType: z.nativeEnum(InventoryType).optional(),
-    initialStock: z.coerce.number().int().min(0).optional(),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
     autoMarkUnavailable: z.boolean().optional(),
   }),
@@ -269,7 +267,6 @@ export const bulkInventoryTypeSchema = z.object({
   body: z.object({
     menuItemIds: z.array(z.coerce.number().int().positive()).min(1),
     inventoryType: z.nativeEnum(InventoryType),
-    initialStock: z.coerce.number().int().min(0).optional(),
     lowStockAlert: z.coerce.number().int().min(1).optional(),
   }),
 });

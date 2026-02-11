@@ -18,7 +18,6 @@ paths:
 
         **Key Features:**
         - Batch operation for multiple items
-        - Sets both stockQuantity and initialStock
         - Marks all items as available
         - Creates audit trail entries
         - Atomic transaction (all or nothing)
@@ -272,7 +271,6 @@ paths:
                   imageUrl: "https://cloudinary.com/plaet/items/bandeja-paisa.jpg"
                   inventoryType: "TRACKED"
                   stockQuantity: 33
-                  initialStock: 30
                   lowStockAlert: 5
                   autoMarkUnavailable: true
                   createdAt: "2025-01-15T10:00:00.000Z"
@@ -455,7 +453,6 @@ paths:
                   imageUrl: "https://cloudinary.com/plaet/items/bandeja-paisa.jpg"
                   inventoryType: "TRACKED"
                   stockQuantity: 15
-                  initialStock: 30
                   lowStockAlert: 5
                   autoMarkUnavailable: true
                   createdAt: "2025-01-15T10:00:00.000Z"
@@ -989,7 +986,6 @@ paths:
                   imageUrl: "https://cloudinary.com/plaet/items/bandeja-paisa.jpg"
                   inventoryType: "TRACKED"
                   stockQuantity: null
-                  initialStock: null
                   lowStockAlert: 5
                   autoMarkUnavailable: true
                   createdAt: "2025-01-15T10:00:00.000Z"
