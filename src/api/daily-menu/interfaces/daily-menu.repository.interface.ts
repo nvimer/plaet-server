@@ -122,5 +122,7 @@ export interface DailyMenuRepositoryInterface {
   /**
    * Fetch menu items by their IDs
    */
-  fetchMenuItems(ids: (number | null | undefined)[]): Promise<import("@prisma/client").MenuItem[]>;
+  fetchMenuItems(
+    ids: (number | null | undefined)[],
+  ): Promise<import("@prisma/client").MenuItem[]>;
 }

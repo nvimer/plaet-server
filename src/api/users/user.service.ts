@@ -290,7 +290,7 @@ export class UserServices implements UserServiceInterface {
     const updatedUser = await this.userRepository.update(id, {
       emailVerified: true,
       emailVerifiedAt: new Date(),
-    } as any);
+    } as unknown as UpdateUserInput);
 
     logger.info(`[USER] Email verified for user ${id}`);
 
@@ -316,7 +316,10 @@ export class UserServices implements UserServiceInterface {
   ): Promise<User> {
     await this.findByIdOrFail(id);
 
-    const updatedUser = await this.userRepository.update(id, data as any);
+    const updatedUser = await this.userRepository.update(
+      id,
+      data as unknown as UpdateUserInput,
+    );
 
     logger.info(`[USER] Lockout status updated for user ${id}`);
 

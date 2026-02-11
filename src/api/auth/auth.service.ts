@@ -8,6 +8,20 @@ import hasherUtils from "../../utils/hasher.utils";
 import { CustomError } from "../../types/custom-errors";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 
+interface _FailedLoginUpdateData {
+  failedLoginAttempts: number;
+  lastFailedLogin: Date | null;
+  lockedUntil?: Date | null;
+}
+
+interface _ResetLoginUpdateData {
+  failedLoginAttempts: number;
+  lastFailedLogin: null;
+  lockedUntil: null;
+}
+
+type _LoginUpdateData = _FailedLoginUpdateData | _ResetLoginUpdateData;
+
 /**
  * Auth Service
  *
@@ -28,7 +42,7 @@ export class AuthService implements AuthServiceInterface {
 
     // Check if account is locked
     const now = new Date();
-    const lockedUntil = (user as any).lockedUntil;
+    const lockedUntil = user.lockedUntil;
     if (lockedUntil && lockedUntil > now) {
       const minutesLeft = Math.ceil(
         (lockedUntil.getTime() - now.getTime()) / (1000 * 60),
@@ -70,11 +84,11 @@ export class AuthService implements AuthServiceInterface {
   private async handleFailedLogin(userId: string): Promise<void> {
     try {
       const user = await this.userService.findById(userId);
-      const failedAttempts = ((user as any).failedLoginAttempts || 0) + 1;
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
       const maxAttempts = 5;
       const lockoutMinutes = 15;
 
-      const updateData: any = {
+      const updateData: _FailedLoginUpdateData = {
         failedLoginAttempts: failedAttempts,
         lastFailedLogin: new Date(),
       };
@@ -86,7 +100,10 @@ export class AuthService implements AuthServiceInterface {
       }
 
       // Use userRepository directly for raw updates
-      await userRepository.update(userId, updateData);
+      await userRepository.update(
+        userId,
+        updateData as unknown as Record<string, unknown>,
+      );
     } catch (error) {
       // Log but don't expose error
       console.error("[AUTH] Error handling failed login:", error);
@@ -98,14 +115,17 @@ export class AuthService implements AuthServiceInterface {
    */
   private async resetFailedLoginAttempts(userId: string): Promise<void> {
     try {
-      const updateData: any = {
+      const updateData: _ResetLoginUpdateData = {
         failedLoginAttempts: 0,
-        lockedUntil: null,
         lastFailedLogin: null,
+        lockedUntil: null,
       };
 
       // Use userRepository directly for raw updates
-      await userRepository.update(userId, updateData);
+      await userRepository.update(
+        userId,
+        updateData as unknown as Record<string, unknown>,
+      );
     } catch (error) {
       // Log but don't expose error
       console.error("[AUTH] Error resetting failed login attempts:", error);

@@ -36,10 +36,14 @@ export class DailyMenuService implements DailyMenuServiceInterface {
   /**
    * Transform database model to API response
    */
-  private async toResponse(menu: DailyMenuWithRelations): Promise<DailyMenuResponse> {
+  private async toResponse(
+    menu: DailyMenuWithRelations,
+  ): Promise<DailyMenuResponse> {
     // Fetch protein items from proteinIds array
-    const proteinItems = await this.repository.fetchMenuItems(menu.proteinIds || []);
-    
+    const proteinItems = await this.repository.fetchMenuItems(
+      menu.proteinIds || [],
+    );
+
     return {
       id: menu.id,
       date: menu.date,
@@ -69,7 +73,9 @@ export class DailyMenuService implements DailyMenuServiceInterface {
         this.toMenuItemOption(menu.principleOption2),
       ].filter(Boolean) as MenuItemOption[],
 
-      proteinOptions: proteinItems.map((item: MenuItem) => this.toMenuItemOption(item)).filter(Boolean) as MenuItemOption[],
+      proteinOptions: proteinItems
+        .map((item: MenuItem) => this.toMenuItemOption(item))
+        .filter(Boolean) as MenuItemOption[],
 
       drinkOptions: [
         this.toMenuItemOption(menu.drinkOption1),
@@ -80,12 +86,12 @@ export class DailyMenuService implements DailyMenuServiceInterface {
         this.toMenuItemOption(menu.extraOption1),
         this.toMenuItemOption(menu.extraOption2),
       ].filter(Boolean) as MenuItemOption[],
-      
+
       saladOptions: [
         this.toMenuItemOption(menu.saladOption1),
         this.toMenuItemOption(menu.saladOption2),
       ].filter(Boolean) as MenuItemOption[],
-      
+
       dessertOptions: [
         this.toMenuItemOption(menu.dessertOption1),
         this.toMenuItemOption(menu.dessertOption2),

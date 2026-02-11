@@ -814,7 +814,12 @@ export class ItemService implements ItemServiceInterface {
           );
         }
 
-        const updateData: any = {
+        const updateData: {
+          inventoryType: string;
+          stockQuantity?: number | null;
+          lowStockAlert?: number | null;
+          autoMarkUnavailable?: boolean;
+        } = {
           inventoryType: data.inventoryType,
         };
 
@@ -829,7 +834,7 @@ export class ItemService implements ItemServiceInterface {
 
         await tx.menuItem.update({
           where: { id: menuItemId },
-          data: updateData as any,
+          data: updateData,
         });
       }
     });
@@ -838,10 +843,31 @@ export class ItemService implements ItemServiceInterface {
   /**
    * Generate comprehensive inventory report
    */
-  async getInventoryReport(params: InventoryReportParams): Promise<any> {
+  async getInventoryReport(params: InventoryReportParams): Promise<{
+    summary: {
+      totalItems: number;
+      trackedItems: number;
+      unlimitedItems: number;
+      outOfStock: number;
+      lowStock: number;
+    };
+    items: Array<{
+      id: number;
+      name: string;
+      category?: string;
+      price: number;
+      inventoryType: string;
+      isAvailable: boolean;
+      stockQuantity?: number | null;
+      lowStockAlert?: number | null;
+      stockStatus: string;
+      recentAdjustments: unknown[];
+    }>;
+    generatedAt: string;
+  }> {
     const client = getPrismaClient();
 
-    const whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
 
     if (params.categoryId) {
       whereClause.categoryId = params.categoryId;
