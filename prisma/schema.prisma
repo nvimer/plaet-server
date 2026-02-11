@@ -483,9 +483,8 @@ model DailyMenu {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Price configuration based on protein selection
-  basePrice          Decimal  @default(10000.00) @db.Decimal(10, 2) @map("base_price") // Price for standard proteins (chicken, pork)
-  premiumProteinPrice Decimal @default(11000.00) @db.Decimal(10, 2) @map("premium_protein_price") // Price for premium proteins (beef, fish)
+  // Price configuration - base margin added to protein individual price
+  basePrice          Decimal  @default(4000.00) @db.Decimal(10, 2) @map("base_price") // Base margin for lunch (e.g., $4,000). Total = basePrice + proteinPrice
 
   // Category references (just IDs - no relations needed)
   soupCategoryId     Int?          @map("soup_category_id")

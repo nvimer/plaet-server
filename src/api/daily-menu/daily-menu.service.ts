@@ -48,8 +48,7 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       id: menu.id,
       date: menu.date,
       isActive: menu.isActive ?? true,
-      basePrice: Number(menu.basePrice ?? 10000),
-      premiumProteinPrice: Number(menu.premiumProteinPrice ?? 11000),
+      basePrice: Number(menu.basePrice ?? 4000), // Base margin (e.g., $4,000)
       createdAt: menu.createdAt || new Date(),
       updatedAt: menu.updatedAt || new Date(),
 
@@ -120,8 +119,7 @@ export class DailyMenuService implements DailyMenuServiceInterface {
    */
   private transformInput(data: UpdateDailyMenuInput) {
     return {
-      basePrice: data.basePrice,
-      premiumProteinPrice: data.premiumProteinPrice,
+      basePrice: data.basePrice, // Base margin for lunch
       soupCategoryId: data.soupCategoryId,
       principleCategoryId: data.principleCategoryId,
       proteinCategoryId: data.proteinCategoryId,

@@ -22,8 +22,7 @@ export interface DailyMenuResponse {
   id: string;
   date: Date;
   isActive: boolean;
-  basePrice: number;
-  premiumProteinPrice: number;
+  basePrice: number; // Base margin added to protein individual price
   createdAt: Date;
   updatedAt: Date;
 
@@ -60,8 +59,7 @@ export interface DailyMenuItemOptionInput {
  */
 export interface UpdateDailyMenuInput {
   // Prices
-  basePrice?: number;
-  premiumProteinPrice?: number;
+  basePrice?: number; // Base margin for lunch (e.g., 4000)
 
   // Category IDs
   soupCategoryId?: number | null;

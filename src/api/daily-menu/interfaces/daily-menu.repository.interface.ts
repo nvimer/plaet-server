@@ -38,8 +38,7 @@ export type DailyMenuWithRelations = DailyMenu & {
 export interface CreateDailyMenuData {
   date: Date;
   isActive?: boolean;
-  basePrice?: number;
-  premiumProteinPrice?: number;
+  basePrice?: number; // Base margin for lunch
   soupCategoryId?: number | null;
   principleCategoryId?: number | null;
   proteinCategoryId?: number | null;
@@ -66,8 +65,7 @@ export interface CreateDailyMenuData {
  * Data for updating a daily menu
  */
 export interface UpdateDailyMenuData {
-  basePrice?: number;
-  premiumProteinPrice?: number;
+  basePrice?: number; // Base margin for lunch
   soupCategoryId?: number | null;
   principleCategoryId?: number | null;
   proteinCategoryId?: number | null;

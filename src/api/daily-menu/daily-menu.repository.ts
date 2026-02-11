@@ -179,8 +179,7 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
       data: {
         date: data.date,
         isActive: data.isActive ?? true,
-        basePrice: data.basePrice,
-        premiumProteinPrice: data.premiumProteinPrice,
+        basePrice: data.basePrice, // Base margin for lunch
         soupCategoryId: data.soupCategoryId,
         principleCategoryId: data.principleCategoryId,
         proteinCategoryId: data.proteinCategoryId,
@@ -220,8 +219,7 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     const menu = await this.prismaClient.dailyMenu.update({
       where: { date: normalizedDate },
       data: {
-        basePrice: data.basePrice,
-        premiumProteinPrice: data.premiumProteinPrice,
+        basePrice: data.basePrice, // Base margin for lunch
         soupCategoryId: data.soupCategoryId,
         principleCategoryId: data.principleCategoryId,
         proteinCategoryId: data.proteinCategoryId,
