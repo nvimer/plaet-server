@@ -21,7 +21,7 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   /**
    * Fetch menu items by their IDs
    */
-  private async fetchMenuItems(
+  async fetchMenuItems(
     ids: (number | null | undefined)[],
   ): Promise<MenuItem[]> {
     const validIds = ids.filter(
@@ -56,7 +56,6 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     const [
       soupItems,
       principleItems,
-      proteinItems,
       drinkItems,
       extraItems,
       soupCategory,
@@ -67,11 +66,6 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     ] = await Promise.all([
       this.fetchMenuItems([menu.soupOption1Id, menu.soupOption2Id]),
       this.fetchMenuItems([menu.principleOption1Id, menu.principleOption2Id]),
-      this.fetchMenuItems([
-        menu.proteinOption1Id,
-        menu.proteinOption2Id,
-        menu.proteinOption3Id,
-      ]),
       this.fetchMenuItems([menu.drinkOption1Id, menu.drinkOption2Id]),
       this.fetchMenuItems([menu.extraOption1Id, menu.extraOption2Id]),
       this.fetchCategory(menu.soupCategoryId),
@@ -86,7 +80,6 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     [
       ...soupItems,
       ...principleItems,
-      ...proteinItems,
       ...drinkItems,
       ...extraItems,
     ].forEach((item) => {
@@ -111,15 +104,6 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
         : null,
       principleOption2: menu.principleOption2Id
         ? itemMap.get(menu.principleOption2Id) || null
-        : null,
-      proteinOption1: menu.proteinOption1Id
-        ? itemMap.get(menu.proteinOption1Id) || null
-        : null,
-      proteinOption2: menu.proteinOption2Id
-        ? itemMap.get(menu.proteinOption2Id) || null
-        : null,
-      proteinOption3: menu.proteinOption3Id
-        ? itemMap.get(menu.proteinOption3Id) || null
         : null,
       drinkOption1: menu.drinkOption1Id
         ? itemMap.get(menu.drinkOption1Id) || null

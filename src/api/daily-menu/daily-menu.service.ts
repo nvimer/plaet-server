@@ -36,7 +36,10 @@ export class DailyMenuService implements DailyMenuServiceInterface {
   /**
    * Transform database model to API response
    */
-  private toResponse(menu: DailyMenuWithRelations): DailyMenuResponse {
+  private async toResponse(menu: DailyMenuWithRelations): Promise<DailyMenuResponse> {
+    // Fetch protein items from proteinIds array
+    const proteinItems = await this.repository.fetchMenuItems(menu.proteinIds || []);
+    
     return {
       id: menu.id,
       date: menu.date,
@@ -64,11 +67,7 @@ export class DailyMenuService implements DailyMenuServiceInterface {
         this.toMenuItemOption(menu.principleOption2),
       ].filter(Boolean) as MenuItemOption[],
 
-      proteinOptions: [
-        this.toMenuItemOption(menu.proteinOption1),
-        this.toMenuItemOption(menu.proteinOption2),
-        this.toMenuItemOption(menu.proteinOption3),
-      ].filter(Boolean) as MenuItemOption[],
+      proteinOptions: proteinItems.map((item: MenuItem) => this.toMenuItemOption(item)).filter(Boolean) as MenuItemOption[],
 
       drinkOptions: [
         this.toMenuItemOption(menu.drinkOption1),
@@ -87,7 +86,7 @@ export class DailyMenuService implements DailyMenuServiceInterface {
    */
   async getTodayMenu(): Promise<DailyMenuResponse | null> {
     const menu = await this.repository.getCurrent();
-    return menu ? this.toResponse(menu) : null;
+    return menu ? await this.toResponse(menu) : null;
   }
 
   /**
@@ -95,7 +94,7 @@ export class DailyMenuService implements DailyMenuServiceInterface {
    */
   async getMenuByDate(date: Date): Promise<DailyMenuResponse | null> {
     const menu = await this.repository.findByDate(date);
-    return menu ? this.toResponse(menu) : null;
+    return menu ? await this.toResponse(menu) : null;
   }
 
   /**
@@ -114,13 +113,11 @@ export class DailyMenuService implements DailyMenuServiceInterface {
       soupOption2Id: data.soupOptions?.option2Id,
       principleOption1Id: data.principleOptions?.option1Id,
       principleOption2Id: data.principleOptions?.option2Id,
-      proteinOption1Id: data.proteinOptions?.option1Id,
-      proteinOption2Id: data.proteinOptions?.option2Id,
-      proteinOption3Id: data.proteinOptions?.option3Id,
       drinkOption1Id: data.drinkOptions?.option1Id,
       drinkOption2Id: data.drinkOptions?.option2Id,
       extraOption1Id: data.extraOptions?.option1Id,
       extraOption2Id: data.extraOptions?.option2Id,
+      proteinIds: data.allProteinIds || [],
     };
   }
 
@@ -138,14 +135,14 @@ export class DailyMenuService implements DailyMenuServiceInterface {
 
     if (existingMenu) {
       const updated = await this.repository.updateByDate(today, repositoryData);
-      return this.toResponse(updated);
+      return await this.toResponse(updated);
     } else {
       const created = await this.repository.create({
         date: today,
         ...repositoryData,
         isActive: true,
       });
-      return this.toResponse(created);
+      return await this.toResponse(created);
     }
   }
 
@@ -167,14 +164,14 @@ export class DailyMenuService implements DailyMenuServiceInterface {
         normalizedDate,
         repositoryData,
       );
-      return this.toResponse(updated);
+      return await this.toResponse(updated);
     } else {
       const created = await this.repository.create({
         date: normalizedDate,
         ...repositoryData,
         isActive: true,
       });
-      return this.toResponse(created);
+      return await this.toResponse(created);
     }
   }
 }

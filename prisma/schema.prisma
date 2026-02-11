@@ -499,13 +499,13 @@ model DailyMenu {
   soupOption2Id     Int?      @map("soup_option_2_id")
   principleOption1Id Int?      @map("principle_option_1_id")
   principleOption2Id Int?      @map("principle_option_2_id")
-  proteinOption1Id  Int?      @map("protein_option_1_id")
-  proteinOption2Id  Int?      @map("protein_option_2_id")
-  proteinOption3Id  Int?      @map("protein_option_3_id")
   drinkOption1Id    Int?      @map("drink_option_1_id")
   drinkOption2Id    Int?      @map("drink_option_2_id")
   extraOption1Id    Int?      @map("extra_option_1_id")
   extraOption2Id    Int?      @map("extra_option_2_id")
+  
+  // All available protein IDs for today (array for multiple selections)
+  proteinIds        Int[]     @default([]) @map("protein_ids")
 
   @@index([date])
   @@index([isActive])

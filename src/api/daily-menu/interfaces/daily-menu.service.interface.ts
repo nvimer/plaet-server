@@ -69,9 +69,11 @@ export interface UpdateDailyMenuInput {
   // Item options
   soupOptions?: DailyMenuItemOptionInput;
   principleOptions?: DailyMenuItemOptionInput;
-  proteinOptions?: DailyMenuItemOptionInput;
   drinkOptions?: DailyMenuItemOptionInput;
   extraOptions?: DailyMenuItemOptionInput;
+  
+  // All available protein IDs (replaces proteinOptions)
+  allProteinIds?: number[];
 }
 
 /**

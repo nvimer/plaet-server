@@ -18,9 +18,8 @@ export type DailyMenuWithRelations = DailyMenu & {
   soupOption2: MenuItem | null;
   principleOption1: MenuItem | null;
   principleOption2: MenuItem | null;
-  proteinOption1: MenuItem | null;
-  proteinOption2: MenuItem | null;
-  proteinOption3: MenuItem | null;
+  // Protein options are now loaded separately from proteinIds array
+  proteinIds: number[];
   drinkOption1: MenuItem | null;
   drinkOption2: MenuItem | null;
   extraOption1: MenuItem | null;
@@ -44,13 +43,11 @@ export interface CreateDailyMenuData {
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
   principleOption2Id?: number | null;
-  proteinOption1Id?: number | null;
-  proteinOption2Id?: number | null;
-  proteinOption3Id?: number | null;
   drinkOption1Id?: number | null;
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;
   extraOption2Id?: number | null;
+  proteinIds?: number[];
 }
 
 /**
@@ -68,13 +65,11 @@ export interface UpdateDailyMenuData {
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
   principleOption2Id?: number | null;
-  proteinOption1Id?: number | null;
-  proteinOption2Id?: number | null;
-  proteinOption3Id?: number | null;
   drinkOption1Id?: number | null;
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;
   extraOption2Id?: number | null;
+  proteinIds?: number[];
   isActive?: boolean;
 }
 
@@ -105,4 +100,9 @@ export interface DailyMenuRepositoryInterface {
     date: Date,
     data: UpdateDailyMenuData,
   ): Promise<DailyMenuWithRelations>;
+
+  /**
+   * Fetch menu items by their IDs
+   */
+  fetchMenuItems(ids: (number | null | undefined)[]): Promise<import("@prisma/client").MenuItem[]>;
 }
