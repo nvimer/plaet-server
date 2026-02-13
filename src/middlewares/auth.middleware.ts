@@ -22,6 +22,11 @@ const extractTokenFromRequest = (req: Request): string | undefined => {
   return req.cookies?.accessToken || req.cookies?.refreshToken;
 };
 
+// Extend PassportAuthInfo to include name property for JWT errors
+interface PassportAuthInfoExtended extends PassportAuthInfo {
+  name?: string;
+}
+
 // Middleware of WJT authentication
 export const authJwt = (req: Request, res: Response, next: NextFunction) => {
   // Passport jwt try authenticated petition using "jwt" strategy
@@ -32,12 +37,24 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
     async (
       err: Error | null,
       user: AuthenticatedUser | false,
-      info: PassportAuthInfo | undefined,
+      info: PassportAuthInfoExtended | undefined,
     ) => {
       if (err) {
         return next(err);
       }
       if (!user) {
+        // Check if token expired naturally (time-based expiration)
+        // This is different from invalid/malformed tokens
+        if (info?.name === "TokenExpiredError") {
+          return next(
+            new CustomError(
+              "Token has expired. Please refresh your session.",
+              HttpStatus.UNAUTHORIZED,
+              "TOKEN_EXPIRED",
+            ),
+          );
+        }
+
         return next(
           new CustomError(
             info?.message || "Unauthorized. Please login and retry",

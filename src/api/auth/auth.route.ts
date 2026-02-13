@@ -11,7 +11,10 @@ import {
   changePasswordSchema,
 } from "./auth.validator";
 import { authJwt } from "../../middlewares/auth.middleware";
-import { authRateLimit } from "../../middlewares/rateLimit.middleware";
+import {
+  authRateLimit,
+  refreshTokenRateLimit,
+} from "../../middlewares/rateLimit.middleware";
 
 const router = Router();
 
@@ -549,7 +552,11 @@ router.post(
  *       429:
  *         description: Too many requests
  */
-router.post("/refresh-token", authRateLimit, authController.refreshToken);
+router.post(
+  "/refresh-token",
+  refreshTokenRateLimit,
+  authController.refreshToken,
+);
 
 /**
  * @swagger
