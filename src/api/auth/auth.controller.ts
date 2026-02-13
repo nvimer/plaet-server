@@ -17,7 +17,6 @@ import { TokenServiceInterface } from "./tokens/token.interface";
 import tokenService from "./tokens/token.service";
 import { EmailService } from "../../config/email";
 import { logger } from "../../config/logger";
-import { config } from "../../config";
 
 /**
  * Auth Controller
@@ -107,7 +106,7 @@ class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: config.jwtAccessExpirationMinutes * 60 * 1000,
+      maxAge: 30 * 60 * 1000, // 30 minutes
       path: "/",
     });
 
@@ -401,7 +400,7 @@ class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: config.jwtAccessExpirationMinutes * 60 * 1000,
+      maxAge: 30 * 60 * 1000, // 30 minutes
       path: "/",
     });
 
