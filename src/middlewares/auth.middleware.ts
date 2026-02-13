@@ -43,9 +43,14 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
         return next(err);
       }
       if (!user) {
-        // Check if token expired naturally (time-based expiration)
-        // This is different from invalid/malformed tokens
+        console.log(
+          `[AUTH MIDDLEWARE] No user - info.name: ${info?.name}, info.message: ${info?.message}`,
+        );
+
         if (info?.name === "TokenExpiredError") {
+          console.log(
+            "[AUTH MIDDLEWARE] TokenExpiredError detected - sending TOKEN_EXPIRED",
+          );
           return next(
             new CustomError(
               "Token has expired. Please refresh your session.",
@@ -55,6 +60,7 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
           );
         }
 
+        console.log("[AUTH MIDDLEWARE] Sending UNAUTHORIZED_ACCESS");
         return next(
           new CustomError(
             info?.message || "Unauthorized. Please login and retry",
