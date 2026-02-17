@@ -4,7 +4,7 @@
   "description": "Plaet API para administración y contabilidad de restaurantes. ",
   "main": "src/server.ts",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "npx prisma migrate deploy && node dist/server.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/server.ts",
     "build": "tsc",
     "test": "jest",
