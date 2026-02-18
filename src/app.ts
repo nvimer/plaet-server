@@ -50,10 +50,17 @@ const corsOptions: CorsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // Restricted: removed OPTIONS, HEAD
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "X-Request-ID",
+  ],
+  exposedHeaders: ["X-Request-ID"], // Headers exposed to client
   credentials: true,
   preflightContinue: false,
+  maxAge: 86400, // Cache preflight response for 24 hours
   optionsSuccessStatus: 204,
 };
 

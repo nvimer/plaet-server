@@ -19,8 +19,8 @@ DATABASE_URL = "${{postgresql.DATABASE_URL}}"
 # Application Configuration (using api.plaet.cloud subdomain)
 APP_URL = "https://api.plaet.cloud/api/v1"
 
-# CORS Configuration - only allow frontend domain
-ALLOWED_ORIGINS = "https://plaet.cloud,https://www.plaet.cloud"
+# CORS Configuration - only allow frontend and backend domains
+ALLOWED_ORIGINS = "https://plaet.cloud,https://www.plaet.cloud,https://api.plaet.cloud"
 
 # Health Check
 HEALTH_CHECK_ENDPOINT = "/api/health"
