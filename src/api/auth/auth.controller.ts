@@ -17,6 +17,7 @@ import { TokenServiceInterface } from "./tokens/token.interface";
 import tokenService from "./tokens/token.service";
 import { EmailService } from "../../config/email";
 import { logger } from "../../config/logger";
+import { config } from "../../config";
 
 /**
  * Auth Controller
@@ -102,19 +103,21 @@ class AuthController {
     const token = await this.tokenService.generateAuthToken(user.id);
 
     // Set httpOnly cookies for secure token storage
+    // Using sameSite: "lax" to allow cookies on subdomains of the same domain
+    // Maximum security: api.plaet.cloud (backend) + plaet.cloud (frontend)
     res.cookie("accessToken", token.access.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 60 * 1000, // 30 minutes
+      sameSite: "lax", // Allows cookies on subdomains of same domain base
+      maxAge: (config.jwtAccessExpirationMinutes || 30) * 60 * 1000,
       path: "/",
     });
 
     res.cookie("refreshToken", token.refresh.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "lax", // Allows cookies on subdomains of same domain base
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 
@@ -150,14 +153,14 @@ class AuthController {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
     });
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
     });
 
@@ -399,16 +402,16 @@ class AuthController {
     res.cookie("accessToken", newTokens.access.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 60 * 1000, // 30 minutes
+      sameSite: "lax",
+      maxAge: (config.jwtAccessExpirationMinutes || 30) * 60 * 1000,
       path: "/",
     });
 
     res.cookie("refreshToken", newTokens.refresh.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 

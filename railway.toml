@@ -16,14 +16,10 @@ PORT = "8080"
 # Database Configuration - Usando variables automáticas de Railway
 DATABASE_URL = "${{postgresql.DATABASE_URL}}"
 
-# Application Configuration (para plaet.cloud)
-APP_URL = "https://plaet.cloud/api/v1"
-JWT_SECRET = "${{secrets.JWT_SECRET}"
-SALT_ROUNDS = "10"
-JWT_ACCESS_EXPIRATION_MINUTES = "30"
-JWT_ACCESS_EXPIRATION_DAYS = "7"
+# Application Configuration (using api.plaet.cloud subdomain)
+APP_URL = "https://api.plaet.cloud/api/v1"
 
-# CORS Configuration para plaet.cloud
+# CORS Configuration - only allow frontend domain
 ALLOWED_ORIGINS = "https://plaet.cloud,https://www.plaet.cloud"
 
 # Health Check
