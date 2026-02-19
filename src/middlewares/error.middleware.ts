@@ -27,6 +27,11 @@ export const errorHandler = (
   }
 
   if (err instanceof PrismaClientKnownRequestError) {
+    logger.error("Prisma Client Known Request Error:", {
+      code: err.code,
+      message: err.message,
+      meta: err.meta,
+    });
     switch (err.code) {
       case "P2002":
         return res.status(HttpStatus.CONFLICT).json({
@@ -47,6 +52,7 @@ export const errorHandler = (
           success: false,
           message: "Database operation failed due to invalid data or request.",
           errorCode: "DATABASE_REQUEST_ERROR",
+          prismaCode: err.code,
         });
     }
   }

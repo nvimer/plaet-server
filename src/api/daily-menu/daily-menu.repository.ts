@@ -6,6 +6,7 @@ import {
   UpdateDailyMenuData,
 } from "./interfaces/daily-menu.repository.interface";
 import { DailyMenu, MenuItem, MenuCategory } from "@prisma/client";
+import { logger } from "../../config/logger";
 
 /**
  * DailyMenu Repository Implementation - Simplified version
@@ -152,13 +153,30 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const menu = await this.prismaClient.dailyMenu.findUnique({
-      where: { date: normalizedDate },
+    logger.debug("[DailyMenu] findByDate called", {
+      date: normalizedDate.toISOString(),
     });
 
-    if (!menu) return null;
+    try {
+      const menu = await this.prismaClient.dailyMenu.findUnique({
+        where: { date: normalizedDate },
+      });
 
-    return this.buildWithRelations(menu);
+      logger.debug("[DailyMenu] Query result", {
+        menu: menu ? "found" : "null",
+        date: normalizedDate.toISOString(),
+      });
+
+      if (!menu) return null;
+
+      return this.buildWithRelations(menu);
+    } catch (error) {
+      logger.error("[DailyMenu] findByDate error", {
+        error,
+        date: normalizedDate.toISOString(),
+      });
+      throw error;
+    }
   }
 
   /**
@@ -167,6 +185,10 @@ export class DailyMenuRepository implements DailyMenuRepositoryInterface {
   async getCurrent(): Promise<DailyMenuWithRelations | null> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    logger.debug("[DailyMenu] getCurrent called", {
+      today: today.toISOString(),
+    });
 
     return this.findByDate(today);
   }
