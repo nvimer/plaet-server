@@ -19,8 +19,8 @@ const extractTokenFromRequest = (req: Request): string | undefined => {
     return authHeader.substring(7);
   }
 
-  // If not in header, try cookies
-  return req.cookies?.accessToken || req.cookies?.refreshToken;
+  // If not in header, try cookies - ONLY accessToken
+  return req.cookies?.accessToken;
 };
 
 // Extend PassportAuthInfo to include name property for JWT errors

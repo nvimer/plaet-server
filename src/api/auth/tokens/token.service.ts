@@ -335,11 +335,12 @@ export class TokenService implements TokenServiceInterface {
     }
 
     if (tokenRecord.blacklisted) {
-      // Potential token reuse attack - blacklist all user tokens
+      // Potential token reuse attack - Log warning but avoid nuclear logout to prevent loops
+      // caused by parallel refreshes (race conditions)
       logger.warn(
-        `[REFRESH] Token reuse detected for user ${tokenRecord.userId}. Blacklisting all tokens.`,
+        `[REFRESH] Token reuse detected for user ${tokenRecord.userId}. Invalidating session.`,
       );
-      await this.logout(tokenRecord.userId);
+      // await this.logout(tokenRecord.userId);
       return null;
     }
 

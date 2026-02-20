@@ -44,9 +44,9 @@ export const tokenBlacklistMiddleware = (
     tokenString = authHeader.substring(7);
   }
 
-  // If not in header, try cookies
+  // If not in header, try cookies - ONLY accessToken
   if (!tokenString) {
-    tokenString = req.cookies?.accessToken || req.cookies?.refreshToken;
+    tokenString = req.cookies?.accessToken;
   }
 
   // If no token found, skip blacklisting check
