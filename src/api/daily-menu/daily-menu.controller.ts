@@ -9,7 +9,7 @@ import { UpdateDailyMenuBodyInput } from "./daily-menu.validator";
  * DailyMenu Controller - Updated for Item-Based Daily Menu
  * Handles HTTP requests for daily menu management with MenuItem references
  */
-export class DailyMenuController {
+class DailyMenuController {
   constructor(private service: DailyMenuServiceInterface = dailyMenuService) {}
 
   /**

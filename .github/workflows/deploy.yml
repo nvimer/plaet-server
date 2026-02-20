@@ -66,7 +66,7 @@ jobs:
         
     - name: Notify Deployment
       if: success()
-        run: |
-          echo "🎉 Plaet API deployed successfully!"
+      run: |
+        echo "🎉 Plaet API deployed successfully!"
           echo "🌐 API URL: $RAILWAY_URL"
           echo "📖 Documentation: $RAILWAY_URL/api/v1/docs"

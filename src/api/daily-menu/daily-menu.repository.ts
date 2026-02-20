@@ -12,7 +12,7 @@ import { logger } from "../../config/logger";
  * DailyMenu Repository Implementation - Simplified version
  * Uses manual queries to fetch related items instead of Prisma relations
  */
-export class DailyMenuRepository implements DailyMenuRepositoryInterface {
+class DailyMenuRepository implements DailyMenuRepositoryInterface {
   private prismaClient: ReturnType<typeof getPrismaClient>;
 
   constructor() {

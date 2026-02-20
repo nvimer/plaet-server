@@ -91,8 +91,8 @@ export const phoneSearchSchema = z.object({
 });
 
 // Type exports for TypeScript
-export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
-export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
-export type SearchCustomersInput = z.infer<typeof searchCustomersSchema>;
-export type CustomerIdInput = z.infer<typeof customerIdSchema>;
-export type PhoneSearchInput = z.infer<typeof phoneSearchSchema>;
+type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
+type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
+type SearchCustomersInput = z.infer<typeof searchCustomersSchema>;
+type CustomerIdInput = z.infer<typeof customerIdSchema>;
+type PhoneSearchInput = z.infer<typeof phoneSearchSchema>;

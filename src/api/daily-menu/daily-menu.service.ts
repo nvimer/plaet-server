@@ -15,7 +15,7 @@ import { MenuItem } from "@prisma/client";
  * DailyMenu Service Implementation - Updated for Item-Based Daily Menu
  * Contains business logic for daily menu operations with MenuItem references
  */
-export class DailyMenuService implements DailyMenuServiceInterface {
+class DailyMenuService implements DailyMenuServiceInterface {
   constructor(
     private repository: DailyMenuRepositoryInterface = dailyMenuRepository,
   ) {}

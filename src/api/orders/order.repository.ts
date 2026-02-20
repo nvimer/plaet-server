@@ -14,7 +14,7 @@ import { getPrismaClient } from "../../database/prisma";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 
-export class OrderRepository implements OrderRepositoryInterface {
+class OrderRepository implements OrderRepositoryInterface {
   /**
    * Retrieves Paginated List of Orders with Filtering
    *
