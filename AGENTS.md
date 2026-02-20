@@ -91,10 +91,10 @@ When acting on this codebase, adhere strictly to these rules:
 - Maintain at least 80% coverage. 
 - Before assuming a task is done, run `npm run eslint-check-only` and `npm run build` to verify no breaking changes.
 
-### 5. Maintenance & Cleanup
-- **Dead Code:** Periodically run `npx knip` to find unused exports, files, and dependencies.
-- **Exports:** Avoid exporting classes or types if they are only used within the same module. Prefer `export default instance` for Controllers, Services, and Repositories to keep the public API minimal.
-- **GitHub Actions:** Ensure `.github/workflows/` files have correct YAML indentation.
+### 6. Authentication Best Practices (Session Protection)
+- **AccessToken-Only Sessions:** Protected routes (via `authJwt`) MUST ONLY extract the `accessToken` from cookies or headers. The `refreshToken` should ONLY be used in the `/refresh-token` endpoint.
+- **Refresh Token Rotation (Race Condition Handling):** If a `refreshToken` is reuse-detected (it was already rotated), do NOT execute a global user logout. Instead, just reject that specific request. This prevents infinite loops caused by parallel refresh requests from the frontend.
+- **Token Type Validation:** Always verify the `type` field in the JWT payload during strategy validation to ensure an `ACCESS` token isn't being used as a `REFRESH` token and vice versa.
 
 ## 🔐 Authentication Module Documentation
 
