@@ -1,0 +1,49 @@
+openapi: 3.0.0
+components:
+  schemas:
+    DailySummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            salesSummary:
+              type: object
+              properties:
+                totalSold:
+                  type: number
+                  example: 150000.00
+                orderCount:
+                  type: integer
+                  example: 12
+                breakdown:
+                  type: object
+                  properties:
+                    CASH:
+                      type: number
+                      example: 80000.00
+                    NEQUI:
+                      type: number
+                      example: 40000.00
+                    TICKET_BOOK:
+                      type: number
+                      example: 30000.00
+            topProducts:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  quantity:
+                    type: integer
+                  totalRevenue:
+                    type: number
+            netBalance:
+              type: number
+              example: 120000.00

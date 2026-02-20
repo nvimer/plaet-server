@@ -1,0 +1,28 @@
+openapi: 3.0.0
+paths:
+  /cash-closures:
+    post:
+      tags:
+        - Cash Closures
+      summary: Open a new cash closure shift (ADMIN/CASHIER only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenCashClosureRequest"
+      responses:
+        201:
+          description: Cash closure shift opened successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashClosureResponse"
+        400:
+          description: A shift is already open
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden (Admin or Cashier only)

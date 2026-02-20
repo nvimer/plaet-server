@@ -1,0 +1,73 @@
+openapi: 3.0.0
+components:
+  schemas:
+    CashClosure:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        openedById:
+          type: string
+          format: uuid
+        closedById:
+          type: string
+          format: uuid
+          nullable: true
+        openingDate:
+          type: string
+          format: date-time
+        closingDate:
+          type: string
+          format: date-time
+          nullable: true
+        openingBalance:
+          type: number
+          format: decimal
+        expectedBalance:
+          type: number
+          format: decimal
+        actualBalance:
+          type: number
+          format: decimal
+          nullable: true
+        difference:
+          type: number
+          format: decimal
+          nullable: true
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OpenCashClosureRequest:
+      type: object
+      required: [openingBalance]
+      properties:
+        openingBalance:
+          type: number
+          minimum: 0
+          example: 50000.00
+
+    CloseCashClosureRequest:
+      type: object
+      required: [actualBalance]
+      properties:
+        actualBalance:
+          type: number
+          minimum: 0
+          example: 120000.00
+
+    CashClosureResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/CashClosure"

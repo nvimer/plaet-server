@@ -9,6 +9,9 @@ import profilesRouter from "./profiles/profile.route";
 import ordersRouter from "./orders/order.route";
 import { customerRoutes } from "./customers/customer.route";
 import dailyMenuRouter from "./daily-menu/daily-menu.route";
+import expensesRouter from "./expenses/expense.route";
+import cashClosuresRouter from "./cash-closures/cash-closure.route";
+import analyticsRouter from "./analytics/analytics.route";
 
 /**
  * Main API Router for v1 endpoints.
@@ -60,5 +63,20 @@ router.use("/customers", customerRoutes);
  * Daily Menu Routes
  */
 router.use("/daily-menu", dailyMenuRouter);
+
+/**
+ * Expenses Management Routes
+ */
+router.use("/expenses", expensesRouter);
+
+/**
+ * Cash Closures Management Routes
+ */
+router.use("/cash-closures", cashClosuresRouter);
+
+/**
+ * Analytics Routes
+ */
+router.use("/analytics", analyticsRouter);
 
 export default router;

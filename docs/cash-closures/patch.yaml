@@ -1,0 +1,35 @@
+openapi: 3.0.0
+paths:
+  /cash-closures/{id}/close:
+    patch:
+      tags:
+        - Cash Closures
+      summary: Close a cash closure shift (ADMIN/CASHIER only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseCashClosureRequest"
+      responses:
+        200:
+          description: Cash closure shift closed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashClosureResponse"
+        404:
+          description: Shift not found
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden (Admin or Cashier only)

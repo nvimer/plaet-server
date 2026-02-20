@@ -1,0 +1,59 @@
+openapi: 3.0.0
+paths:
+  /expenses:
+    get:
+      tags:
+        - Expenses
+      summary: List expenses (ADMIN only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseListResponse"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden (Admin only)
+
+  /expenses/{id}:
+    delete:
+      tags:
+        - Expenses
+      summary: Delete an expense (ADMIN only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Expense deleted successfully
+        404:
+          description: Expense not found
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden (Admin only)

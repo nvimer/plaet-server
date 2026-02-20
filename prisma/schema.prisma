@@ -68,6 +68,11 @@ enum PaymentMethod {
   TICKET_BOOK
 }
 
+enum CashClosureStatus {
+  OPEN
+  CLOSED
+}
+
 // DATA-MODELS
 
 model Token {
@@ -144,8 +149,10 @@ model User {
 
   token Token[]
 
-  ordersTaken        Order[]   @relation("OrdersTakenByWaiter")
-  registeredExpenses Expense[] @relation("ExpensesRecordedBy")
+  ordersTaken         Order[]       @relation("OrdersTakenByWaiter")
+  registeredExpenses  Expense[]     @relation("ExpensesRecordedBy")
+  openedCashClosures  CashClosure[] @relation("OpenedBy")
+  closedCashClosures  CashClosure[] @relation("ClosedBy")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -154,7 +161,7 @@ model User {
   deletedAt DateTime? @map("deleted_at")
 
   // Email verification fields
-  emailVerified   Boolean  @default(false) @map("email_verified")
+  emailVerified   Boolean   @default(false) @map("email_verified")
   emailVerifiedAt DateTime? @map("email_verified_at")
 
   // Account lockout fields (brute force protection)
@@ -279,8 +286,8 @@ model StockAdjustment {
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 
   adjustmentType StockAdjustmentType @map("adjustment_type")
-  previousStock  Int                @map("previous_stock")
-  newStock       Int                @map("new_stock")
+  previousStock  Int                 @map("previous_stock")
+  newStock       Int                 @map("new_stock")
   quantity       Int
 
   reason  String?
@@ -418,27 +425,15 @@ model Payment {
   @@map("payments")
 }
 
-model ExpenseCategory {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-
-  expenses Expense[]
-
-  @@map("expense_categories")
-}
-
 model Expense {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
 
-  recordedById String @map("recorded_by_id")
-  recordedBy   User   @relation("ExpensesRecordedBy", fields: [recordedById], references: [id])
-
-  categoryId Int             @map("category_id")
-  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+  registeredById String @map("registered_by_id")
+  registeredBy   User   @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
 
   date        DateTime
   amount      Decimal  @db.Decimal(10, 2)
+  category    String
   description String?
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -448,6 +443,31 @@ model Expense {
   deletedAt DateTime? @map("deleted_at")
 
   @@map("expenses")
+}
+
+model CashClosure {
+  id String @id @default(uuid())
+
+  openedById String @map("opened_by_id")
+  openedBy   User   @relation("OpenedBy", fields: [openedById], references: [id])
+
+  closedById String? @map("closed_by_id")
+  closedBy   User?   @relation("ClosedBy", fields: [closedById], references: [id])
+
+  openingDate DateTime  @default(now()) @map("opening_date")
+  closingDate DateTime? @map("closing_date")
+
+  openingBalance  Decimal @map("opening_balance") @db.Decimal(10, 2)
+  expectedBalance Decimal @default(0) @map("expected_balance") @db.Decimal(10, 2)
+  actualBalance   Decimal? @map("actual_balance") @db.Decimal(10, 2)
+  difference      Decimal? @map("difference") @db.Decimal(10, 2)
+
+  status CashClosureStatus @default(OPEN)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("cash_closures")
 }
 
 model DailyTicketBookCode {

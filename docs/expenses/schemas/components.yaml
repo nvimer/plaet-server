@@ -1,0 +1,76 @@
+openapi: 3.0.0
+components:
+  schemas:
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        amount:
+          type: number
+          format: decimal
+          example: 50000.00
+        description:
+          type: string
+          example: "Pago de servicios públicos"
+        category:
+          type: string
+          example: "Servicios"
+        date:
+          type: string
+          format: date-time
+          example: "2024-03-20T10:00:00Z"
+        registeredById:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateExpenseRequest:
+      type: object
+      required:
+        - amount
+        - description
+        - category
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+          example: 50000.00
+        description:
+          type: string
+          example: "Pago de servicios públicos"
+        category:
+          type: string
+          example: "Servicios"
+        date:
+          type: string
+          format: date-time
+          example: "2024-03-20T10:00:00Z"
+
+    ExpenseResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/Expense"
+
+    ExpenseListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Expense"
