@@ -40,6 +40,6 @@ export const userSearchSchema = z.object({
   }),
 });
 
-export type UserIdParams = z.infer<typeof userIdSchema>["params"];
+type UserIdParams = z.infer<typeof userIdSchema>["params"];
 export type UpdateUserInput = z.infer<typeof updateUserSchema>["body"];
 export type UserSearchParams = z.infer<typeof userSearchSchema>["query"];
