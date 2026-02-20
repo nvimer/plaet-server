@@ -7,10 +7,8 @@ Welcome, fellow AI Agent! This document contains all the necessary context, rule
 Plaet API is an enterprise-level backend API for managing restaurant operations. It handles users, customers, tables, orders, menus, and inventory.
 
 ### Core Domain: The "Corrientazo" (Daily Menu)
-
-A critical feature of this system is the **Corrientazo** (Colombian daily lunch menu).
+A critical feature of this system is the **Corrientazo** (Colombian daily lunch menu). 
 **IMPORTANT:** The database schema (`prisma/schema.prisma`) uses a highly structured model for `DailyMenu`, differing from older documentation.
-
 - **Pricing:** The total price of a Corrientazo is calculated as `basePrice` + `price of the selected protein(s)`.
 - **Structure:** `DailyMenu` references specific `MenuItem`s through IDs (e.g., `soupOption1Id`, `principleOption1Id`) and `MenuCategory`s.
 - **Proteins:** `proteinIds` is an array of IDs representing the available meat/protein options for the day.
@@ -62,6 +60,9 @@ npm run prettier             # Format all files with Prettier
 npm run prisma:generate      # Generate Prisma client
 npm run prisma:migrate       # Deploy migrations
 npm run test:db:migrate      # Run migrations on test DB
+
+# Maintenance
+npx knip                 # Find unused files, exports, and dependencies
 ```
 
 ## 🤖 AI Agent Guidelines (Crucial)
@@ -69,7 +70,6 @@ npm run test:db:migrate      # Run migrations on test DB
 When acting on this codebase, adhere strictly to these rules:
 
 ### 1. Code Style & Formatting
-
 - **Strings:** ALWAYS use double quotes (`"`). Single quotes will fail ESLint.
 - **Semicolons:** ALWAYS required at the end of statements.
 - **Trailing commas:** Use `all` (include in multi-line objects/arrays).
@@ -77,22 +77,24 @@ When acting on this codebase, adhere strictly to these rules:
 - **Unused variables:** Prefix with `_` (e.g., `_req`, `_res`).
 
 ### 2. Error Handling & Logging
-
 - **Try/Catch:** Always use try/catch with async/await. NEVER use `.then()` without `.catch()`.
 - **Custom Errors:** Use `CustomError` with HTTP status codes for all business logic failures.
 - **Logging:** NEVER use `console.log()` in production code. Always use `import { logger } from "@/config/logger";` and `logger.info()`, `logger.error()`.
 
 ### 3. Database & Migrations
-
-- **Prisma Schema:** If you modify `prisma/schema.prisma`, you MUST run `npx prisma migrate dev --name <migration_name>` to generate a migration file.
+- **Prisma Schema:** If you modify `prisma/schema.prisma`, you MUST run `npx prisma migrate dev --name <migration_name>` to generate a migration file. 
 - **Repository Pattern:** Do not call Prisma directly in Controllers or Services if a Repository exists. Always pass through the Repository layer.
 - **Transactions:** Use Prisma transactions for multi-table operations (e.g., creating an order and deducting stock).
 
 ### 4. Testing
-
 - If you add a feature, add tests.
-- Maintain at least 80% coverage.
+- Maintain at least 80% coverage. 
 - Before assuming a task is done, run `npm run eslint-check-only` and `npm run build` to verify no breaking changes.
+
+### 5. Maintenance & Cleanup
+- **Dead Code:** Periodically run `npx knip` to find unused exports, files, and dependencies.
+- **Exports:** Avoid exporting classes or types if they are only used within the same module. Prefer `export default instance` for Controllers, Services, and Repositories to keep the public API minimal.
+- **GitHub Actions:** Ensure `.github/workflows/` files have correct YAML indentation.
 
 ## 🔐 Authentication Module Documentation
 
@@ -108,7 +110,6 @@ The auth module uses JWT tokens stored in `httpOnly` cookies with token blacklis
 Login sets cookies. Make sure to pass cookies to protected routes when testing with curl or Postman.
 
 ## 📝 Best Practices For AI Output
-
 - Do not repeat file contents unnecessarily. Provide precise replacements.
 - If an API response structure is changed, update the Swagger docs located in `docs/` and `src/config/swagger.ts`.
 - Understand the existing validation schemas (Zod) in `*.validator.ts` files before modifying endpoints.
