@@ -21,7 +21,8 @@ export default [
       "*.log",
       ".env*",
     ],
-
+  },
+  {
     // --- files ---
     // Especifica a qué archivos se aplica este bloque de configuración.
     // "**/*.ts" significa "todos los archivos con extensión .ts en cualquier subcarpeta".
