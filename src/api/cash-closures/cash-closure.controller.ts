@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { CashClosureService } from "./cash-closure.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpStatus } from "../../utils/httpStatus.enum";
-import { OpenCashClosureDto, CloseCashClosureDto } from "./cash-closure.validator";
+import {
+  OpenCashClosureDto,
+  CloseCashClosureDto,
+} from "./cash-closure.validator";
 
 export class CashClosureController {
   private service: CashClosureService;
@@ -22,7 +25,7 @@ export class CashClosureController {
 
   open = asyncHandler(async (req: Request, res: Response) => {
     const data: OpenCashClosureDto = req.body;
-    const userId = (req.user as any).id;
+    const userId = req.user.id;
 
     const closure = await this.service.openShift(data, userId);
 
@@ -35,7 +38,7 @@ export class CashClosureController {
   close = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { actualBalance }: CloseCashClosureDto = req.body;
-    const userId = (req.user as any).id;
+    const userId = req.user.id;
 
     const closure = await this.service.closeShift(id, actualBalance, userId);
 

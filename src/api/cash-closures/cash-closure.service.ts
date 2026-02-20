@@ -21,7 +21,7 @@ export class CashClosureService {
     if (existingOpen) {
       throw new CustomError(
         "There is already an open shift. Please close it before opening a new one.",
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -32,19 +32,25 @@ export class CashClosureService {
     const closure = await this.repository.findById(id);
 
     if (!closure) {
-      throw new CustomError("Cash closure shift not found.", HttpStatus.NOT_FOUND);
+      throw new CustomError(
+        "Cash closure shift not found.",
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     if (closure.status === CashClosureStatus.CLOSED) {
-      throw new CustomError("This shift is already closed.", HttpStatus.BAD_REQUEST);
+      throw new CustomError(
+        "This shift is already closed.",
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const closingDate = new Date();
-    
+
     // Sum all orders PAID from openingDate to closingDate
     const totalSales = await this.repository.sumPaidOrdersTotalAmount(
       closure.openingDate,
-      closingDate
+      closingDate,
     );
 
     const expectedBalance = Number(closure.openingBalance) + totalSales;

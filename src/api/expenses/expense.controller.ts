@@ -13,7 +13,7 @@ export class ExpenseController {
 
   create = asyncHandler(async (req: Request, res: Response) => {
     const data: CreateExpenseDto = req.body;
-    const userId = (req.user as any).id;
+    const userId = req.user.id;
 
     const expense = await this.service.createExpense(data, userId);
 

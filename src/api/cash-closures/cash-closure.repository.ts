@@ -41,13 +41,16 @@ export class CashClosureRepository {
     });
   }
 
-  async close(id: string, data: { 
-    actualBalance: number; 
-    expectedBalance: number; 
-    difference: number; 
-    closedById: string;
-    closingDate: Date;
-  }) {
+  async close(
+    id: string,
+    data: {
+      actualBalance: number;
+      expectedBalance: number;
+      difference: number;
+      closedById: string;
+      closingDate: Date;
+    },
+  ) {
     return prisma.cashClosure.update({
       where: { id },
       data: {

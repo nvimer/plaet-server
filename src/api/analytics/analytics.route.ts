@@ -23,7 +23,7 @@ router.use(roleMiddleware([RoleName.ADMIN]));
 router.get(
   "/daily-summary",
   validate(getDailySummarySchema),
-  controller.getDailySummary
+  controller.getDailySummary,
 );
 
 export default router;

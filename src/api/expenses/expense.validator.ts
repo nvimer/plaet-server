@@ -5,7 +5,10 @@ export const createExpenseSchema = z.object({
     amount: z.number().positive("Amount must be positive"),
     description: z.string().min(1, "Description is required"),
     category: z.string().min(1, "Category is required"),
-    date: z.string().datetime({ message: "Invalid date format (ISO 8601 required)" }).optional(),
+    date: z
+      .string()
+      .datetime({ message: "Invalid date format (ISO 8601 required)" })
+      .optional(),
   }),
 });
 
@@ -18,4 +21,6 @@ export const getExpensesQuerySchema = z.object({
 });
 
 export type CreateExpenseDto = z.infer<typeof createExpenseSchema>["body"];
-export type GetExpensesQueryDto = z.infer<typeof getExpensesQuerySchema>["query"];
+export type GetExpensesQueryDto = z.infer<
+  typeof getExpensesQuerySchema
+>["query"];

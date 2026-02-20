@@ -13,9 +13,18 @@ export class AnalyticsService {
     const startDate = date.startOf("day").toDate();
     const endDate = date.endOf("day").toDate();
 
-    const salesSummary = await this.repository.getSalesSummary(startDate, endDate);
-    const topProducts = await this.repository.getTopProducts(startDate, endDate);
-    const totalExpenses = await this.repository.getTotalExpenses(startDate, endDate);
+    const salesSummary = await this.repository.getSalesSummary(
+      startDate,
+      endDate,
+    );
+    const topProducts = await this.repository.getTopProducts(
+      startDate,
+      endDate,
+    );
+    const totalExpenses = await this.repository.getTotalExpenses(
+      startDate,
+      endDate,
+    );
 
     const netBalance = salesSummary.totalSold - totalExpenses;
 

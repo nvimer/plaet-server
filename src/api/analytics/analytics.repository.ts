@@ -16,19 +16,22 @@ export class AnalyticsRepository {
       },
     });
 
-    const totalSold = orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
+    const totalSold = orders.reduce(
+      (sum, order) => sum + Number(order.totalAmount),
+      0,
+    );
     const orderCount = orders.length;
 
-    const breakdown = {
+    const breakdown: Record<string, number> = {
       CASH: 0,
       NEQUI: 0,
       TICKET_BOOK: 0,
     };
 
-    orders.forEach(order => {
-      order.payments.forEach(payment => {
+    orders.forEach((order) => {
+      order.payments.forEach((payment) => {
         if (payment.method in breakdown) {
-          (breakdown as any)[payment.method] += Number(payment.amount);
+          breakdown[payment.method] += Number(payment.amount);
         }
       });
     });
@@ -56,9 +59,12 @@ export class AnalyticsRepository {
       },
     });
 
-    const productStats: Record<number, { id: number; name: string; quantity: number; totalRevenue: number }> = {};
+    const productStats: Record<
+      number,
+      { id: number; name: string; quantity: number; totalRevenue: number }
+    > = {};
 
-    orderItems.forEach(item => {
+    orderItems.forEach((item) => {
       if (!item.menuItemId) return;
 
       if (!productStats[item.menuItemId]) {
@@ -71,7 +77,8 @@ export class AnalyticsRepository {
       }
 
       productStats[item.menuItemId].quantity += item.quantity;
-      productStats[item.menuItemId].totalRevenue += Number(item.priceAtOrder) * item.quantity;
+      productStats[item.menuItemId].totalRevenue +=
+        Number(item.priceAtOrder) * item.quantity;
     });
 
     return Object.values(productStats)

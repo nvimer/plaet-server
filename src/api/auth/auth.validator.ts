@@ -143,4 +143,4 @@ export const changePasswordSchema = z.object({
     }),
 });
 
-type ChangePasswordInput = z.infer<typeof changePasswordSchema>["body"];
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>["body"];
