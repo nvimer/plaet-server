@@ -1,4 +1,5 @@
 import passport from "passport";
+import { logger } from "../config/logger";
 import { HttpStatus } from "../utils/httpStatus.enum";
 import { NextFunction, Request, Response } from "express";
 import { AuthenticatedUser } from "../types/express";
@@ -43,12 +44,12 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
         return next(err);
       }
       if (!user) {
-        console.log(
+        logger.warn(
           `[AUTH MIDDLEWARE] No user - info.name: ${info?.name}, info.message: ${info?.message}`,
         );
 
         if (info?.name === "TokenExpiredError") {
-          console.log(
+          logger.warn(
             "[AUTH MIDDLEWARE] TokenExpiredError detected - sending TOKEN_EXPIRED",
           );
           return next(
@@ -60,7 +61,7 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
           );
         }
 
-        console.log("[AUTH MIDDLEWARE] Sending UNAUTHORIZED_ACCESS");
+        logger.warn("[AUTH MIDDLEWARE] Sending UNAUTHORIZED_ACCESS");
         return next(
           new CustomError(
             info?.message || "Unauthorized. Please login and retry",

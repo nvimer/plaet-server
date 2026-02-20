@@ -65,5 +65,7 @@ export async function seedCategories() {
     logger.info(` 📝 Menu Category "${category.name}" seeded`);
   }
 
-  logger.info(`✅ ${categoriesConfig.length} menu categories seeded successfully!`);
+  logger.info(
+    `✅ ${categoriesConfig.length} menu categories seeded successfully!`,
+  );
 }

@@ -1,4 +1,5 @@
 import { User } from "@prisma/client";
+import { logger } from "../../config/logger";
 import { LoginInput } from "./auth.validator";
 import { AuthServiceInterface } from "./interfaces/auth.service.interface";
 import { UserServiceInterface } from "../users/interfaces/user.service.interface";
@@ -106,7 +107,7 @@ export class AuthService implements AuthServiceInterface {
       );
     } catch (error) {
       // Log but don't expose error
-      console.error("[AUTH] Error handling failed login:", error);
+      logger.error("[AUTH] Error handling failed login:", { error });
     }
   }
 
@@ -128,7 +129,7 @@ export class AuthService implements AuthServiceInterface {
       );
     } catch (error) {
       // Log but don't expose error
-      console.error("[AUTH] Error resetting failed login attempts:", error);
+      logger.error("[AUTH] Error resetting failed login attempts:", { error });
     }
   }
 

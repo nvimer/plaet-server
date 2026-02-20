@@ -1,6 +1,5 @@
 import rateLimit from "express-rate-limit";
 import { logger } from "../config/logger";
-import { Request, Response, NextFunction } from "express";
 
 /**
  * Rate limiting configuration for authentication endpoints

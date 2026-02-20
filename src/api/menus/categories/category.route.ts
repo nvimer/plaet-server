@@ -1,14 +1,7 @@
 import { Router } from "express";
 import categoryController from "./category.controller";
 import { validate } from "../../../middlewares/validation.middleware";
-import { authJwt } from "../../../middlewares/auth.middleware";
-import {
-  categoryIdSchema,
-  createMenuCategorySchema,
-  updateMenuCategorySchema,
-  categorySearchSchema,
-  bulkCategorySchema,
-} from "./category.validator";
+import { categoryIdSchema, categorySearchSchema } from "./category.validator";
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
 
 const router = Router();
