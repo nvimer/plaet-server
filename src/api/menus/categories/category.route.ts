@@ -37,12 +37,15 @@ router.get(
 /**
  * POST /categories
  * Creates a new menu category.
+ * (DISABLED: Categories are managed via seeds for now)
  */
+/*
 router.post(
   "/",
   validate(createMenuCategorySchema),
   categoryController.postCategory,
 );
+*/
 
 /**
  * GET /categories/:id
@@ -53,34 +56,40 @@ router.get("/:id", validate(categoryIdSchema), categoryController.getCategory);
 /**
  * PATCH /categories/:id
  * Updates an existing menu category.
- *
+ * (DISABLED: Categories are managed via seeds for now)
  */
+/*
 router.patch(
   "/:id",
   validate(categoryIdSchema),
   validate(updateMenuCategorySchema),
   categoryController.patchCategory,
 );
+*/
 
 /**
  * DELETE /categories/:id
- * Soft deletes a menu category by setting the deleted flag to true.
+ * (DISABLED)
  */
+/*
 router.delete(
   "/:id",
   validate(categoryIdSchema),
   categoryController.deleteCategory,
 );
+*/
 
 /**
  * DELETE /categories/bulk
- * Soft deletes multiple menu categories in bulk.
+ * (DISABLED)
  */
+/*
 router.delete(
   "/bulk",
   authJwt,
   validate(bulkCategorySchema),
   categoryController.bulkDeleteCategories,
 );
+*/
 
 export default router;
