@@ -225,6 +225,7 @@ src/
 - **Multiple orderBy: use array `[{field: 'asc'}, {field2: 'asc'}]`**
 - Handle errors: P2002 (duplicate), P2025 (not found)
 - Use transactions for multi-table ops
+- **⚠️ IMPORTANT: MIGRATIONS ⚠️** Always generate a migration file (`npx prisma migrate dev` or `npx prisma migrate diff`) after modifying `schema.prisma` BEFORE committing and pushing to production. If you forget, the production database will not receive the schema changes.
 
 ### API Response Format
 
