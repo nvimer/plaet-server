@@ -40,6 +40,9 @@ export const updateDailyMenuBodySchema = z.object({
 
   // All available protein IDs (array replaces proteinOptions)
   allProteinIds: z.array(z.number().int().positive()).optional(),
+
+  // Optional created date for historical data
+  createdAt: z.coerce.date().optional(),
 });
 
 /**

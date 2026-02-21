@@ -80,6 +80,9 @@ export interface UpdateDailyMenuInput {
 
   // All available protein IDs (replaces proteinOptions)
   allProteinIds?: number[];
+
+  // Optional creation date for historical data
+  createdAt?: Date;
 }
 
 /**

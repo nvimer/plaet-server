@@ -140,6 +140,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
       dessertOption1Id: data.dessertOptions?.option1Id,
       dessertOption2Id: data.dessertOptions?.option2Id,
       proteinIds: data.allProteinIds || [],
+      createdAt: data.createdAt,
     };
   }
 

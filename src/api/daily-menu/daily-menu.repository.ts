@@ -222,6 +222,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         dessertOption1Id: data.dessertOption1Id,
         dessertOption2Id: data.dessertOption2Id,
         proteinIds: data.proteinIds || [],
+        createdAt: data.createdAt,
       },
     });
 

@@ -59,6 +59,7 @@ export interface CreateDailyMenuData {
   dessertOption1Id?: number | null;
   dessertOption2Id?: number | null;
   proteinIds?: number[];
+  createdAt?: Date;
 }
 
 /**
