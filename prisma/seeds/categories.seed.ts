@@ -30,7 +30,7 @@ export const categoriesConfig = [
     order: 5,
   },
   {
-    name: "Jugos",
+    name: "Bebidas",
     description: "Bebidas y jugos naturales",
     order: 6,
   },
