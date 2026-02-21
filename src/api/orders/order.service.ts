@@ -153,6 +153,14 @@ export class OrderService implements OrderServiceInterface {
               menuItem: true,
             },
           },
+          table: true,
+          waiter: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
