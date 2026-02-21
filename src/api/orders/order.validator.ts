@@ -67,6 +67,7 @@ export const createOrderSchema = z.object({
       .string()
       .max(100, "WhatsApp Order ID cannot exceed 100 characters")
       .optional(),
+    createdAt: z.coerce.date().optional(),
   }),
 });
 
