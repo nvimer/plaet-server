@@ -68,6 +68,16 @@ paths:
                   isExtra: true
                   isAvailable: true
                   inventoryType: "UNLIMITED"
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CreateItemRequest"
+                - type: object
+                  properties:
+                    image:
+                      type: string
+                      format: binary
+                      description: Optional image file upload
 
       responses:
         201:

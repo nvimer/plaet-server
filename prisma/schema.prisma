@@ -197,6 +197,7 @@ model Profile {
   user   User   @relation(fields: [userId], references: [id])
 
   photoUrl       String?   @map("photo_url")
+  imagePublicId  String?   @map("image_public_id")
   birthDate      DateTime? @map("birthDate")
   identification String?
   address        String?
@@ -259,6 +260,7 @@ model MenuItem {
   price       Decimal @db.Decimal(10, 2)
   isAvailable Boolean @default(true) @map("is_available")
   imageUrl    String? @map("image_url")
+  imagePublicId String? @map("image_public_id")
 
   // Inventory management
   inventoryType       String  @default("UNLIMITED") @map("inventory_type")

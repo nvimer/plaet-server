@@ -27,6 +27,7 @@ import {
 } from "../../../types/prisma.types";
 import { PrismaTransaction } from "../../../types/prisma-transaction.types";
 import { getPrismaClient } from "../../../database/prisma";
+import { storageService } from "../../../services/storage.service";
 
 /**
  * Menu Item Service
@@ -677,6 +678,7 @@ export class ItemService implements ItemServiceInterface {
       price?: Prisma.Decimal;
       isAvailable?: boolean;
       imageUrl?: string | null;
+      imagePublicId?: string | null;
       inventoryType?: string;
       stockQuantity?: number | null;
       lowStockAlert?: number | null;
@@ -693,8 +695,27 @@ export class ItemService implements ItemServiceInterface {
       updateData.price = new Prisma.Decimal(data.price);
     if (data.isAvailable !== undefined)
       updateData.isAvailable = data.isAvailable;
-    if (data.imageUrl !== undefined)
+    if (data.imageUrl !== undefined) {
       updateData.imageUrl = data.imageUrl || null;
+      // If updating image, handle public ID and cleanup
+      if (data.imagePublicId) {
+        updateData.imagePublicId = data.imagePublicId;
+        const existingItem = await this.findMenuItemByIdOrFail(id);
+        if (
+          existingItem.imagePublicId &&
+          existingItem.imagePublicId !== data.imagePublicId
+        ) {
+          await storageService.deleteImage(existingItem.imagePublicId);
+        }
+      } else if (data.imageUrl === null) {
+        // If clearing image, also clear public ID and delete file
+        const existingItem = await this.findMenuItemByIdOrFail(id);
+        if (existingItem.imagePublicId) {
+          await storageService.deleteImage(existingItem.imagePublicId);
+          updateData.imagePublicId = null;
+        }
+      }
+    }
     if (data.inventoryType !== undefined)
       updateData.inventoryType = data.inventoryType;
     if (data.lowStockAlert !== undefined)

@@ -35,15 +35,24 @@ export const createItemSchema = z.object({
       .int()
       .positive("Category ID must be a positive number"),
     price: z.coerce.number().positive("Price must be positive"),
-    isAvailable: z.boolean().optional().default(true),
+    isAvailable: z
+      .union([z.boolean(), z.string()])
+      .transform((val) => val === true || val === "true")
+      .optional()
+      .default(true),
     imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
+    imagePublicId: z.string().optional(),
     // Inventory management fields
     inventoryType: z
       .nativeEnum(InventoryType)
       .optional()
       .default(InventoryType.UNLIMITED),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
-    autoMarkUnavailable: z.boolean().optional().default(true),
+    autoMarkUnavailable: z
+      .union([z.boolean(), z.string()])
+      .transform((val) => val === true || val === "true")
+      .optional()
+      .default(true),
   }),
 });
 
@@ -216,11 +225,18 @@ export const updateItemSchema = z.object({
       .optional(),
     categoryId: z.coerce.number().int().positive().optional(),
     price: z.coerce.number().positive("Price must be positive").optional(),
-    isAvailable: z.boolean().optional(),
+    isAvailable: z
+      .union([z.boolean(), z.string()])
+      .transform((val) => val === true || val === "true")
+      .optional(),
     imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
+    imagePublicId: z.string().optional(),
     inventoryType: z.nativeEnum(InventoryType).optional(),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
-    autoMarkUnavailable: z.boolean().optional(),
+    autoMarkUnavailable: z
+      .union([z.boolean(), z.string()])
+      .transform((val) => val === true || val === "true")
+      .optional(),
   }),
 });
 

@@ -274,6 +274,12 @@ class ItemController {
     // Extract validated item data from request body
     const data: CreateItemInput = req.body;
 
+    // Handle file upload
+    if (req.file) {
+      data.imageUrl = req.file.path;
+      data.imagePublicId = req.file.filename;
+    }
+
     // Create new item through service layer
     const item = await this.itemService.createItem(data);
 
@@ -567,6 +573,12 @@ class ItemController {
   patchItem = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const data: UpdateItemInput = req.body;
+
+    // Handle file upload
+    if (req.file) {
+      data.imageUrl = req.file.path;
+      data.imagePublicId = req.file.filename;
+    }
 
     const item = await this.itemService.updateItem(id, data);
 

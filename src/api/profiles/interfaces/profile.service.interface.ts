@@ -11,4 +11,8 @@ export interface ProfileServiceInterface {
   findById(id: string): Promise<UserWithProfile>;
   updateUser(id: string, data: UpdateProfileInput): Promise<UserWithProfile>;
   getMyProfile(id: string): Promise<UserWithProfile>;
+  updatePhoto(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<UserWithProfile>;
 }

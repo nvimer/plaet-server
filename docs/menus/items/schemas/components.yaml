@@ -59,11 +59,6 @@ components:
           nullable: true
           description: Current stock quantity (null for UNLIMITED items)
           example: 18
-          type: integer
-          format: int32
-          nullable: true
-          description: Initial stock quantity set at day start
-          example: 30
         lowStockAlert:
           type: integer
           format: int32
@@ -165,6 +160,40 @@ components:
           type: boolean
           description: Auto-block item when stock reaches zero (only for TRACKED)
           example: true
+
+    UpdateItemRequest:
+      type: object
+      description: Request body for updating a menu item (all fields optional)
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+          minLength: 10
+          maxLength: 500
+        categoryId:
+          type: integer
+          minimum: 1
+        price:
+          type: number
+          minimum: 0
+        isExtra:
+          type: boolean
+        isAvailable:
+          type: boolean
+        imageUrl:
+          type: string
+          format: uri
+        inventoryType:
+          type: string
+          enum: [TRACKED, UNLIMITED]
+        lowStockAlert:
+          type: integer
+          minimum: 0
+        autoMarkUnavailable:
+          type: boolean
 
     MenuItemResponse:
       type: object

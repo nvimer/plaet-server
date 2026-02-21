@@ -1,0 +1,31 @@
+openapi: 3.0.0
+paths:
+  /profile/me/photo:
+    patch:
+      tags:
+        - Profiles
+      summary: Upload/Update profile photo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: Profile photo (jpg, png, webp, max 5MB)
+      responses:
+        200:
+          description: Photo updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        400:
+          description: Invalid file or request
+        401:
+          description: Unauthorized

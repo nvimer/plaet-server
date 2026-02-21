@@ -5,6 +5,7 @@ import { HttpStatus } from "../../utils/httpStatus.enum";
 import { PaginationParams } from "../../interfaces/pagination.interfaces";
 import { UpdateProfileInput } from "./profile.validator";
 import { logger } from "../../config/logger";
+import { CustomError } from "../../types/custom-errors";
 
 /**
  * Profile Controller
@@ -126,6 +127,37 @@ class ProfileController {
       success: true,
       message: "Profile fetched successfully",
       data: data,
+    });
+  });
+
+  /**
+   * PATCH /profiles/me/photo
+   *
+   * Uploads or updates the authenticated user's profile photo.
+   *
+   * Headers:
+   * - Authorization: Bearer <JWT_TOKEN> (required)
+   * - Content-Type: multipart/form-data
+   *
+   * Body:
+   * - photo: Image file (jpg, png, webp)
+   *
+   * Response:
+   * - 200: Photo updated successfully
+   * - 400: File validation error
+   */
+  uploadPhoto = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) {
+      throw new CustomError("No file uploaded", HttpStatus.BAD_REQUEST);
+    }
+
+    const userId = req.user.id;
+    const updatedProfile = await profileService.updatePhoto(userId, req.file);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Profile photo updated successfully",
+      data: updatedProfile,
     });
   });
 }

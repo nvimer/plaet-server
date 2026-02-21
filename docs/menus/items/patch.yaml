@@ -1,0 +1,45 @@
+openapi: 3.0.0
+paths:
+  /menu/items/{id}:
+    patch:
+      tags:
+        - Menu Items
+      summary: Update a menu item
+      description: |
+        Updates an existing menu item. Supports partial updates.
+        Can upload a new image via multipart/form-data.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Menu item ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemRequest"
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UpdateItemRequest"
+                - type: object
+                  properties:
+                    image:
+                      type: string
+                      format: binary
+                      description: Optional new image file
+      responses:
+        200:
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItemResponse"
+        400:
+          description: Validation error
+        404:
+          description: Item not found

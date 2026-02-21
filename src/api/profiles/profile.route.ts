@@ -4,6 +4,7 @@ import { profileIdSchema, updateProfileSchema } from "./profile.validator";
 import profileController from "./profile.controller";
 import { paginationQuerySchema } from "../../utils/pagination.schema";
 import { authJwt } from "../../middlewares/auth.middleware";
+import { uploadSingle } from "../../middlewares/upload.middleware";
 
 const router = Router();
 
@@ -17,8 +18,18 @@ router.get("/", validate(paginationQuerySchema), profileController.getProfiles);
  * GET /profiles/me
  * Retrieves the authenticated user's own profile
  */
-
 router.get("/me", authJwt, profileController.getMyProfile);
+
+/**
+ * PATCH /profiles/me/photo
+ * Uploads/Updates the authenticated user's profile photo.
+ */
+router.patch(
+  "/me/photo",
+  authJwt,
+  uploadSingle("photo"),
+  profileController.uploadPhoto,
+);
 
 /**
  * GET /profiles/:id

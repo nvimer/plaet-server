@@ -79,6 +79,31 @@ class ProfileRepository implements ProfileRepositoryInterface {
       include: { profile: true },
     });
   }
+
+  /**
+   * Updates user profile photo specifically
+   * @param userId The ID of the user
+   * @param photoUrl The new photo URL from Cloudinary
+   * @param imagePublicId The Cloudinary public_id for future deletion
+   */
+  async updatePhoto(
+    userId: string,
+    photoUrl: string,
+    imagePublicId: string,
+  ): Promise<UserWithProfile> {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        profile: {
+          update: {
+            photoUrl,
+            imagePublicId,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+  }
 }
 
 export default new ProfileRepository();

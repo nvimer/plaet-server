@@ -18,6 +18,7 @@ import {
 } from "./item.validator";
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
 import { authJwt } from "../../../middlewares/auth.middleware";
+import { uploadSingle } from "../../../middlewares/upload.middleware";
 
 const router = Router();
 
@@ -58,7 +59,12 @@ router.get(
  * This endpoint handles menu item creation with comprehensive validation
  * and ensures proper data structure and business rules.
  */
-router.post("/", validate(createItemSchema), itemController.postItem);
+router.post(
+  "/",
+  uploadSingle("image"),
+  validate(createItemSchema),
+  itemController.postItem,
+);
 
 /**
  * POST /items/stock/daily-reset
@@ -184,6 +190,11 @@ router.get("/stock-summary", authJwt, itemController.getStockSummary);
  * Updates menu item information. All fields are optional to support
  * partial updates. This endpoint allows modifying any menu item field.
  */
-router.patch("/:id", validate(updateItemSchema), itemController.patchItem);
+router.patch(
+  "/:id",
+  uploadSingle("image"),
+  validate(updateItemSchema),
+  itemController.patchItem,
+);
 
 export default router;

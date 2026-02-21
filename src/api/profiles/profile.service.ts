@@ -10,6 +10,7 @@ import {
 } from "../../interfaces/pagination.interfaces";
 import { UpdateProfileInput } from "./profile.validator";
 import { UserWithProfile } from "../../types/prisma.types";
+import { storageService } from "../../services/storage.service";
 
 /**
  * Profile Service
@@ -76,6 +77,30 @@ export class ProfileServices implements ProfileServiceInterface {
 
   async getMyProfile(id: string): Promise<UserWithProfile> {
     return this.findByIdOrFail(id);
+  }
+
+  /**
+   * Updates the user's profile photo.
+   * Uploads new photo to Cloudinary (handled by middleware) and updates DB.
+   * Deletes the old photo from Cloudinary if it exists.
+   */
+  async updatePhoto(
+    userId: string,
+    file: Express.Multer.File, // Using generic type, assumed to be handled by multer
+  ): Promise<UserWithProfile> {
+    const user = await this.findByIdOrFail(userId);
+
+    // If user already has a photo, delete it from Cloudinary to save space
+    if (user.profile?.imagePublicId) {
+      await storageService.deleteImage(user.profile.imagePublicId);
+    }
+
+    // The file is already uploaded by the middleware.
+    // multer-storage-cloudinary provides 'path' as the secure_url and 'filename' as public_id
+    const photoUrl = file.path;
+    const imagePublicId = file.filename;
+
+    return this.profileRepository.updatePhoto(userId, photoUrl, imagePublicId);
   }
 }
 
