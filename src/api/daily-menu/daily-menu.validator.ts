@@ -49,8 +49,10 @@ export const updateDailyMenuBodySchema = z.object({
  * Schema for date parameter in URL
  */
 export const dailyMenuDateParamSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: "Date must be in YYYY-MM-DD format",
+  params: z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: "Date must be in YYYY-MM-DD format",
+    }),
   }),
 });
 
