@@ -40,7 +40,7 @@ export const orderIdSchema = z.object({
 const orderItemSchema = z.object({
   menuItemId: z.number().int().positive("Menu item ID must be positive"),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
-  notes: z.string().max(200, "Notes cannot exceed 200 characters").optional(),
+  notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional(),
   // SET_LUNCH SPECIFIC FIELDS
   isSubstitution: z.boolean().optional(),
   originalItemId: z.number().int().positive().optional(),
@@ -62,7 +62,7 @@ export const createOrderSchema = z.object({
     items: z
       .array(orderItemSchema)
       .min(1, "Order must contain at least one item."),
-    notes: z.string().max(500, "Notes cannot exceed 500 characters").optional(),
+    notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional(),
     whatsappOrderId: z
       .string()
       .max(100, "WhatsApp Order ID cannot exceed 100 characters")
@@ -122,7 +122,7 @@ export const batchCreateOrderSchema = z.object({
             .min(1, "Order must contain at least one item."),
           notes: z
             .string()
-            .max(500, "Notes cannot exceed 500 characters")
+            .max(1000, "Notes cannot exceed 1000 characters")
             .optional(),
         }),
       )

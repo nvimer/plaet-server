@@ -237,7 +237,7 @@ components:
             $ref: "#/components/schemas/CreateOrderItemRequest"
         notes:
           type: string
-          maxLength: 500
+          maxLength: 1000
           description: General order notes or instructions
           example: "Customer prefers window seat"
         whatsappOrderId:
@@ -270,7 +270,7 @@ components:
           example: 2
         notes:
           type: string
-          maxLength: 200
+          maxLength: 1000
           description: Special instructions for this item
           example: "No onions, extra spicy"
 
