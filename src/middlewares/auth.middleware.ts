@@ -94,3 +94,55 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
     },
   )(req, res, next);
 };
+
+// Middleware for optional JWT authentication
+// Tries to authenticate, but doesn't error if token is invalid/missing
+export const authJwtOptional = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  passport.authenticate(
+    "jwt",
+    { session: false },
+    async (
+      err: Error | null,
+      user: AuthenticatedUser | false,
+      info: PassportAuthInfoExtended | undefined,
+    ) => {
+      if (err) {
+        logger.warn(
+          `[AUTH OPTIONAL] Error during authentication: ${err.message}`,
+        );
+        return next();
+      }
+
+      if (!user) {
+        logger.debug(
+          `[AUTH OPTIONAL] No user authenticated - info: ${JSON.stringify(info)}`,
+        );
+        return next();
+      }
+
+      // Check if token is blacklisted
+      const tokenString = extractTokenFromRequest(req);
+      if (tokenString) {
+        try {
+          const isBlacklisted =
+            await tokenService.isTokenBlacklisted(tokenString);
+          if (isBlacklisted) {
+            logger.debug("[AUTH OPTIONAL] Token is blacklisted");
+            return next();
+          }
+        } catch (error) {
+          logger.error(`[AUTH OPTIONAL] Error checking blacklist: ${error}`);
+          return next();
+        }
+      }
+
+      // If valid user and token not blacklisted, attach user
+      req.user = user;
+      next();
+    },
+  )(req, res, next);
+};

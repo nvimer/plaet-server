@@ -10,7 +10,7 @@ import {
   resendVerificationSchema,
   changePasswordSchema,
 } from "./auth.validator";
-import { authJwt } from "../../middlewares/auth.middleware";
+import { authJwt, authJwtOptional } from "../../middlewares/auth.middleware";
 import {
   authRateLimit,
   refreshTokenRateLimit,
@@ -344,14 +344,8 @@ router.post(
  *                 message:
  *                   type: string
  *                   example: "Logged out successfully"
- *       401:
- *         description: Unauthorized - invalid or missing token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/logout", authJwt, authController.logout);
+router.post("/logout", authJwtOptional, authController.logout);
 
 /**
  * @swagger

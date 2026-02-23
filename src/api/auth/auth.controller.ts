@@ -147,7 +147,9 @@ class AuthController {
   logout = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
 
-    await this.tokenService.logout(userId);
+    if (userId) {
+      await this.tokenService.logout(userId);
+    }
 
     // Clear httpOnly cookies
     res.clearCookie("accessToken", {
