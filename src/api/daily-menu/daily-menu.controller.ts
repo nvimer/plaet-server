@@ -37,78 +37,62 @@ class DailyMenuController {
 
   /**
    * GET /daily-menu/:date
-   * Get daily menu for a specific date with full item details
+   * Get daily menu for a specific date
    */
-  getMenuByDate = asyncHandler(async (req: Request, res: Response) => {
+  getMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
-    const targetDate = new Date(date);
+    const createdAt = new Date(date + 'T12:00:00.000Z');
 
-    if (isNaN(targetDate.getTime())) {
-      res.status(HttpStatus.BAD_REQUEST).json({
-        success: false,
-        message: "Invalid date format",
-      });
-      return;
-    }
-
-    const menu = await this.service.getMenuByDate(targetDate);
+    const menu = await this.service.getMenuByCreatedAt(createdAt);
 
     if (!menu) {
-      res.status(HttpStatus.OK).json({
-        success: true,
-        message: `No daily menu configured for ${date}`,
-        data: null,
+      res.status(HttpStatus.NOT_FOUND).json({
+        success: false,
+        message: `Daily menu not found for date: ${date}`,
+        errorCode: "DAILY_MENU_NOT_FOUND",
       });
       return;
     }
 
     res.status(HttpStatus.OK).json({
       success: true,
-      message: "Daily menu retrieved successfully",
       data: menu,
     });
   });
 
   /**
-   * PUT /daily-menu
-   * Update or create daily menu for today with item references
+   * POST /daily-menu/today
+   * Update or create today's daily menu
    */
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
-
-    const updatedMenu = await this.service.updateTodayMenu(data);
+    const menu = await this.service.updateTodayMenu(data as any);
 
     res.status(HttpStatus.OK).json({
       success: true,
-      message: "Daily menu updated successfully",
-      data: updatedMenu,
+      message: "Today's daily menu updated successfully",
+      data: menu,
     });
   });
 
   /**
-   * PUT /daily-menu/:date
-   * Update or create daily menu for a specific date with item references
+   * POST /daily-menu/:date
+   * Update daily menu for a specific date
    */
-  updateMenuByDate = asyncHandler(async (req: Request, res: Response) => {
+  updateMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
+    const createdAt = new Date(date + 'T12:00:00.000Z');
     const data: UpdateDailyMenuBodyInput = req.body;
 
-    const targetDate = new Date(date);
-
-    if (isNaN(targetDate.getTime())) {
-      res.status(HttpStatus.BAD_REQUEST).json({
-        success: false,
-        message: "Invalid date format",
-      });
-      return;
-    }
-
-    const updatedMenu = await this.service.updateMenuByDate(targetDate, data);
+    const menu = await this.service.updateMenuByCreatedAt(
+      createdAt,
+      data as any,
+    );
 
     res.status(HttpStatus.OK).json({
       success: true,
-      message: "Daily menu updated successfully",
-      data: updatedMenu,
+      message: `Daily menu for ${date} updated successfully`,
+      data: menu,
     });
   });
 }

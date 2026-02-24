@@ -133,6 +133,7 @@ class OrderRepository implements OrderRepositoryInterface {
         waiterId,
         status: OrderStatus.PENDING,
         totalAmount: 0,
+        createdAt: orderData.createdAt, // Support historical date entry
         items: {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,

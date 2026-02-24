@@ -86,6 +86,9 @@ class ItemController {
         : req.query.active === "false"
           ? false
           : undefined;
+    const categoryId = req.query.categoryId
+      ? Number(req.query.categoryId)
+      : undefined;
 
     // Create combined parameters object
     const params: PaginationParams & MenuItemSearchParams = {
@@ -93,6 +96,7 @@ class ItemController {
       limit,
       search,
       active,
+      categoryId,
     };
 
     // Search menu items from service layer

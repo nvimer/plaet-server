@@ -36,7 +36,7 @@ export type DailyMenuWithRelations = DailyMenu & {
  * Data for creating a daily menu
  */
 export interface CreateDailyMenuData {
-  date: Date;
+  createdAt: Date;
   isActive?: boolean;
   basePrice?: number; // Base margin for lunch
   soupCategoryId?: number | null;
@@ -59,7 +59,6 @@ export interface CreateDailyMenuData {
   dessertOption1Id?: number | null;
   dessertOption2Id?: number | null;
   proteinIds?: number[];
-  createdAt?: Date;
 }
 
 /**
@@ -96,9 +95,9 @@ export interface UpdateDailyMenuData {
  */
 export interface DailyMenuRepositoryInterface {
   /**
-   * Find daily menu by specific date with all relations
+   * Find daily menu by specific createdAt with all relations
    */
-  findByDate(date: Date): Promise<DailyMenuWithRelations | null>;
+  findByCreatedAt(createdAt: Date): Promise<DailyMenuWithRelations | null>;
 
   /**
    * Get current daily menu (today) with all relations
@@ -111,10 +110,10 @@ export interface DailyMenuRepositoryInterface {
   create(data: CreateDailyMenuData): Promise<DailyMenuWithRelations>;
 
   /**
-   * Update daily menu for a specific date
+   * Update daily menu for a specific createdAt
    */
-  updateByDate(
-    date: Date,
+  updateByCreatedAt(
+    createdAt: Date,
     data: UpdateDailyMenuData,
   ): Promise<DailyMenuWithRelations>;
 

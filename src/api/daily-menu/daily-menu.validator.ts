@@ -18,35 +18,37 @@ const itemOptionSchema = z.object({
  * Schema for updating daily menu configuration
  */
 export const updateDailyMenuBodySchema = z.object({
-  // Prices - base margin added to protein individual price
-  basePrice: z.number().positive().optional(),
+  body: z.object({
+    // Prices - base margin added to protein individual price
+    basePrice: z.number().positive().optional(),
 
-  // Category IDs
-  soupCategoryId: z.number().int().positive().optional().nullable(),
-  principleCategoryId: z.number().int().positive().optional().nullable(),
-  proteinCategoryId: z.number().int().positive().optional().nullable(),
-  drinkCategoryId: z.number().int().positive().optional().nullable(),
-  extraCategoryId: z.number().int().positive().optional().nullable(),
-  saladCategoryId: z.number().int().positive().optional().nullable(),
-  dessertCategoryId: z.number().int().positive().optional().nullable(),
+    // Category IDs
+    soupCategoryId: z.number().int().positive().optional().nullable(),
+    principleCategoryId: z.number().int().positive().optional().nullable(),
+    proteinCategoryId: z.number().int().positive().optional().nullable(),
+    drinkCategoryId: z.number().int().positive().optional().nullable(),
+    extraCategoryId: z.number().int().positive().optional().nullable(),
+    saladCategoryId: z.number().int().positive().optional().nullable(),
+    dessertCategoryId: z.number().int().positive().optional().nullable(),
 
-  // Item options for each category
-  soupOptions: itemOptionSchema.optional(),
-  principleOptions: itemOptionSchema.optional(),
-  drinkOptions: itemOptionSchema.optional(),
-  extraOptions: itemOptionSchema.optional(),
-  saladOptions: itemOptionSchema.optional(),
-  dessertOptions: itemOptionSchema.optional(),
+    // Item options for each category
+    soupOptions: itemOptionSchema.optional(),
+    principleOptions: itemOptionSchema.optional(),
+    drinkOptions: itemOptionSchema.optional(),
+    extraOptions: itemOptionSchema.optional(),
+    saladOptions: itemOptionSchema.optional(),
+    dessertOptions: itemOptionSchema.optional(),
 
-  // All available protein IDs (array replaces proteinOptions)
-  allProteinIds: z.array(z.number().int().positive()).optional(),
+    // All available protein IDs (array replaces proteinOptions)
+    allProteinIds: z.array(z.number().int().positive()).optional(),
 
-  // Optional created date for historical data
-  createdAt: z.coerce.date().optional(),
+    // Mandatory creation date for historical data
+    createdAt: z.coerce.date(),
+  })
 });
 
 /**
- * Schema for date parameter in URL
+ * Schema for createdAt parameter in URL
  */
 export const dailyMenuDateParamSchema = z.object({
   params: z.object({
@@ -61,5 +63,5 @@ export const dailyMenuDateParamSchema = z.object({
  */
 export type UpdateDailyMenuBodyInput = z.infer<
   typeof updateDailyMenuBodySchema
->;
+>["body"];
 export type UpdateDailyMenuDateInput = z.infer<typeof dailyMenuDateParamSchema>;

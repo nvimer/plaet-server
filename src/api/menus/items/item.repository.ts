@@ -108,31 +108,39 @@ class ItemRepository implements ItemRepositoryInterface {
   async search(
     params: PaginationParams & MenuItemSearchParams,
   ): Promise<PaginatedResponse<MenuItem>> {
-    const { page, limit, search, active } = params;
+    const { page, limit, search, active, categoryId } = params;
     const skip = (page - 1) * limit;
 
     // Build search conditions
-    const whereConditions: Record<string, unknown> = {
-      deleted: false, // Always exclude deleted categories
+    const whereConditions: Prisma.MenuItemWhereInput = {
+      deleted: false,
     };
 
     // Add search term if provided
     if (search) {
       whereConditions.name = {
         contains: search,
-        mode: "insensitive", // Case-insensitive searc
+        mode: "insensitive",
       };
     }
 
-    // add actice filter if provided
-    if (active === undefined) {
-      whereConditions.active = active;
+    // Add active (isAvailable) filter if provided
+    if (active !== undefined) {
+      whereConditions.isAvailable = active;
+    }
+
+    // Add category filter if provided
+    if (categoryId !== undefined) {
+      whereConditions.categoryId = categoryId;
     }
 
     // Execute search and count in parallel
     const [menuItems, total] = await Promise.all([
       prisma.menuItem.findMany({
         where: whereConditions,
+        include: {
+          category: true,
+        },
         orderBy: { name: "asc" },
         skip,
         take: limit,

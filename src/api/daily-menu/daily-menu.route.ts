@@ -24,31 +24,24 @@ router.get("/current", dailyMenuController.getTodayMenu);
  */
 router.get(
   "/:date",
+  authJwt,
   validate(dailyMenuDateParamSchema),
-  dailyMenuController.getMenuByDate,
+  dailyMenuController.getMenuByCreatedAt,
 );
 
-/**
- * PUT /daily-menu
- * Update or create daily menu for today
- * Requires admin or manager role
- */
-router.put(
-  "/",
+router.post(
+  "/today",
+  authJwt,
   validate(updateDailyMenuBodySchema),
   dailyMenuController.updateTodayMenu,
 );
 
-/**
- * PUT /daily-menu/:date
- * Update or create daily menu for a specific date
- * Requires admin or manager role
- */
-router.put(
+router.post(
   "/:date",
+  authJwt,
   validate(dailyMenuDateParamSchema),
   validate(updateDailyMenuBodySchema),
-  dailyMenuController.updateMenuByDate,
+  dailyMenuController.updateMenuByCreatedAt,
 );
 
 export default router;

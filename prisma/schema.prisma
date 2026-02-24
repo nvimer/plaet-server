@@ -500,9 +500,8 @@ model DailyTicketBookCode {
  */
 model DailyMenu {
   id        String   @id @default(uuid())
-  date      DateTime @unique @db.Date
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @unique @map("created_at") @db.Date
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Price configuration - base margin added to protein individual price
@@ -534,7 +533,8 @@ model DailyMenu {
   // All available protein IDs for today (array for multiple selections)
   proteinIds        Int[]     @default([]) @map("protein_ids")
 
-  @@index([date])
+  @@index([createdAt])
   @@index([isActive])
   @@map("daily_menus")
 }
+

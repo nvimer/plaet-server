@@ -46,10 +46,9 @@ class DailyMenuService implements DailyMenuServiceInterface {
 
     return {
       id: menu.id,
-      date: menu.date,
       isActive: menu.isActive ?? true,
       basePrice: Number(menu.basePrice ?? 4000), // Base margin (e.g., $4,000)
-      createdAt: menu.createdAt || new Date(),
+      createdAt: menu.createdAt,
       updatedAt: menu.updatedAt || new Date(),
 
       // Categories
@@ -107,10 +106,10 @@ class DailyMenuService implements DailyMenuServiceInterface {
   }
 
   /**
-   * Get daily menu for a specific date with full item details
+   * Get daily menu for a specific createdAt with full item details
    */
-  async getMenuByDate(date: Date): Promise<DailyMenuResponse | null> {
-    const menu = await this.repository.findByDate(date);
+  async getMenuByCreatedAt(createdAt: Date): Promise<DailyMenuResponse | null> {
+    const menu = await this.repository.findByCreatedAt(createdAt);
     return menu ? await this.toResponse(menu) : null;
   }
 
@@ -153,16 +152,22 @@ class DailyMenuService implements DailyMenuServiceInterface {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingMenu = await this.repository.findByDate(today);
-    const repositoryData = this.transformInput(data);
+    const existingMenu = await this.repository.findByCreatedAt(today);
+    const repositoryData = this.transformInput({
+      ...data,
+      createdAt: today,
+    });
 
     if (existingMenu) {
-      const updated = await this.repository.updateByDate(today, repositoryData);
+      const updated = await this.repository.updateByCreatedAt(
+        today,
+        repositoryData,
+      );
       return await this.toResponse(updated);
     } else {
       const created = await this.repository.create({
-        date: today,
         ...repositoryData,
+        createdAt: today,
         isActive: true,
       });
       return await this.toResponse(created);
@@ -170,28 +175,28 @@ class DailyMenuService implements DailyMenuServiceInterface {
   }
 
   /**
-   * Update daily menu for a specific date
+   * Update daily menu for a specific createdAt
    */
-  async updateMenuByDate(
-    date: Date,
+  async updateMenuByCreatedAt(
+    createdAt: Date,
     data: UpdateDailyMenuInput,
   ): Promise<DailyMenuResponse> {
-    const normalizedDate = new Date(date);
+    const normalizedDate = new Date(createdAt);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const existingMenu = await this.repository.findByDate(normalizedDate);
+    const existingMenu = await this.repository.findByCreatedAt(normalizedDate);
     const repositoryData = this.transformInput(data);
 
     if (existingMenu) {
-      const updated = await this.repository.updateByDate(
+      const updated = await this.repository.updateByCreatedAt(
         normalizedDate,
         repositoryData,
       );
       return await this.toResponse(updated);
     } else {
       const created = await this.repository.create({
-        date: normalizedDate,
         ...repositoryData,
+        createdAt: normalizedDate,
         isActive: true,
       });
       return await this.toResponse(created);

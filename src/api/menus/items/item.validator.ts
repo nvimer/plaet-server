@@ -75,6 +75,7 @@ export const menuItemSearchSchema = z.object({
       .enum(["true", "false"])
       .transform((val) => val === "true")
       .optional(),
+    categoryId: z.coerce.number().int().positive().optional(),
   }),
 });
 

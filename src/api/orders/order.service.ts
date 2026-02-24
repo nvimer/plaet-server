@@ -242,6 +242,7 @@ export class OrderService implements OrderServiceInterface {
         ...item,
         priceAtOrder: menuItems[index].price,
       })),
+      createdAt: data.createdAt, // Pass historical date if provided
     };
 
     // Step 5: Calculate total amount

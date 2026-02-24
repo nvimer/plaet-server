@@ -20,7 +20,6 @@ export interface MenuItemOption {
  */
 export interface DailyMenuResponse {
   id: string;
-  date: Date;
   isActive: boolean;
   basePrice: number; // Base margin added to protein individual price
   createdAt: Date;
@@ -81,8 +80,8 @@ export interface UpdateDailyMenuInput {
   // All available protein IDs (replaces proteinOptions)
   allProteinIds?: number[];
 
-  // Optional creation date for historical data
-  createdAt?: Date;
+  // Mandatory creation date for historical data
+  createdAt: Date;
 }
 
 /**
@@ -97,11 +96,11 @@ export interface DailyMenuServiceInterface {
   getTodayMenu(): Promise<DailyMenuResponse | null>;
 
   /**
-   * Get daily menu for a specific date with full item details
-   * @param date - Date to retrieve menu for
+   * Get daily menu for a specific createdAt with full item details
+   * @param createdAt - Creation date to retrieve menu for
    * @returns Menu for the specified date or null
    */
-  getMenuByDate(date: Date): Promise<DailyMenuResponse | null>;
+  getMenuByCreatedAt(createdAt: Date): Promise<DailyMenuResponse | null>;
 
   /**
    * Update or create daily menu for today
@@ -111,13 +110,13 @@ export interface DailyMenuServiceInterface {
   updateTodayMenu(data: UpdateDailyMenuInput): Promise<DailyMenuResponse>;
 
   /**
-   * Update daily menu for a specific date
-   * @param date - Date to update
+   * Update daily menu for a specific createdAt
+   * @param createdAt - Creation date to update
    * @param data - Menu configuration data
    * @returns Updated menu
    */
-  updateMenuByDate(
-    date: Date,
+  updateMenuByCreatedAt(
+    createdAt: Date,
     data: UpdateDailyMenuInput,
   ): Promise<DailyMenuResponse>;
 }

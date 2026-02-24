@@ -147,19 +147,19 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   }
 
   /**
-   * Find daily menu by specific date with all relations
+   * Find daily menu by specific createdAt with all relations
    */
-  async findByDate(date: Date): Promise<DailyMenuWithRelations | null> {
-    const normalizedDate = new Date(date);
+  async findByCreatedAt(createdAt: Date): Promise<DailyMenuWithRelations | null> {
+    const normalizedDate = new Date(createdAt);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    logger.debug("[DailyMenu] findByDate called", {
+    logger.debug("[DailyMenu] findByCreatedAt called", {
       date: normalizedDate.toISOString(),
     });
 
     try {
       const menu = await this.prismaClient.dailyMenu.findUnique({
-        where: { date: normalizedDate },
+        where: { createdAt: normalizedDate },
       });
 
       logger.debug("[DailyMenu] Query result", {
@@ -171,7 +171,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
 
       return this.buildWithRelations(menu);
     } catch (error) {
-      logger.error("[DailyMenu] findByDate error", {
+      logger.error("[DailyMenu] findByCreatedAt error", {
         error,
         date: normalizedDate.toISOString(),
       });
@@ -190,7 +190,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       today: today.toISOString(),
     });
 
-    return this.findByDate(today);
+    return this.findByCreatedAt(today);
   }
 
   /**
@@ -199,7 +199,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   async create(data: CreateDailyMenuData): Promise<DailyMenuWithRelations> {
     const menu = await this.prismaClient.dailyMenu.create({
       data: {
-        date: data.date,
+        createdAt: data.createdAt,
         isActive: data.isActive ?? true,
         basePrice: data.basePrice, // Base margin for lunch
         soupCategoryId: data.soupCategoryId,
@@ -222,7 +222,6 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         dessertOption1Id: data.dessertOption1Id,
         dessertOption2Id: data.dessertOption2Id,
         proteinIds: data.proteinIds || [],
-        createdAt: data.createdAt,
       },
     });
 
@@ -230,17 +229,17 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   }
 
   /**
-   * Update daily menu for a specific date
+   * Update daily menu for a specific createdAt
    */
-  async updateByDate(
-    date: Date,
+  async updateByCreatedAt(
+    createdAt: Date,
     data: UpdateDailyMenuData,
   ): Promise<DailyMenuWithRelations> {
-    const normalizedDate = new Date(date);
+    const normalizedDate = new Date(createdAt);
     normalizedDate.setHours(0, 0, 0, 0);
 
     const menu = await this.prismaClient.dailyMenu.update({
-      where: { date: normalizedDate },
+      where: { createdAt: normalizedDate },
       data: {
         basePrice: data.basePrice, // Base margin for lunch
         soupCategoryId: data.soupCategoryId,
