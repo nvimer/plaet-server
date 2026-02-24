@@ -3,69 +3,39 @@ import { logger } from "../../src/config/logger";
 
 const prisma = new PrismaClient();
 
-export const categoriesConfig = [
-  {
-    name: "Sopas",
-    description: "Sopas del día",
-    order: 1,
-  },
-  {
-    name: "Principios",
-    description: "Principios (frijoles, lentejas, garbanzos, etc)",
-    order: 2,
-  },
-  {
-    name: "Proteínas",
-    description: "Carnes, pollo, pescado, cerdo, etc",
-    order: 3,
-  },
-  {
-    name: "Arroces",
-    description: "Diferentes tipos de arroz",
-    order: 4,
-  },
-  {
-    name: "Ensaladas",
-    description: "Ensaladas y acompañamientos frescos",
-    order: 5,
-  },
-  {
-    name: "Bebidas",
-    description: "Bebidas y jugos naturales",
-    order: 6,
-  },
-  {
-    name: "Postres",
-    description: "Postres y dulces",
-    order: 7,
-  },
-  {
-    name: "Extras",
-    description: "Adiciones y porciones extra",
-    order: 8,
-  },
+export const categoriesData = [
+  { name: "Sopas", description: "Sopas del día", order: 1 },
+  { name: "Principios", description: "Principios del día", order: 2 },
+  { name: "Proteínas", description: "Opciones de proteína", order: 3 },
+  { name: "Bebidas", description: "Bebidas incluidas", order: 4 },
+  { name: "Extras", description: "Acompañamientos extra", order: 5 },
+  { name: "Ensaladas", description: "Ensaladas del día", order: 6 },
+  { name: "Postres", description: "Postres opcionales", order: 7 },
 ];
 
 export async function seedCategories() {
-  logger.info("🌱 Seeding menu categories...");
+  logger.info("🌱 Seeding categories...");
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: "plaet-pos" },
+  });
+  if (!restaurant) throw new Error("Default restaurant not found");
 
-  for (const category of categoriesConfig) {
+  for (const categoryData of categoriesData) {
     await prisma.menuCategory.upsert({
-      where: { name: category.name },
-      update: {
-        description: category.description,
-        order: category.order,
+      where: {
+        restaurantId_name: {
+          restaurantId: restaurant.id,
+          name: categoryData.name,
+        },
       },
+      update: {},
       create: {
-        name: category.name,
-        description: category.description,
-        order: category.order,
+        restaurantId: restaurant.id,
+        name: categoryData.name,
+        description: categoryData.description,
+        order: categoryData.order,
       },
     });
-    logger.info(` 📝 Menu Category "${category.name}" seeded`);
   }
-
-  logger.info(
-    `✅ ${categoriesConfig.length} menu categories seeded successfully!`,
-  );
+  logger.info("✅ Categories seeded successfully!");
 }

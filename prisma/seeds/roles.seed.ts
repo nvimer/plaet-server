@@ -5,6 +5,30 @@ const prisma = new PrismaClient();
 
 export const rolesConfig = [
   {
+    name: RoleName.SUPERADMIN,
+    description: "System superadmin with global access",
+    permissions: [
+      "user.view",
+      "users.create",
+      "users.update",
+      "users.delete",
+      "profiles.view",
+      "profiles.update",
+      "roles.view",
+      "roles.create",
+      "roles.update",
+      "roles.delete",
+      "menu.view",
+      "menu.create",
+      "menu.update",
+      "menu.delete",
+      "tables.view",
+      "tables.create",
+      "tables.update",
+      "tables.delete",
+    ],
+  },
+  {
     name: RoleName.ADMIN,
     description: "Admin with complete access to system",
     permissions: [

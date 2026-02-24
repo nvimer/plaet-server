@@ -44,7 +44,7 @@ export const updateDailyMenuBodySchema = z.object({
 
     // Mandatory creation date for historical data
     createdAt: z.coerce.date(),
-  })
+  }),
 });
 
 /**

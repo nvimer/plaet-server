@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { logger } from "../src/config/logger";
 import { seedPermissions } from "./seeds/permissions.seed";
 import { seedRoles } from "./seeds/roles.seed";
+import { seedRestaurants } from "./seeds/restaurants.seed";
 import { seedUsers } from "./seeds/users.seed";
 import { seedCategories } from "./seeds/categories.seed";
 import { seedItems } from "./seeds/items.seed";
@@ -12,6 +13,7 @@ async function main() {
   logger.info("🚀 Starting database seeding...\n");
 
   try {
+    await seedRestaurants();
     await seedPermissions();
     logger.info("");
 

@@ -149,7 +149,9 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   /**
    * Find daily menu by specific createdAt with all relations
    */
-  async findByCreatedAt(createdAt: Date): Promise<DailyMenuWithRelations | null> {
+  async findByCreatedAt(
+    createdAt: Date,
+  ): Promise<DailyMenuWithRelations | null> {
     const normalizedDate = new Date(createdAt);
     normalizedDate.setHours(0, 0, 0, 0);
 

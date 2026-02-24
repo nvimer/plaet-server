@@ -62,7 +62,10 @@ export const createOrderSchema = z.object({
     items: z
       .array(orderItemSchema)
       .min(1, "Order must contain at least one item."),
-    notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional(),
+    notes: z
+      .string()
+      .max(1000, "Notes cannot exceed 1000 characters")
+      .optional(),
     whatsappOrderId: z
       .string()
       .max(100, "WhatsApp Order ID cannot exceed 100 characters")

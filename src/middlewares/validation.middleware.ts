@@ -11,22 +11,22 @@ export const validate = (schema: AnyZodObject) =>
     });
 
     if (parsed.body) req.body = parsed.body;
-    
+
     if (parsed.query) {
-        // Handle potential read-only req.query
-        try {
-            req.query = parsed.query;
-        } catch {
-            Object.assign(req.query, parsed.query);
-        }
+      // Handle potential read-only req.query
+      try {
+        req.query = parsed.query;
+      } catch {
+        Object.assign(req.query, parsed.query);
+      }
     }
-    
+
     if (parsed.params) {
-        try {
-            req.params = parsed.params;
-        } catch {
-            Object.assign(req.params, parsed.params);
-        }
+      try {
+        req.params = parsed.params;
+      } catch {
+        Object.assign(req.params, parsed.params);
+      }
     }
 
     // next() is called automatically by asyncHandler

@@ -41,7 +41,7 @@ class DailyMenuController {
    */
   getMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
-    const createdAt = new Date(date + 'T12:00:00.000Z');
+    const createdAt = new Date(date + "T12:00:00.000Z");
 
     const menu = await this.service.getMenuByCreatedAt(createdAt);
 
@@ -66,7 +66,8 @@ class DailyMenuController {
    */
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
-    const menu = await this.service.updateTodayMenu(data as any);
+    const menu = await this.service.updateTodayMenu(data @typescript-eslint/no-explicit-any
+    as any);
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -81,12 +82,13 @@ class DailyMenuController {
    */
   updateMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
-    const createdAt = new Date(date + 'T12:00:00.000Z');
+    const createdAt = new Date(date + "T12:00:00.000Z");
     const data: UpdateDailyMenuBodyInput = req.body;
 
     const menu = await this.service.updateMenuByCreatedAt(
       createdAt,
-      data as any,
+      data @typescript-eslint/no-explicit-any
+    as any,
     );
 
     res.status(HttpStatus.OK).json({

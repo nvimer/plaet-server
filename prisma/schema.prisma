@@ -12,6 +12,38 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+enum RestaurantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  PAST_DUE
+}
+
+model Restaurant {
+  id          String           @id @default(uuid())
+  name        String  @unique
+  slug        String           @unique
+  status      RestaurantStatus @default(TRIAL)
+  address     String?
+  phone       String?
+  nit         String?          @unique
+  logoUrl     String?          @map("logo_url")
+  currency    String           @default("COP")
+  timezone    String           @default("America/Bogota")
+  users           User[]
+  categories      MenuCategory[]
+  items           MenuItem[]
+  tables          Table[]
+  orders          Order[]
+  expenses        Expense[]
+  dailyMenus      DailyMenu[]
+  cashClosures    CashClosure[]
+  customers       Customer[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("restaurants")
+}
+
 
 // ENUMS
 
@@ -24,6 +56,7 @@ enum TokenType {
 }
 
 enum RoleName {
+  SUPERADMIN
   ADMIN
   CASHIER
   WAITER
@@ -136,6 +169,8 @@ model RolePermission {
 }
 
 model User {
+  restaurantId String?    @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id        String  @id @default(uuid())
   firstName String  @map("first_name")
   lastName  String  @map("last_name")
@@ -172,6 +207,7 @@ model User {
   // Password history and tracking
   passwordChangedAt DateTime? @default(now()) @map("password_changed_at")
 
+  @@index([restaurantId])
   @@map("users")
 }
 
@@ -212,8 +248,10 @@ model Profile {
 }
 
 model Table {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id       Int         @id @default(autoincrement())
-  number   String      @unique
+  number   String
   status   TableStatus @default(AVAILABLE)
   location String?
 
@@ -225,6 +263,7 @@ model Table {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
+  @@unique([restaurantId, number])
   @@map("tables")
 }
 
@@ -233,6 +272,8 @@ model Table {
  * Categories for organizing menu items (e.g., Sopas, Principios, Proteínas, etc.)
  */
 model MenuCategory {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id          Int     @id @default(autoincrement())
   name        String  @unique
   description String?
@@ -243,6 +284,7 @@ model MenuCategory {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
+  @@unique([restaurantId, name])
   @@map("menu_categories")
 }
 
@@ -251,11 +293,13 @@ model MenuCategory {
  * Simplified - removed unused fields for corrientazo
  */
 model MenuItem {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id         Int          @id @default(autoincrement())
   categoryId Int          @map("category_id")
   category   MenuCategory @relation(fields: [categoryId], references: [id])
 
-  name        String
+  name        String  @unique
   description String?
   price       Decimal @db.Decimal(10, 2)
   isAvailable Boolean @default(true) @map("is_available")
@@ -278,7 +322,7 @@ model MenuItem {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
-  @@unique([categoryId, name])
+  @@unique([restaurantId, categoryId, name])
   @@map("menu_items")
 }
 
@@ -302,6 +346,8 @@ model StockAdjustment {
 }
 
 model Order {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id      String @id @default(uuid())
   tableId Int?   @map("table_id")
   table   Table? @relation(fields: [tableId], references: [id])
@@ -326,6 +372,7 @@ model Order {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([restaurantId])
   @@map("orders")
 }
 
@@ -348,6 +395,8 @@ model OrderItem {
 }
 
 model Customer {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id        String  @id @default(uuid())
   firstName String  @map("first_name")
   lastName  String  @map("last_name")
@@ -364,6 +413,8 @@ model Customer {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
+  @@unique([restaurantId, phone])
+  @@unique([restaurantId, email])
   @@map("customers")
 }
 
@@ -428,6 +479,8 @@ model Payment {
 }
 
 model Expense {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id String @id @default(uuid())
 
   registeredById String @map("registered_by_id")
@@ -444,10 +497,13 @@ model Expense {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
+  @@index([restaurantId])
   @@map("expenses")
 }
 
 model CashClosure {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id String @id @default(uuid())
 
   openedById String @map("opened_by_id")
@@ -469,6 +525,7 @@ model CashClosure {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([restaurantId])
   @@map("cash_closures")
 }
 
@@ -499,6 +556,8 @@ model DailyTicketBookCode {
  * Each day can have multiple options for soup, principle, protein, drink, and extra
  */
 model DailyMenu {
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id        String   @id @default(uuid())
   isActive  Boolean  @default(true)
   createdAt DateTime @unique @map("created_at") @db.Date
@@ -535,6 +594,7 @@ model DailyMenu {
 
   @@index([createdAt])
   @@index([isActive])
+  @@index([restaurantId])
   @@map("daily_menus")
 }
 

@@ -6,7 +6,10 @@ import { Moment } from "moment";
  * Token Service Interface
  */
 export interface TokenServiceInterface {
-  generateAuthToken(id: string): Promise<AuthTokenResponseInput>;
+  generateAuthToken(
+    id: string,
+    restaurantId?: string | null,
+  ): Promise<AuthTokenResponseInput>;
   logout(userId: string): Promise<void>;
   isTokenBlacklisted(token: string): Promise<boolean>;
   generatePasswordResetToken(userId: string): Promise<string>;

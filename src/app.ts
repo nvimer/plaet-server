@@ -7,6 +7,7 @@ import express, {
 import helmet from "helmet";
 import cors, { CorsOptions } from "cors";
 import cookieParser from "cookie-parser";
+import { tenantMiddleware } from "./middlewares/tenant.middleware";
 import { logger } from "./config/logger";
 import { requestLogger } from "./middlewares/morgan.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
@@ -86,6 +87,7 @@ requestLogger(app);
 // Strategies for auth users
 passport.use(jwtStrategy);
 app.use(passport.initialize());
+app.use(tenantMiddleware);
 
 // Token blacklist check (before auth middleware)
 app.use(tokenBlacklistMiddleware);

@@ -13,7 +13,9 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Basic file type validation
     if (!file.mimetype.match(/^image\/(jpeg|png|webp|jpg)$/)) {
-      return cb(new Error("Only image files (jpg, jpeg, png, webp) are allowed!"));
+      return cb(
+        new Error("Only image files (jpg, jpeg, png, webp) are allowed!"),
+      );
     }
     cb(null, true);
   },
@@ -29,7 +31,12 @@ export const uploadSingle = (fieldName: string) => {
     upload.single(fieldName)(req, res, (err: any) => {
       if (err instanceof multer.MulterError) {
         // A Multer error occurred when uploading.
-        return next(new CustomError(`File upload error: ${err.message}`, HttpStatus.BAD_REQUEST));
+        return next(
+          new CustomError(
+            `File upload error: ${err.message}`,
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
       } else if (err) {
         // An unknown error occurred when uploading.
         return next(new CustomError(err.message, HttpStatus.BAD_REQUEST));
@@ -50,7 +57,12 @@ export const uploadMultiple = (fieldName: string, maxCount: number = 5) => {
   return (req: Request, res: Response, next: NextFunction) => {
     upload.array(fieldName, maxCount)(req, res, (err: any) => {
       if (err instanceof multer.MulterError) {
-        return next(new CustomError(`Files upload error: ${err.message}`, HttpStatus.BAD_REQUEST));
+        return next(
+          new CustomError(
+            `Files upload error: ${err.message}`,
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
       } else if (err) {
         return next(new CustomError(err.message, HttpStatus.BAD_REQUEST));
       }

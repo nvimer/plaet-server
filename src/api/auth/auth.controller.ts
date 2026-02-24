@@ -100,7 +100,10 @@ class AuthController {
 
     const user = await this.authService.login(data);
 
-    const token = await this.tokenService.generateAuthToken(user.id);
+    const token = await this.tokenService.generateAuthToken(
+      user.id,
+      user.restaurantId,
+    );
 
     // Set httpOnly cookies for secure token storage
     // Using sameSite: "lax" to allow cookies on subdomains of the same domain

@@ -1,164 +1,100 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from "@prisma/client";
-import { logger } from "../config/logger";
+import { tenantContext } from "../utils/tenant-context";
 
-interface SoftDeleteWhere {
-  deleted: boolean;
-  [key: string]: unknown;
-}
+const MODELS_WITH_TENANT = [
+  "User",
+  "MenuCategory",
+  "MenuItem",
+  "Table",
+  "Order",
+  "Expense",
+  "CashClosure",
+  "DailyMenu",
+  "Customer",
+  "Inventory",
+  "PurchaseOrder",
+];
 
-interface SoftDeleteData {
-  deleted: boolean;
-  deletedAt: Date;
-  [key: string]: unknown;
-}
-
-interface SoftDeleteArgs {
-  where?: Record<string, unknown> & { id?: unknown };
-  data?: Record<string, unknown>;
-}
-
-interface PrismaQueryParams<TArgs = SoftDeleteArgs> {
-  model: string;
-  operation: string;
-  args: TArgs;
-  query: (args: TArgs) => Promise<unknown>;
-}
-
-const _SOFT_DELETE_MODELS = [
+const SOFT_DELETE_MODELS = [
   "Permission",
   "Role",
   "MenuCategory",
   "MenuItem",
   "User",
   "Table",
-] as const;
+  "Expense",
+  "Order",
+];
 
-type SoftDeleteModelName = (typeof _SOFT_DELETE_MODELS)[number];
-
-// Helper function to create soft delete handlers with strict types
-const createSoftDeleteHandlers = (modelName: SoftDeleteModelName) => ({
-  async delete({
-    model: _model,
-    operation: _operation,
-    args,
-    query,
-  }: PrismaQueryParams) {
-    logger.info(`Soft deleting ${modelName} with ID: ${args.where?.id}`);
-    return query({
-      ...args,
-      data: {
-        ...args.data,
-        deleted: true,
-        deletedAt: new Date(),
-      } as SoftDeleteData,
-    });
-  },
-
-  async deleteMany({
-    model: _model,
-    operation: _operation,
-    args,
-    query,
-  }: PrismaQueryParams) {
-    logger.info(`Soft deleting multiple ${modelName}s`);
-    return query({
-      ...args,
-      data: {
-        ...args.data,
-        deleted: true,
-        deletedAt: new Date(),
-      } as SoftDeleteData,
-    });
-  },
-
-  async findMany({
-    model: _model,
-    operation: _operation,
-    args,
-    query,
-  }: PrismaQueryParams) {
-    const where = args.where || {};
-    return query({
-      ...args,
-      where: { ...where, deleted: false } as SoftDeleteWhere,
-    });
-  },
-
-  async findFirst({
-    model: _model,
-    operation: _operation,
-    args,
-    query,
-  }: PrismaQueryParams) {
-    const where = args.where || {};
-    return query({
-      ...args,
-      where: { ...where, deleted: false } as SoftDeleteWhere,
-    });
-  },
-
-  async findUnique({
-    model: _model,
-    operation: _operation,
-    args,
-    query,
-  }: PrismaQueryParams) {
-    const where = args.where || {};
-    return query({
-      ...args,
-      where: { ...where, deleted: false } as SoftDeleteWhere,
-    });
-  },
+const prismaClient = new PrismaClient({
+  log: ["info", "warn", "error"],
 });
 
-// Crear PrismaClient con extensiones para soft delete
-const prisma = new PrismaClient({
-  log: ["query", "info", "warn", "error"],
-}).$extends({
+export const prisma = prismaClient.$extends({
   query: {
-    // MenuCategory soft delete
-    menuCategory: createSoftDeleteHandlers("MenuCategory"),
-    // MenuItem soft delete
-    menuItem: createSoftDeleteHandlers("MenuItem"),
-    // Permission soft delete
-    permission: createSoftDeleteHandlers("Permission"),
-    // Role soft delete
-    role: createSoftDeleteHandlers("Role"),
-    // User soft delete
-    user: createSoftDeleteHandlers("User"),
-    // Table soft delete
-    table: createSoftDeleteHandlers("Table"),
+    $allModels: {
+      async $allOperations({ model, operation, args, query }) {
+        const context = tenantContext.getStore();
+        const restaurantId = context?.restaurantId;
+
+        interface ExtendedArgs {
+          where?: Record<string, any>;
+          data?: Record<string, any>;
+          [key: string]: any;
+        }
+
+        const extendedArgs = args as ExtendedArgs;
+
+        // 1. Inyectar restaurantId en filtros (READ/UPDATE/DELETE)
+        if (MODELS_WITH_TENANT.includes(model)) {
+          if (restaurantId && operation !== "create") {
+            extendedArgs.where = { ...extendedArgs.where, restaurantId };
+          }
+        }
+
+        // 2. Inyectar restaurantId en creaciones (CREATE)
+        if (MODELS_WITH_TENANT.includes(model) && operation === "create") {
+          if (
+            restaurantId &&
+            extendedArgs.data &&
+            !extendedArgs.data.restaurantId
+          ) {
+            extendedArgs.data = { ...extendedArgs.data, restaurantId };
+          }
+        }
+
+        // 3. Inyectar Soft Delete
+        if (SOFT_DELETE_MODELS.includes(model)) {
+          if (
+            ["findMany", "findFirst", "findUnique", "count"].includes(operation)
+          ) {
+            extendedArgs.where = { ...extendedArgs.where, deleted: false };
+          }
+
+          if (operation === "delete") {
+            return (prismaClient @typescript-eslint/no-explicit-any
+    as any)[model.toLowerCase()].update({
+              where: extendedArgs.where,
+              data: { deleted: true, deletedAt: new Date() },
+            });
+          }
+
+          if (operation === "deleteMany") {
+            return (prismaClient @typescript-eslint/no-explicit-any
+    as any)[model.toLowerCase()].updateMany({
+              where: extendedArgs.where,
+              data: { deleted: true, deletedAt: new Date() },
+            });
+          }
+        }
+
+        return query(extendedArgs);
+      },
+    },
   },
 });
 
-// Hook for clean disconnect to close application
-process.on("beforeExit", async () => {
-  await prisma.$disconnect();
-});
-
-/**
- * Gets the appropriate Prisma client based on the environment.
- *
- * In test environment with TEST_TYPE set (integration/E2E tests),
- * returns the test database client. Otherwise, returns the main
- * production client with soft delete extensions.
- *
- * This function is used by services to ensure they access the
- * correct database when running integration/E2E tests.
- *
- * @returns Prisma client instance (test or production)
- */
 export function getPrismaClient(): any {
-  if (process.env.NODE_ENV === "test") {
-    // For all tests (unit, integration, E2E), use test database client
-    // Dynamic import to avoid circular dependencies
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const testDbModule = require("../tests/shared/test-database") as {
-      getTestDatabaseClient: () => any;
-    };
-    return testDbModule.getTestDatabaseClient();
-  }
   return prisma;
 }
 

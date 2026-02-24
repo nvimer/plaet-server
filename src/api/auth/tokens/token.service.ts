@@ -1,3 +1,4 @@
+import userService from "../../users/user.service";
 import jwt from "jsonwebtoken";
 import moment, { Moment } from "moment";
 import {
@@ -32,6 +33,8 @@ export class TokenService implements TokenServiceInterface {
    * - type: Token type (ACCESS/REFRESH)
    */
   private generateToken(
+    restaurantId: string | null | undefined,
+
     id: string,
     expires: Moment,
     type: TokenType,
@@ -40,6 +43,7 @@ export class TokenService implements TokenServiceInterface {
     // create a personalize payload where save necessary values for token in auth user.
     const payload = {
       sub: id,
+      restaurantId,
       iat: moment().unix(),
       exp: expires.unix(),
       type,
@@ -100,12 +104,17 @@ export class TokenService implements TokenServiceInterface {
    * - Expiration times configured via environment variables
    * - Both tokens stored for complete revocation capability
    */
-  async generateAuthToken(id: string): Promise<AuthTokenResponseInput> {
+  async generateAuthToken(
+    id: string,
+    restaurantId?: string | null,
+  ): Promise<AuthTokenResponseInput> {
     const accessTokenExpires = moment().add(
       config.jwtAccessExpirationMinutes,
       "minutes",
     );
     const accessToken = this.generateToken(
+      restaurantId,
+
       id,
       accessTokenExpires,
       TokenType.ACCESS,
@@ -117,6 +126,8 @@ export class TokenService implements TokenServiceInterface {
     );
 
     const refreshToken = this.generateToken(
+      restaurantId,
+
       id,
       refreshTokenExpires,
       TokenType.REFRESH,
@@ -185,8 +196,11 @@ export class TokenService implements TokenServiceInterface {
    * @returns Reset token string
    */
   async generatePasswordResetToken(userId: string): Promise<string> {
+    const restaurantId = undefined;
     const expires = moment().add(1, "hour"); // 1 hour validity
     const resetToken = this.generateToken(
+      restaurantId,
+
       userId,
       expires,
       TokenType.RESET_PASSWORD,
@@ -250,8 +264,11 @@ export class TokenService implements TokenServiceInterface {
    * @returns Verification token string
    */
   async generateEmailVerificationToken(userId: string): Promise<string> {
+    const restaurantId = undefined;
     const expires = moment().add(24, "hours"); // 24 hours validity
     const verificationToken = this.generateToken(
+      restaurantId,
+
       userId,
       expires,
       TokenType.VERIFY_EMAIL,
@@ -353,8 +370,12 @@ export class TokenService implements TokenServiceInterface {
     await this.tokenRepository.blacklistToken(refreshToken);
     logger.info(`[REFRESH] Rotated token for user ${tokenRecord.userId}`);
 
+    const user = await userService.findById(tokenRecord.userId);
     // Generate new token pair
-    const newTokens = await this.generateAuthToken(tokenRecord.userId);
+    const newTokens = await this.generateAuthToken(
+      tokenRecord.userId,
+      user.restaurantId,
+    );
 
     logger.info(
       `[REFRESH] New tokens generated for user ${tokenRecord.userId}`,

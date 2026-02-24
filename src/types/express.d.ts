@@ -12,6 +12,7 @@ export type RoleWithPermissions = Role & {
 
 export type AuthenticatedUser = {
   id: string;
+  restaurantId?: string | null;
   email: string;
   roles: {
     role: RoleWithPermissions;

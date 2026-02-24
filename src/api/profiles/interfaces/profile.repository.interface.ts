@@ -6,7 +6,9 @@ import { UpdateProfileInput } from "../profile.validator";
 import { UserWithProfile } from "../../../types/prisma.types";
 
 export interface ProfileRepositoryInterface {
-  findAll(params: PaginationParams): Promise<PaginatedResponse<UserWithProfile>>;
+  findAll(
+    params: PaginationParams,
+  ): Promise<PaginatedResponse<UserWithProfile>>;
   findById(id: string): Promise<UserWithProfile | null>;
   update(id: string, data: UpdateProfileInput): Promise<UserWithProfile>;
   updatePhoto(

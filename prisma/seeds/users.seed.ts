@@ -27,40 +27,22 @@ export const usersData = [
       address: "Carrera Falsa 2 #09-87, Pasto",
     },
   },
-  {
-    firstName: "Janneth",
-    lastName: "Díaz",
-    email: "cajera@plaet.com",
-    phone: "3008765432",
-    password: "cajero123",
-    roles: [RoleName.CASHIER],
-    profile: {
-      address: "Avenida 100 #90-877, Ipiales",
-    },
-  },
-  {
-    firstName: "Cesar",
-    lastName: "Pantoja",
-    email: "cocina@plaet.com",
-    phone: "3134568765",
-    password: "cocina123",
-    roles: [RoleName.KITCHEN_MANAGER],
-    profile: {
-      address: "Barrio Heraldo Romero Mz A Casa 13 , Ipiales",
-    },
-  },
 ];
 
 export async function seedUsers() {
   logger.info("🌱 Seeding users...");
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: "plaet-pos" },
+  });
+  if (!restaurant) throw new Error("Default restaurant not found");
 
   for (const userData of usersData) {
     const hashedPassword = hasherUtils.hash(userData.password);
-
     const user = await prisma.user.upsert({
       where: { email: userData.email },
       update: {},
       create: {
+        restaurantId: restaurant.id,
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
@@ -71,33 +53,17 @@ export async function seedUsers() {
         },
       },
     });
-    logger.info(` 📝 User "${userData.firstName} ${userData.lastName}" seeded`);
 
     for (const roleName of userData.roles) {
-      const role = await prisma.role.findUnique({
-        where: { name: roleName },
-      });
-
+      const role = await prisma.role.findUnique({ where: { name: roleName } });
       if (role) {
         await prisma.userRole.upsert({
-          where: {
-            roleId_userId: {
-              roleId: role.id,
-              userId: user.id,
-            },
-          },
+          where: { roleId_userId: { roleId: role.id, userId: user.id } },
           update: {},
-          create: {
-            roleId: role.id,
-            userId: user.id,
-          },
+          create: { roleId: role.id, userId: user.id },
         });
       }
     }
-    logger.info(
-      `  ✅ Roles assigned to ${userData.firstName} ${userData.lastName}`,
-    );
   }
-
-  logger.info(`✅ ${usersData.length} users seeded successfully!`);
+  logger.info("✅ Users seeded successfully!");
 }

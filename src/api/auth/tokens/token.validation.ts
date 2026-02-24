@@ -41,6 +41,7 @@ const tokenType = z.enum(
  */
 export const payloadSchema = z.object({
   sub: z.string().uuid(),
+  restaurantId: z.string().uuid().optional().nullable(),
   iat: z.coerce.number(),
   exp: z.coerce.number(),
   type: tokenType,
