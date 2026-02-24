@@ -138,7 +138,7 @@ class OrderRepository implements OrderRepositoryInterface {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
-            priceAtOrder: (item as any).priceAtOrder || 0,
+            priceAtOrder: (item /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ as any).priceAtOrder || 0,
             notes: item.notes,
           })),
         },

@@ -66,8 +66,8 @@ class DailyMenuController {
    */
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
-    const menu = await this.service.updateTodayMenu(data @typescript-eslint/no-explicit-any
-    as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const menu = await this.service.updateTodayMenu(data as any);
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -87,8 +87,8 @@ class DailyMenuController {
 
     const menu = await this.service.updateMenuByCreatedAt(
       createdAt,
-      data @typescript-eslint/no-explicit-any
-    as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data as any,
     );
 
     res.status(HttpStatus.OK).json({

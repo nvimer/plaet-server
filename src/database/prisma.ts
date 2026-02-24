@@ -72,16 +72,16 @@ export const prisma = prismaClient.$extends({
           }
 
           if (operation === "delete") {
-            return (prismaClient @typescript-eslint/no-explicit-any
-    as any)[model.toLowerCase()].update({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (prismaClient /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ as any)[model.toLowerCase()].update({
               where: extendedArgs.where,
               data: { deleted: true, deletedAt: new Date() },
             });
           }
 
           if (operation === "deleteMany") {
-            return (prismaClient @typescript-eslint/no-explicit-any
-    as any)[model.toLowerCase()].updateMany({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (prismaClient /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ as any)[model.toLowerCase()].updateMany({
               where: extendedArgs.where,
               data: { deleted: true, deletedAt: new Date() },
             });

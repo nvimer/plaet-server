@@ -35,7 +35,7 @@ export const storage = new CloudinaryStorage({
     },
     allowed_formats: ["jpg", "jpeg", "png", "webp"],
     transformation: [{ width: 1000, height: 1000, crop: "limit" }], // Basic optimization
-  } as any, // Type casting needed due to library type definitions
+  } /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ as any, // Type casting needed due to library type definitions
 });
 
 /**
