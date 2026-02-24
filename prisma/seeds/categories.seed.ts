@@ -4,19 +4,19 @@ import { logger } from "../../src/config/logger";
 const prisma = new PrismaClient();
 
 export const categoriesData = [
-  { name: "Sopas", description: "Sopas del día", order: 1 },
-  { name: "Principios", description: "Principios del día", order: 2 },
-  { name: "Proteínas", description: "Opciones de proteína", order: 3 },
-  { name: "Bebidas", description: "Bebidas incluidas", order: 4 },
-  { name: "Extras", description: "Acompañamientos extra", order: 5 },
-  { name: "Ensaladas", description: "Ensaladas del día", order: 6 },
-  { name: "Postres", description: "Postres opcionales", order: 7 },
+  { name: "Sopas SZ", description: "Sopas del día", order: 1 },
+  { name: "Principios SZ", description: "Principios del día", order: 2 },
+  { name: "Proteínas SZ", description: "Opciones de proteína", order: 3 },
+  { name: "Bebidas SZ", description: "Bebidas incluidas", order: 4 },
+  { name: "Extras SZ", description: "Acompañamientos extra", order: 5 },
+  { name: "Ensaladas SZ", description: "Ensaladas del día", order: 6 },
+  { name: "Postres SZ", description: "Postres opcionales", order: 7 },
 ];
 
 export async function seedCategories() {
   logger.info("🌱 Seeding categories...");
   const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: "plaet-pos" },
+    where: { slug: "sazonarte" },
   });
   if (!restaurant) throw new Error("Default restaurant not found");
 

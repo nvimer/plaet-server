@@ -8,8 +8,8 @@ export const usersData = [
   {
     firstName: "Admin",
     lastName: "User",
-    email: "admin@plaet.com",
-    phone: "3001234567",
+    email: "admin@sazonarte.com",
+    phone: "3111234567",
     password: "admin123",
     roles: [RoleName.ADMIN],
     profile: {
@@ -19,8 +19,8 @@ export const usersData = [
   {
     firstName: "Nicolas",
     lastName: "Pantoja",
-    email: "mesero@plaet.com",
-    phone: "3007890123",
+    email: "mesero@sazonarte.com",
+    phone: "3117890123",
     password: "mesero123",
     roles: [RoleName.WAITER],
     profile: {
@@ -32,7 +32,7 @@ export const usersData = [
 export async function seedUsers() {
   logger.info("🌱 Seeding users...");
   const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: "plaet-pos" },
+    where: { slug: "sazonarte" },
   });
   if (!restaurant) throw new Error("Default restaurant not found");
 

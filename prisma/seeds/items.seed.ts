@@ -4,27 +4,27 @@ import { logger } from "../../src/config/logger";
 const prisma = new PrismaClient();
 
 const itemsByStore = [
-  { categoryName: "Sopas", name: "Sopa de Lentejas", price: 0 },
-  { categoryName: "Sopas", name: "Sopa de Verduras", price: 0 },
-  { categoryName: "Sopas", name: "Crema de Pollo", price: 0 },
-  { categoryName: "Principios", name: "Arroz Blanco", price: 0 },
-  { categoryName: "Principios", name: "Frijoles", price: 0 },
-  { categoryName: "Principios", name: "Puré de Papa", price: 0 },
-  { categoryName: "Proteínas", name: "Pollo Asado", price: 6000 },
-  { categoryName: "Proteínas", name: "Carne a la Plancha", price: 7000 },
-  { categoryName: "Proteínas", name: "Pescado Frito", price: 8000 },
-  { categoryName: "Bebidas", name: "Jugo de Mora", price: 0 },
-  { categoryName: "Bebidas", name: "Limonada", price: 0 },
-  { categoryName: "Extras", name: "Tajadas de Plátano", price: 1000 },
-  { categoryName: "Extras", name: "Huevo Frito", price: 1500 },
-  { categoryName: "Ensaladas", name: "Ensalada Verde", price: 0 },
-  { categoryName: "Postres", name: "Gelatina", price: 0 },
+  { categoryName: "Sopas SZ", name: "Sopa de Patacón SZ", price: 0 },
+  { categoryName: "Sopas SZ", name: "Sancocho de Gallina SZ", price: 0 },
+  { categoryName: "Sopas SZ", name: "Crema de Champiñones SZ", price: 0 },
+  { categoryName: "Principios SZ", name: "Arroz con Fideos SZ", price: 0 },
+  { categoryName: "Principios SZ", name: "Lentejas Guisadas SZ", price: 0 },
+  { categoryName: "Principios SZ", name: "Puré de Papa Criolla SZ", price: 0 },
+  { categoryName: "Proteínas SZ", name: "Pechuga a la Plancha SZ", price: 6500 },
+  { categoryName: "Proteínas SZ", name: "Carne Asada SZ", price: 7500 },
+  { categoryName: "Proteínas SZ", name: "Mojarra Frita SZ", price: 9000 },
+  { categoryName: "Bebidas SZ", name: "Jugo de Lulo SZ", price: 0 },
+  { categoryName: "Bebidas SZ", name: "Agua de Panela SZ", price: 0 },
+  { categoryName: "Extras SZ", name: "Porción de Aguacate SZ", price: 1500 },
+  { categoryName: "Extras SZ", name: "Huevo Frito SZ", price: 1500 },
+  { categoryName: "Ensaladas SZ", name: "Ensalada de Aguacate SZ", price: 0 },
+  { categoryName: "Postres SZ", name: "Arroz con Leche SZ", price: 0 },
 ];
 
 export async function seedItems() {
   logger.info("🌱 Seeding items...");
   const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: "plaet-pos" },
+    where: { slug: "sazonarte" },
   });
   if (!restaurant) throw new Error("Default restaurant not found");
 
