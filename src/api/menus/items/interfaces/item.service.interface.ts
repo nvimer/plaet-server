@@ -93,4 +93,5 @@ export interface ItemServiceInterface {
     lowStockItems: number;
     inStockItems: number;
   }>;
+  deleteItem(id: number): Promise<void>;
 }

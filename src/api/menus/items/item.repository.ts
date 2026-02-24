@@ -568,6 +568,12 @@ class ItemRepository implements ItemRepositoryInterface {
       },
     });
   }
+
+  async delete(id: number): Promise<void> {
+    await prisma.menuItem.delete({
+      where: { id },
+    });
+  }
 }
 
 export default new ItemRepository();

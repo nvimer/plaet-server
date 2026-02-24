@@ -711,6 +711,14 @@ class ItemController {
       data: summary,
     });
   });
+
+  deleteItem = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+
+    await this.itemService.deleteItem(id);
+
+    res.status(HttpStatus.NO_CONTENT).send();
+  });
 }
 
 export default new ItemController(itemService);

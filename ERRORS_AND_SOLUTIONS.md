@@ -34,12 +34,13 @@ warn The configuration property `package.json#prisma` is deprecated and will be 
 ```
 
 **Solution:**
-Removed the `"prisma"` block from `package.json` and created a new file `prisma.config.ts` in the root directory:
+Initially attempted to create a `prisma.config.ts` file, but encountered a `Failed to parse syntax of config file` error when running Prisma Studio because the project uses CommonJS and Prisma's internal ES module loader failed to parse the default export in TypeScript correctly. 
 
-```typescript
-export default {
-  seed: "ts-node prisma/seed.ts",
-};
+The workaround was to simply ignore the warning and keep the configuration inside `package.json`:
+```json
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
 ```
 
 ---

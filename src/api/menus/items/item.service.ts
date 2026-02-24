@@ -1,4 +1,5 @@
 import { MenuItem, StockAdjustment, Prisma } from "@prisma/client";
+import { logger } from "../../../config/logger";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
 import {
   AddStockBodyInput,
@@ -1011,6 +1012,32 @@ export class ItemService implements ItemServiceInterface {
       lowStockItems,
       inStockItems: trackedItems - outOfStockItems - lowStockItems,
     };
+  }
+
+  async deleteItem(id: number): Promise<void> {
+    const restaurantId = (await import("../../../utils/tenant-context")).tenantContext.getStore()?.restaurantId;
+    logger.debug(`[ItemService] Attempting to delete item ${id} for restaurant ${restaurantId}`);
+    
+    const existingItem = await this.itemRepository.findById(id);
+
+    if (!existingItem) {
+      throw new CustomError(
+        `Menu Item with id ${id} not found`,
+        HttpStatus.NOT_FOUND,
+        "MENU_ITEM_NOT_FOUND",
+      );
+    }
+
+    if (existingItem.imagePublicId) {
+      try {
+        await storageService.deleteImage(existingItem.imagePublicId);
+      } catch (error) {
+        logger.error(`Failed to delete image from Cloudinary:`, error);
+      }
+    }
+
+    await this.itemRepository.delete(id);
+    logger.info(`Menu Item deleted: ${existingItem.name}`);
   }
 }
 

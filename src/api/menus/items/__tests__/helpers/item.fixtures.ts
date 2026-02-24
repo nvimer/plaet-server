@@ -6,6 +6,7 @@ export function createMenuItemFixture(
 ): MenuItem {
   return {
     id: 1,
+    restaurantId: overrides.restaurantId ?? null,
     categoryId: 1,
     name: "Hamburguesa Clásica",
     description: "Hamburguesa con carne, lechuga y tomate",
