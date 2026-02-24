@@ -8,6 +8,7 @@ import { UserWithRoles } from "../../user.repository";
 export function createUserFixture(overrides: Partial<User> = {}): User {
   return {
     id: "user-fixture-id-001",
+    restaurantId: overrides.restaurantId ?? null,
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@fixture.test",

@@ -6,6 +6,8 @@ import { AuthenticatedUser } from "../types/express";
 import { CustomError } from "../types/custom-errors";
 import tokenService from "../api/auth/tokens/token.service";
 
+import { tenantMiddleware } from "./tenant.middleware";
+
 // Interface for info if generate error with token
 export interface PassportAuthInfo {
   message?: string;
@@ -29,7 +31,7 @@ interface PassportAuthInfoExtended extends PassportAuthInfo {
 }
 
 // Middleware of WJT authentication
-export const authJwt = (req: Request, res: Response, next: NextFunction) => {
+export const authJwtStrategy = (req: Request, res: Response, next: NextFunction) => {
   // Passport jwt try authenticated petition using "jwt" strategy
   // session in false because we not use sessions based in cookies
   passport.authenticate(
@@ -97,7 +99,7 @@ export const authJwt = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware for optional JWT authentication
 // Tries to authenticate, but doesn't error if token is invalid/missing
-export const authJwtOptional = (
+export const authJwtOptionalStrategy = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -146,3 +148,7 @@ export const authJwtOptional = (
     },
   )(req, res, next);
 };
+
+// Export composed middlewares to ensure tenant context is established after authentication
+export const authJwt = [authJwtStrategy, tenantMiddleware];
+export const authJwtOptional = [authJwtOptionalStrategy, tenantMiddleware];

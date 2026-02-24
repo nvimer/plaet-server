@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { authJwt, PassportAuthInfo } from "../../auth.middleware";
+import {
+  authJwtStrategy as authJwt,
+  authJwtOptionalStrategy as authJwtOptional,
+  PassportAuthInfo,
+} from "../../auth.middleware";
 import {
   createMockRequest,
   createMockResponse,
