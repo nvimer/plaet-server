@@ -98,8 +98,30 @@ at ItemService.setInventoryType
   Use `findFirst` instead of `findUnique` inside the transactions to manually filter by `deleted: false`, working around the lack of soft-delete extensions in the test environment setup.
 
 ---
+*(Append any future errors and solutions below this line)*
 
-_(Append any future errors and solutions below this line)_
+## 🌍 Production & Database Errors
+
+### 1. Failed Migrations in Production (Error P3009)
+**Context:** During deployment to Railway, the process fails with error `P3009: migrate found failed migrations in the target database`. Specifically, the migration `20260224035315_add_multi_tenant_support` failed.
+**Error message:**
+```
+Error: P3009
+migrate found failed migrations in the target database, new migrations will not be applied.
+The `20260224035315_add_multi_tenant_support` migration ... failed
+```
+**Root Cause:**
+This usually happens when a migration attempts to add a `NOT NULL` column to a table that already contains data. Since no default value was provided in the migration, the database engine rejects the change, leaving the Prisma migration history in a "failed" state.
+**Solution:**
+1. You must manually resolve the failed migration state using the Prisma CLI. Run the following command (ensure `DATABASE_URL` is set to your production database):
+   ```bash
+   npx prisma migrate resolve --rolled-back "20260224035315_add_multi_tenant_support"
+   ```
+2. Once the state is resolved, you can attempt to deploy again. If the migration continues to fail due to data constraints, you may need to either:
+   - Temporarily make the fields nullable in the schema and generate a new migration.
+   - Or, if data loss is acceptable in the current environment, perform a reset: `npx prisma migrate reset --force`.
+   - In our current `schema.prisma`, most of these fields have already been updated to be optional (`String?`), so resolving the failed state and redeploying should allow the system to progress.
+
 
 ## 🐛 API Runtime Errors
 
