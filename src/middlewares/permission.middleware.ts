@@ -55,7 +55,7 @@ export const permissionMiddleware = (requiredPermission: string) => {
 
       if (!hasPermission) {
         throw new CustomError(
-          `Permission denied: "\${requiredPermission}" required`,
+          `Permission denied: ${requiredPermission} required`,
           HttpStatus.FORBIDDEN,
           "FORBIDDEN",
         );
