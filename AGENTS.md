@@ -1,80 +1,26 @@
-# AGENTS.md - Coding Guidelines & Context for AI Agents
-
-Welcome, fellow AI Agent! This document contains all the necessary context, rules, and architectural decisions for the Plaet API project.
+# AGENTS.md - Coding Guidelines & Context for AI Agents (Server)
 
 ## 🏢 Architecture: Multi-Tenant SaaS
 
-The project is built as a **Multi-tenant SaaS** using a shared database with column-based isolation.
-
 ### 1. Data Isolation (Prisma Extension)
+- **Automatic Filtering:** READ/UPDATE/DELETE are filtered by `restaurantId` automatically.
+- **Automatic Assignment:** CREATE injects `restaurantId` automatically.
+- **SUPERADMIN:** Bypasses all tenant filters to manage global SaaS data.
 
-- **Global Extension:** A global Prisma extension in `src/database/prisma.ts` intercepts all operations.
-- **Automatic Filtering:** It automatically injects `where: { restaurantId: currentId }` into READ, UPDATE, and DELETE operations for tenant-specific models.
-- **Automatic Assignment:** It automatically injects `restaurantId` into CREATE operations.
-- **Tenant Context:** Uses `AsyncLocalStorage` (`src/utils/tenant-context.ts`) to store the `restaurantId` during the request lifecycle, populated by `tenantMiddleware`.
+### 2. Granular Permissions System
+- **Permission-Based Access:** Use `permissionMiddleware("module:action")` to protect routes.
+- **Hierarchy:** Roles (`ADMIN`, `WAITER`, etc.) are collections of granular permissions (`orders:create`, `menu:read`).
+- **SuperAdmin Bypass:** `SUPERADMIN` role bypasses all permission checks in `permissionMiddleware`.
 
-### 2. Authentication & Identity
-
-- **JWT Payload:** Tokens include `restaurantId`. Decoded payload is available in `req.user.restaurantId` after `authJwt` middleware.
-- **SUPERADMIN:** This role has no `restaurantId` and bypasses tenant isolation filters to manage the entire system.
-
-## 🚀 Performance & Complexity (Crucial)
-
-All code contributions MUST prioritize algorithmic efficiency.
-
-- **Goal:** Target **O(1)** or **O(log N)** for lookups and logic.
-- **Avoid:** Strictly avoid **O(N^2)** (nested loops) or **Exponential** complexities.
-- **Database:** Ensure queries leverage composite indices (e.g., `@@index([restaurantId, createdAt])`).
-- **Data Structures:** Prefer `Map` and `Set` over Array searches for constant time lookups.
-
-## 🍽 Project Domain: Plaet API (Restaurant Management)
-
-Handles users, customers, tables, orders, menus, and inventory for multiple restaurants.
-
-### Core Domain: The "Corrientazo" (Daily Menu)
-
-- **Pricing:** `basePrice` + `protein price`.
-- **Structure:** `DailyMenu` references `MenuItem` IDs and `MenuCategory` IDs.
-- **Historical Data:** Support for creating and editing menus for past dates is mandatory.
-
-## 🏗️ Project Architecture & Structure
-
-Layered architecture: **Controller -> Service -> Repository**.
-
-```text
-src/
-├── api/                     # Feature modules
-├── config/                  # Global configuration
-├── database/                # Prisma client & extensions
-├── middlewares/             # Tenant, Auth, Errors
-├── types/                   # TypeScript definitions
-└── utils/                   # Tenant context, Helpers
-```
+## 🚀 Performance & Complexity
+- **O(1) Priority:** Use `Map` and `Set` for heavy lookups.
+- **Algorithmic Efficiency:** Avoid O(N^2) operations. Code must be scalable for thousands of tenants.
 
 ## 🛠️ Quality Standards
+- **Zero Tolerance:** NO `any` or `unknown`. Use `AuthenticatedUser` for `req.user` casting.
+- **Clean Code Documentation:** Comments must describe *functionality* and *complexity*. Never include change logs, commit-like messages, or conversational filler in code comments.
+- **Strict Formatting:** Double quotes, semicolons required, 2 spaces indentation.
 
-### 1. Strict Typing
-
-- **NO `any` or `unknown`** types allowed.
-- Use `eslint-disable-next-line` only for Prisma internal types if absolutely necessary.
-
-### 2. Date Handling
-
-- **Robust Parsing:** Use `new Date(dateString + "T12:00:00.000Z")` for YYYY-MM-DD strings to avoid timezone-driven off-by-one day bugs.
-
-### 3. Strings & Formatting
-
-- Use **double quotes** (""). Semicolons are **required**.
-
-## 🛠️ Build/Lint Commands
-
-```bash
-npm run dev              # Nodemon + ts-node
-npm run build            # Compilation
-npm run eslint-check-only # Linting
-npm test                 # Jest tests
-```
-
-## 🐛 Documenting Errors and Solutions
-
-Whenever an error is encountered and resolved (whether in deployment, testing, or development), you MUST document it in the `ERRORS_AND_SOLUTIONS.md` file in the root of the project. Include the context, the exact error, and the applied solution to help build the final product documentation and prevent future regressions.
+## 🏗️ Structure
+- **Pattern:** Controller -> Service -> Repository.
+- **Seeds:** Always update `permissions.seed.ts` and `roles.seed.ts` when adding new features.
