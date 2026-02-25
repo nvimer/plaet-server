@@ -21,6 +21,12 @@ export const permissionMiddleware = (requiredPermission: string) => {
         );
       }
 
+      // Special case: users can always access their own roles and permissions
+      // This is used by the frontend to build the UI based on permissions
+      if (req.params.id === user.id && requiredPermission === "users:read") {
+        return next();
+      }
+
       const authenticatedUser =
         await userService.findUserWithRolesAndPermissions(user.id);
 
