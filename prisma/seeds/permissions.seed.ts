@@ -26,6 +26,11 @@ export const permissions = [
   { name: "tables.create", description: "Create a new tables" },
   { name: "tables.update", description: "Update tables" },
   { name: "tables.delete", description: "Delete a tables" },
+
+  { name: "restaurants.view", description: "View all restaurants" },
+  { name: "restaurants.create", description: "Create a new restaurant" },
+  { name: "restaurants.update", description: "Update a restaurant" },
+  { name: "restaurants.delete", description: "Delete a restaurant" },
 ];
 
 export async function seedPermissions() {

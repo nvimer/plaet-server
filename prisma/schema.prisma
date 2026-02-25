@@ -41,6 +41,8 @@ model Restaurant {
   customers       Customer[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
   @@map("restaurants")
 }
 
@@ -129,9 +131,9 @@ model Role {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@map("roles")
 }
@@ -145,9 +147,9 @@ model Permission {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@map("permissions")
 }
@@ -163,6 +165,8 @@ model RolePermission {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
@@ -191,9 +195,9 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   // Email verification fields
   emailVerified   Boolean   @default(false) @map("email_verified")
@@ -222,6 +226,8 @@ model UserRole {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@id([roleId, userId])
   @@map("user_roles")
@@ -240,9 +246,9 @@ model Profile {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@map("profiles")
 }
@@ -259,9 +265,9 @@ model Table {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@unique([restaurantId, number])
   @@map("tables")
@@ -275,7 +281,7 @@ model MenuCategory {
   restaurantId String?     @map("restaurant_id")
   restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   id          Int     @id @default(autoincrement())
-  name        String  @unique
+  name        String
   description String?
   order       Int     @default(0)
 
@@ -299,7 +305,7 @@ model MenuItem {
   categoryId Int          @map("category_id")
   category   MenuCategory @relation(fields: [categoryId], references: [id])
 
-  name        String  @unique
+  name        String
   description String?
   price       Decimal @db.Decimal(10, 2)
   isAvailable Boolean @default(true) @map("is_available")
@@ -318,9 +324,9 @@ model MenuItem {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@unique([restaurantId, categoryId, name])
   @@map("menu_items")
@@ -371,6 +377,8 @@ model Order {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@index([restaurantId])
   @@map("orders")
@@ -390,6 +398,8 @@ model OrderItem {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@map("order_items")
 }
@@ -409,9 +419,9 @@ model Customer {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@unique([restaurantId, phone])
   @@unique([restaurantId, email])
@@ -435,6 +445,8 @@ model TicketBook {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@map("ticket_books")
 }
@@ -454,6 +466,8 @@ model TicketBookUsage {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@map("ticket_book_usages")
 }
@@ -493,9 +507,9 @@ model Expense {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+
 
   @@index([restaurantId])
   @@map("expenses")
@@ -524,6 +538,8 @@ model CashClosure {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   @@index([restaurantId])
   @@map("cash_closures")
@@ -562,6 +578,8 @@ model DailyMenu {
   isActive  Boolean  @default(true)
   createdAt DateTime @unique @map("created_at") @db.Date
   updatedAt DateTime @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
 
   // Price configuration - base margin added to protein individual price
   basePrice          Decimal  @default(4000.00) @db.Decimal(10, 2) @map("base_price") // Base margin for lunch (e.g., $4,000). Total = basePrice + proteinPrice

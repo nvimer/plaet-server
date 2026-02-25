@@ -26,6 +26,10 @@ export const rolesConfig = [
       "tables.create",
       "tables.update",
       "tables.delete",
+      "restaurants.view",
+      "restaurants.create",
+      "restaurants.update",
+      "restaurants.delete",
     ],
   },
   {

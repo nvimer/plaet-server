@@ -6,12 +6,25 @@ const prisma = new PrismaClient();
 
 export const usersData = [
   {
+    firstName: "Super",
+    lastName: "Admin",
+    email: "superadmin@plaet.com",
+    phone: "3220000000",
+    password: "superadmin123",
+    roles: [RoleName.SUPERADMIN],
+    restaurantSlug: null,
+    profile: {
+      address: "System HQ",
+    },
+  },
+  {
     firstName: "Admin",
-    lastName: "User",
+    lastName: "Sazonarte",
     email: "admin@sazonarte.com",
     phone: "3111234567",
     password: "admin123",
     roles: [RoleName.ADMIN],
+    restaurantSlug: "sazonarte",
     profile: {
       address: "Calle 123 #45-67, Ipiales",
     },
@@ -23,26 +36,41 @@ export const usersData = [
     phone: "3117890123",
     password: "mesero123",
     roles: [RoleName.WAITER],
+    restaurantSlug: "sazonarte",
     profile: {
       address: "Carrera Falsa 2 #09-87, Pasto",
+    },
+  },
+  {
+    firstName: "Test",
+    lastName: "Admin",
+    email: "admin@test.com",
+    phone: "3119999999",
+    password: "testadmin123",
+    roles: [RoleName.ADMIN],
+    restaurantSlug: "test-restaurant",
+    profile: {
+      address: "Test Address 123",
     },
   },
 ];
 
 export async function seedUsers() {
   logger.info("🌱 Seeding users...");
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: "sazonarte" },
-  });
-  if (!restaurant) throw new Error("Default restaurant not found");
 
   for (const userData of usersData) {
+    const restaurant = userData.restaurantSlug
+      ? await prisma.restaurant.findUnique({
+          where: { slug: userData.restaurantSlug },
+        })
+      : null;
+
     const hashedPassword = hasherUtils.hash(userData.password);
     const user = await prisma.user.upsert({
       where: { email: userData.email },
       update: {},
       create: {
-        restaurantId: restaurant.id,
+        restaurantId: restaurant?.id || null,
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,

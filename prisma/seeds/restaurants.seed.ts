@@ -4,9 +4,9 @@ import { logger } from "../../src/config/logger";
 const prisma = new PrismaClient();
 
 export async function seedRestaurants() {
-  logger.info("🏢 Seeding default restaurant...");
+  logger.info("🏢 Seeding restaurants...");
 
-  const restaurant = await prisma.restaurant.upsert({
+  const sazonarte = await prisma.restaurant.upsert({
     where: { slug: "sazonarte" },
     update: {},
     create: {
@@ -19,8 +19,21 @@ export async function seedRestaurants() {
     },
   });
 
+  const testRestaurant = await prisma.restaurant.upsert({
+    where: { slug: "test-restaurant" },
+    update: {},
+    create: {
+      name: "Restaurante de Prueba",
+      slug: "test-restaurant",
+      status: RestaurantStatus.ACTIVE,
+      address: "Carrera 1 #2-3",
+      phone: "3110000000",
+      nit: "800000000-1",
+    },
+  });
+
   logger.info(
-    `✅ Default restaurant created: ${restaurant.name} (${restaurant.id})`,
+    `✅ Restaurants created: ${sazonarte.name} and ${testRestaurant.name}`,
   );
-  return restaurant;
+  return { sazonarte, testRestaurant };
 }
