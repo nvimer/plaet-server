@@ -29,10 +29,10 @@ router.use(authJwt);
  * GET /items
  */
 router.get(
-  "/", 
-  permissionMiddleware("menu:read"), 
-  validate(paginationQuerySchema), 
-  itemController.getMenuItems
+  "/",
+  permissionMiddleware("menu:read"),
+  validate(paginationQuerySchema),
+  itemController.getMenuItems,
 );
 
 /*
@@ -82,37 +82,37 @@ router.post(
  * GET /items/low-stock
  */
 router.get(
-  "/low-stock", 
-  permissionMiddleware("stock:manage"), 
-  itemController.getLowStock
+  "/low-stock",
+  permissionMiddleware("stock:manage"),
+  itemController.getLowStock,
 );
 
 /**
  * GET /items/out-of-stock
  */
 router.get(
-  "/out-of-stock", 
-  permissionMiddleware("stock:manage"), 
-  itemController.getOutOfStock
+  "/out-of-stock",
+  permissionMiddleware("stock:manage"),
+  itemController.getOutOfStock,
 );
 
 /**
  * GET /items/by-category/:categoryId
  */
 router.get(
-  "/by-category/:categoryId", 
-  permissionMiddleware("menu:read"), 
-  itemController.getItemsByCategory
+  "/by-category/:categoryId",
+  permissionMiddleware("menu:read"),
+  itemController.getItemsByCategory,
 );
 
 /**
  * GET /items/:id
  */
 router.get(
-  "/:id", 
-  permissionMiddleware("menu:read"), 
-  validate(menuItemIdSchema), 
-  itemController.getMenuItem
+  "/:id",
+  permissionMiddleware("menu:read"),
+  validate(menuItemIdSchema),
+  itemController.getMenuItem,
 );
 
 /**
@@ -189,9 +189,9 @@ router.get(
  * GET /items/stock-summary
  */
 router.get(
-  "/stock-summary", 
-  permissionMiddleware("stock:manage"), 
-  itemController.getStockSummary
+  "/stock-summary",
+  permissionMiddleware("stock:manage"),
+  itemController.getStockSummary,
 );
 
 /**
@@ -204,7 +204,6 @@ router.patch(
   validate(updateItemSchema),
   itemController.patchItem,
 );
-
 
 /**
  * DELETE /items/:id

@@ -2,7 +2,11 @@ import { Restaurant, RoleName } from "@prisma/client";
 import { getPrismaClient } from "../../database/prisma";
 import { RestaurantServiceInterface } from "./interfaces/restaurant.service.interface";
 import { RestaurantRepositoryInterface } from "./interfaces/restaurant.repository.interface";
-import { CreateRestaurantInput, UpdateRestaurantInput, RestaurantSearchParams } from "./restaurant.validator";
+import {
+  CreateRestaurantInput,
+  UpdateRestaurantInput,
+  RestaurantSearchParams,
+} from "./restaurant.validator";
 import {
   PaginationParams,
   PaginatedResponse,
@@ -18,18 +22,26 @@ import restaurantRepository from "./restaurant.repository";
 export class RestaurantService implements RestaurantServiceInterface {
   constructor(private restaurantRepository: RestaurantRepositoryInterface) {}
 
-  async getAllRestaurants(params: PaginationParams): Promise<PaginatedResponse<Restaurant>> {
+  async getAllRestaurants(
+    params: PaginationParams,
+  ): Promise<PaginatedResponse<Restaurant>> {
     return this.restaurantRepository.findAll(params);
   }
 
-  async searchRestaurants(params: PaginationParams & RestaurantSearchParams): Promise<PaginatedResponse<Restaurant>> {
+  async searchRestaurants(
+    params: PaginationParams & RestaurantSearchParams,
+  ): Promise<PaginatedResponse<Restaurant>> {
     return this.restaurantRepository.search(params);
   }
 
   async getRestaurantById(id: string): Promise<Restaurant | null> {
     const restaurant = await this.restaurantRepository.findById(id);
     if (!restaurant) {
-      throw new CustomError("Restaurant not found", HttpStatus.NOT_FOUND, "NOT_FOUND");
+      throw new CustomError(
+        "Restaurant not found",
+        HttpStatus.NOT_FOUND,
+        "NOT_FOUND",
+      );
     }
     return restaurant;
   }
@@ -39,15 +51,27 @@ export class RestaurantService implements RestaurantServiceInterface {
     const { adminUser, ...restaurantData } = data;
 
     // 1. Check if restaurant name already exists
-    const existing = await prisma.restaurant.findUnique({ where: { name: restaurantData.name } });
+    const existing = await prisma.restaurant.findUnique({
+      where: { name: restaurantData.name },
+    });
     if (existing) {
-      throw new CustomError("Restaurant name already exists", HttpStatus.CONFLICT, "NAME_CONFLICT");
+      throw new CustomError(
+        "Restaurant name already exists",
+        HttpStatus.CONFLICT,
+        "NAME_CONFLICT",
+      );
     }
 
     // 2. Check if admin email already exists
-    const existingUser = await prisma.user.findUnique({ where: { email: adminUser.email } });
+    const existingUser = await prisma.user.findUnique({
+      where: { email: adminUser.email },
+    });
     if (existingUser) {
-      throw new CustomError("Admin email already exists", HttpStatus.CONFLICT, "EMAIL_CONFLICT");
+      throw new CustomError(
+        "Admin email already exists",
+        HttpStatus.CONFLICT,
+        "EMAIL_CONFLICT",
+      );
     }
 
     // 3. Create everything in a transaction
@@ -57,11 +81,15 @@ export class RestaurantService implements RestaurantServiceInterface {
 
       // b. Find ADMIN role
       const adminRole = await tx.role.findUnique({
-        where: { name: RoleName.ADMIN }
+        where: { name: RoleName.ADMIN },
       });
 
       if (!adminRole) {
-        throw new CustomError("ADMIN role not found in system", HttpStatus.INTERNAL_SERVER_ERROR, "ROLE_NOT_FOUND");
+        throw new CustomError(
+          "ADMIN role not found in system",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "ROLE_NOT_FOUND",
+        );
       }
 
       // c. Create Admin User
@@ -74,22 +102,25 @@ export class RestaurantService implements RestaurantServiceInterface {
           phone: adminUser.phone,
           password: hashedPassword,
           restaurantId: restaurant.id, // Assign to new restaurant
-        }
+        },
       });
 
       // d. Assign Role
       await tx.userRole.create({
         data: {
           userId: user.id,
-          roleId: adminRole.id
-        }
+          roleId: adminRole.id,
+        },
       });
 
       return restaurant;
     });
   }
 
-  async updateRestaurant(id: string, data: UpdateRestaurantInput): Promise<Restaurant> {
+  async updateRestaurant(
+    id: string,
+    data: UpdateRestaurantInput,
+  ): Promise<Restaurant> {
     await this.getRestaurantById(id);
     return this.restaurantRepository.update(id, data);
   }

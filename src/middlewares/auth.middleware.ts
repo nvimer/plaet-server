@@ -31,7 +31,11 @@ interface PassportAuthInfoExtended extends PassportAuthInfo {
 }
 
 // Middleware of WJT authentication
-export const authJwtStrategy = (req: Request, res: Response, next: NextFunction) => {
+export const authJwtStrategy = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   // Passport jwt try authenticated petition using "jwt" strategy
   // session in false because we not use sessions based in cookies
   passport.authenticate(

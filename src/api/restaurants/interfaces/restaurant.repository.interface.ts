@@ -3,7 +3,11 @@ import {
   PaginationParams,
   PaginatedResponse,
 } from "../../../interfaces/pagination.interfaces";
-import { CreateRestaurantInput, UpdateRestaurantInput, RestaurantSearchParams } from "../restaurant.validator";
+import {
+  CreateRestaurantInput,
+  UpdateRestaurantInput,
+  RestaurantSearchParams,
+} from "../restaurant.validator";
 
 export interface RestaurantRepositoryInterface {
   findAll(params: PaginationParams): Promise<PaginatedResponse<Restaurant>>;

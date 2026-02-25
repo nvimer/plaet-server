@@ -1,17 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { RoleName } from "@prisma/client";
 import userService from "../api/users/user.service";
+import { AuthenticatedUser } from "../types/express";
 
 export const roleMiddleware = (allowedRoles: RoleName[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user || !req.user.id) {
+      const user = req.user as AuthenticatedUser;
+
+      if (!user || !user.id) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
 
       const authenticatedUser =
-        await userService.findUserWithRolesAndPermissions(req.user.id);
+        await userService.findUserWithRolesAndPermissions(user.id);
 
       const hasAllowedRole = authenticatedUser.roles.some((userRole) =>
         allowedRoles.includes(userRole.role.name),

@@ -26,7 +26,10 @@ export const createRestaurantSchema = z.object({
         .min(2, "Last name must be at least 2 characters long")
         .max(50, "Last name cannot exceed 50 characters"),
       email: z.string().email("Invalid email address"),
-      phone: z.string().regex(/^\d{10}$/, "Phone number must be a 10 digits").optional(),
+      phone: z
+        .string()
+        .regex(/^\d{10}$/, "Phone number must be a 10 digits")
+        .optional(),
       password: z
         .string()
         .min(8, "Password must be at least 8 characters long"),
@@ -51,17 +54,18 @@ export const updateRestaurantSchema = z.object({
 
 export const restaurantSearchSchema = z.object({
   query: z.object({
-    search: z
-      .string()
-      .min(1)
-      .max(100)
-      .trim()
-      .optional(),
+    search: z.string().min(1).max(100).trim().optional(),
     status: z.enum(["ACTIVE", "SUSPENDED", "TRIAL", "PAST_DUE"]).optional(),
   }),
 });
 
 export type RestaurantIdParams = z.infer<typeof restaurantIdSchema>["params"];
-export type CreateRestaurantInput = z.infer<typeof createRestaurantSchema>["body"];
-export type UpdateRestaurantInput = z.infer<typeof updateRestaurantSchema>["body"];
-export type RestaurantSearchParams = z.infer<typeof restaurantSearchSchema>["query"];
+export type CreateRestaurantInput = z.infer<
+  typeof createRestaurantSchema
+>["body"];
+export type UpdateRestaurantInput = z.infer<
+  typeof updateRestaurantSchema
+>["body"];
+export type RestaurantSearchParams = z.infer<
+  typeof restaurantSearchSchema
+>["query"];

@@ -35,10 +35,10 @@ router.get(
  * GET /categories/:id
  */
 router.get(
-  "/:id", 
+  "/:id",
   permissionMiddleware("menu:read"),
-  validate(categoryIdSchema), 
-  categoryController.getCategory
+  validate(categoryIdSchema),
+  categoryController.getCategory,
 );
 
 // NOTE: POST, PATCH, DELETE are currently disabled in original file

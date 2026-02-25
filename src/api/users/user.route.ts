@@ -14,10 +14,10 @@ router.use(authJwt);
  * GET /users
  */
 router.get(
-  "/", 
+  "/",
   permissionMiddleware("users:read"),
-  validate(paginationQuerySchema), 
-  userController.getUsers
+  validate(paginationQuerySchema),
+  userController.getUsers,
 );
 
 /**
@@ -35,38 +35,38 @@ router.get(
  * GET /users/:id
  */
 router.get(
-  "/:id", 
+  "/:id",
   permissionMiddleware("users:read"),
-  validate(userIdSchema), 
-  userController.getUserById
+  validate(userIdSchema),
+  userController.getUserById,
 );
 
 /**
  * GET /users/email/:email
  */
 router.get(
-  "/email/:email", 
+  "/email/:email",
   permissionMiddleware("users:read"),
-  userController.getUserByEmail
+  userController.getUserByEmail,
 );
 
 /**
  * POST /users/register
  */
 router.post(
-  "/register", 
+  "/register",
   permissionMiddleware("users:create"),
-  userController.registerUser
+  userController.registerUser,
 );
 
 /**
  * PATCH /users/:id
  */
 router.patch(
-  "/:id", 
+  "/:id",
   permissionMiddleware("users:update"),
-  validate(userIdSchema), 
-  userController.updateUser
+  validate(userIdSchema),
+  userController.updateUser,
 );
 
 /**

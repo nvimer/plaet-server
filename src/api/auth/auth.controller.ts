@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedUser } from "../../types/express";
 import { User } from "@prisma/client";
 import userService from "../users/user.service";
 import { HttpStatus } from "../../utils/httpStatus.enum";
@@ -148,7 +149,7 @@ class AuthController {
    * Authentication: Required (JWT token)
    */
   logout = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+    const userId = (req.user as AuthenticatedUser)?.id;
 
     if (userId) {
       await this.tokenService.logout(userId);
@@ -441,7 +442,7 @@ class AuthController {
    * - Invalidates all tokens (logout from all sessions)
    */
   changePassword = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+    const userId = (req.user as AuthenticatedUser)?.id;
     const { currentPassword, newPassword } = req.body;
 
     // Verify current password

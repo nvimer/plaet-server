@@ -58,6 +58,9 @@ components:
           nullable: true
           description: Current stock quantity (null for UNLIMITED items)
           example: 18
+        initialStock:
+        initialStock:
+          initialStock:
           type: integer
           format: int32
           nullable: true

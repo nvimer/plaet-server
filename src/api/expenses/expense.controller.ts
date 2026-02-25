@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedUser } from "../../types/express";
 import { ExpenseService } from "./expense.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpStatus } from "../../utils/httpStatus.enum";
@@ -13,7 +14,7 @@ export class ExpenseController {
 
   create = asyncHandler(async (req: Request, res: Response) => {
     const data: CreateExpenseDto = req.body;
-    const userId = req.user.id;
+    const userId = (req.user as AuthenticatedUser).id;
 
     const expense = await this.service.createExpense(data, userId);
 

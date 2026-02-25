@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedUser } from "../../types/express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import profileService from "./profile.service";
 import { HttpStatus } from "../../utils/httpStatus.enum";
@@ -118,8 +119,8 @@ class ProfileController {
    * - 404: Profile not found
    */
   getMyProfile = asyncHandler(async (req: Request, res: Response) => {
-    // req.user comes to middleware of authentication (authJwt)
-    const id = req.user.id;
+    // (req.user as AuthenticatedUser) comes to middleware of authentication (authJwt)
+    const id = (req.user as AuthenticatedUser).id;
     const profile = await profileService.getMyProfile(id);
 
     const { password: _password, ...data } = profile;
@@ -151,7 +152,7 @@ class ProfileController {
       throw new CustomError("No file uploaded", HttpStatus.BAD_REQUEST);
     }
 
-    const userId = req.user.id;
+    const userId = (req.user as AuthenticatedUser).id;
     const updatedProfile = await profileService.updatePhoto(userId, req.file);
 
     res.status(HttpStatus.OK).json({

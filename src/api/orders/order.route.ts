@@ -20,10 +20,10 @@ router.use(authJwt);
  * Retrieves paginated list of orders with optional filtering.
  */
 router.get(
-  "/", 
-  permissionMiddleware("orders:read"), 
-  validate(orderSearchSchema), 
-  orderController.getOrders
+  "/",
+  permissionMiddleware("orders:read"),
+  validate(orderSearchSchema),
+  orderController.getOrders,
 );
 
 /**
@@ -31,10 +31,10 @@ router.get(
  * Retrieves detailed information about a specific order
  */
 router.get(
-  "/:id", 
-  permissionMiddleware("orders:read"), 
-  validate(orderIdSchema), 
-  orderController.getOrder
+  "/:id",
+  permissionMiddleware("orders:read"),
+  validate(orderIdSchema),
+  orderController.getOrder,
 );
 
 /**
@@ -42,10 +42,10 @@ router.get(
  * Creates a new order with items and stock management
  */
 router.post(
-  "/", 
-  permissionMiddleware("orders:create"), 
-  validate(createOrderSchema), 
-  orderController.createOrder
+  "/",
+  permissionMiddleware("orders:create"),
+  validate(createOrderSchema),
+  orderController.createOrder,
 );
 
 /**
@@ -75,10 +75,10 @@ router.patch(
  * Cancels order and reverts stock
  */
 router.delete(
-  "/:id", 
-  permissionMiddleware("orders:cancel"), 
-  validate(orderIdSchema), 
-  orderController.cancelOrder
+  "/:id",
+  permissionMiddleware("orders:cancel"),
+  validate(orderIdSchema),
+  orderController.cancelOrder,
 );
 
 export default router;

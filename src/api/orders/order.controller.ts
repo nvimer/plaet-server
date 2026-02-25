@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedUser } from "../../types/express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { OrderServiceInterface } from "./interfaces/order.service.interface";
@@ -142,7 +143,7 @@ class OrderController {
    */
   createOrder = asyncHandler(async (req: Request, res: Response) => {
     const data: CreateOrderBodyInput = req.body;
-    const id = req.user.id;
+    const id = (req.user as AuthenticatedUser).id;
 
     const newOrder = await this.orderService.createOrder(id, data);
 
@@ -277,7 +278,7 @@ class OrderController {
    */
   batchCreateOrders = asyncHandler(async (req: Request, res: Response) => {
     const data: BatchCreateOrderBodyInput = req.body;
-    const waiterId = req.user.id;
+    const waiterId = (req.user as AuthenticatedUser).id;
 
     const result = await this.orderService.batchCreateOrders(waiterId, data);
 

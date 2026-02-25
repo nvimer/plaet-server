@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedUser } from "../../../types/express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
 import {
@@ -358,7 +359,7 @@ class ItemController {
   addStock = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const data: AddStockBodyInput = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as AuthenticatedUser)?.id;
 
     const item = await this.itemService.addStock(id, data, userId);
 
@@ -397,7 +398,7 @@ class ItemController {
   removeStock = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const data: AddStockBodyInput = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as AuthenticatedUser)?.id;
 
     const item = await this.itemService.removeStock(id, data, userId);
     res.status(HttpStatus.OK).json({

@@ -41,7 +41,7 @@ export class RestaurantController {
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
     const search = req.query.search as string;
     const status = req.query.status as any;
-    
+
     const result = await this.restaurantService.searchRestaurants({
       page,
       limit,
@@ -89,7 +89,10 @@ export class RestaurantController {
    */
   updateRestaurant = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const restaurant = await this.restaurantService.updateRestaurant(id, req.body);
+    const restaurant = await this.restaurantService.updateRestaurant(
+      id,
+      req.body,
+    );
 
     res.status(HttpStatus.OK).json({
       success: true,

@@ -8,35 +8,53 @@ export const rolesConfig = [
     name: RoleName.SUPERADMIN,
     description: "Administrador global del sistema (SaaS)",
     permissions: [
-      "users:read", "users:create", "users:update", "users:delete",
+      "users:read",
+      "users:create",
+      "users:update",
+      "users:delete",
       "roles:manage",
       "restaurants:manage",
-      "menu:read", "menu:manage",
+      "menu:read",
+      "menu:manage",
       "stock:manage",
       "tables:manage",
-      "orders:read", "orders:create", "orders:update", "orders:cancel", "orders:pay",
-      "kitchen:view", "kitchen:update",
+      "orders:read",
+      "orders:create",
+      "orders:update",
+      "orders:cancel",
+      "orders:pay",
+      "kitchen:view",
+      "kitchen:update",
       "cash:manage",
       "expenses:manage",
       "analytics:view",
-      "settings:update"
+      "settings:update",
     ],
   },
   {
     name: RoleName.ADMIN,
     description: "Dueño/Gerente del restaurante con acceso total local",
     permissions: [
-      "users:read", "users:create", "users:update", "users:delete",
+      "users:read",
+      "users:create",
+      "users:update",
+      "users:delete",
       "roles:manage",
-      "menu:read", "menu:manage",
+      "menu:read",
+      "menu:manage",
       "stock:manage",
       "tables:manage",
-      "orders:read", "orders:create", "orders:update", "orders:cancel", "orders:pay",
-      "kitchen:view", "kitchen:update",
+      "orders:read",
+      "orders:create",
+      "orders:update",
+      "orders:cancel",
+      "orders:pay",
+      "kitchen:view",
+      "kitchen:update",
       "cash:manage",
       "expenses:manage",
       "analytics:view",
-      "settings:update"
+      "settings:update",
     ],
   },
   {
@@ -45,7 +63,9 @@ export const rolesConfig = [
     permissions: [
       "menu:read",
       "tables:manage",
-      "orders:read", "orders:create", "orders:update"
+      "orders:read",
+      "orders:create",
+      "orders:update",
     ],
   },
   {
@@ -53,19 +73,17 @@ export const rolesConfig = [
     description: "Cajero - Gestiona pagos y cierres de caja",
     permissions: [
       "menu:read",
-      "orders:read", "orders:pay",
+      "orders:read",
+      "orders:pay",
       "cash:manage",
       "expenses:manage",
-      "analytics:view"
+      "analytics:view",
     ],
   },
   {
     name: RoleName.KITCHEN_MANAGER,
     description: "Cocina - Visualiza y prepara pedidos",
-    permissions: [
-      "menu:read",
-      "kitchen:view", "kitchen:update"
-    ],
+    permissions: ["menu:read", "kitchen:view", "kitchen:update"],
   },
 ];
 

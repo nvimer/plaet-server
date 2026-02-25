@@ -1015,9 +1015,13 @@ export class ItemService implements ItemServiceInterface {
   }
 
   async deleteItem(id: number): Promise<void> {
-    const restaurantId = (await import("../../../utils/tenant-context")).tenantContext.getStore()?.restaurantId;
-    logger.debug(`[ItemService] Attempting to delete item ${id} for restaurant ${restaurantId}`);
-    
+    const restaurantId = (
+      await import("../../../utils/tenant-context")
+    ).tenantContext.getStore()?.restaurantId;
+    logger.debug(
+      `[ItemService] Attempting to delete item ${id} for restaurant ${restaurantId}`,
+    );
+
     const existingItem = await this.itemRepository.findById(id);
 
     if (!existingItem) {

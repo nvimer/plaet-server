@@ -1,7 +1,11 @@
 import { Restaurant, Prisma, RestaurantStatus } from "@prisma/client";
 import { getPrismaClient } from "../../database/prisma";
 import { RestaurantRepositoryInterface } from "./interfaces/restaurant.repository.interface";
-import { CreateRestaurantInput, UpdateRestaurantInput, RestaurantSearchParams } from "./restaurant.validator";
+import {
+  CreateRestaurantInput,
+  UpdateRestaurantInput,
+  RestaurantSearchParams,
+} from "./restaurant.validator";
 import {
   PaginationParams,
   PaginatedResponse,
@@ -13,7 +17,9 @@ import { createPaginatedResponse } from "../../utils/pagination.helper";
 /**
  * Restaurant Repository
  */
-export class BasicRestaurantRepository implements RestaurantRepositoryInterface {
+export class BasicRestaurantRepository
+  implements RestaurantRepositoryInterface
+{
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
@@ -22,7 +28,9 @@ export class BasicRestaurantRepository implements RestaurantRepositoryInterface 
       .replace(/^-+|-+$/g, "");
   }
 
-  async findAll(params: PaginationParams): Promise<PaginatedResponse<Restaurant>> {
+  async findAll(
+    params: PaginationParams,
+  ): Promise<PaginatedResponse<Restaurant>> {
     const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = params;
     const skip = (page - 1) * limit;
 
@@ -42,8 +50,15 @@ export class BasicRestaurantRepository implements RestaurantRepositoryInterface 
     return createPaginatedResponse(restaurants, total, params);
   }
 
-  async search(params: PaginationParams & RestaurantSearchParams): Promise<PaginatedResponse<Restaurant>> {
-    const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, search, status } = params;
+  async search(
+    params: PaginationParams & RestaurantSearchParams,
+  ): Promise<PaginatedResponse<Restaurant>> {
+    const {
+      page = DEFAULT_PAGE,
+      limit = DEFAULT_LIMIT,
+      search,
+      status,
+    } = params;
     const skip = (page - 1) * limit;
 
     const client = getPrismaClient();
@@ -87,12 +102,16 @@ export class BasicRestaurantRepository implements RestaurantRepositoryInterface 
     });
   }
 
-  async create(data: Omit<CreateRestaurantInput, "adminUser">): Promise<Restaurant> {
+  async create(
+    data: Omit<CreateRestaurantInput, "adminUser">,
+  ): Promise<Restaurant> {
     const client = getPrismaClient();
     const slug = this.generateSlug(data.name);
 
     let uniqueSlug = slug;
-    const existing = await client.restaurant.findUnique({ where: { slug: uniqueSlug } });
+    const existing = await client.restaurant.findUnique({
+      where: { slug: uniqueSlug },
+    });
     if (existing) {
       uniqueSlug = `${slug}-${Math.floor(Math.random() * 1000)}`;
     }
@@ -119,9 +138,9 @@ export class BasicRestaurantRepository implements RestaurantRepositoryInterface 
     const client = getPrismaClient();
     return client.restaurant.update({
       where: { id },
-      data: { 
-        deleted: true, 
-        deletedAt: new Date() 
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
       },
     });
   }

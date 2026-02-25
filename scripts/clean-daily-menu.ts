@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Limpiando tabla daily_menus...');
+  console.log("Limpiando tabla daily_menus...");
   const deleted = await prisma.dailyMenu.deleteMany({});
   console.log(`Se eliminaron ${deleted.count} registros.`);
 }

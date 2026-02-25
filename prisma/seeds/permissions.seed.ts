@@ -14,14 +14,20 @@ export const permissions = [
   { name: "roles:manage", description: "Gestionar roles y sus permisos" },
 
   // Restaurants (SuperAdmin)
-  { name: "restaurants:manage", description: "Administrar todos los restaurantes (SaaS)" },
+  {
+    name: "restaurants:manage",
+    description: "Administrar todos los restaurantes (SaaS)",
+  },
 
   // Menu
   { name: "menu:read", description: "Ver el menú y productos" },
   { name: "menu:manage", description: "Crear y editar categorías y productos" },
 
   // Stock
-  { name: "stock:manage", description: "Gestionar inventario y ajustes de stock" },
+  {
+    name: "stock:manage",
+    description: "Gestionar inventario y ajustes de stock",
+  },
 
   // Tables
   { name: "tables:manage", description: "Configurar y gestionar mesas" },
@@ -44,10 +50,16 @@ export const permissions = [
   { name: "expenses:manage", description: "Registrar y gestionar gastos" },
 
   // Analytics
-  { name: "analytics:view", description: "Ver reportes y estadísticas de ventas" },
+  {
+    name: "analytics:view",
+    description: "Ver reportes y estadísticas de ventas",
+  },
 
   // Settings
-  { name: "settings:update", description: "Actualizar configuración del restaurante" },
+  {
+    name: "settings:update",
+    description: "Actualizar configuración del restaurante",
+  },
 ];
 
 export async function seedPermissions() {
@@ -61,5 +73,7 @@ export async function seedPermissions() {
     });
   }
 
-  logger.info(`✅ ${permissions.length} granular permissions seeded successfully!`);
+  logger.info(
+    `✅ ${permissions.length} granular permissions seeded successfully!`,
+  );
 }
