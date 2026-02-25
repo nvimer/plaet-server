@@ -1,6 +1,7 @@
 export interface PaginationParams {
   page: number;
   limit: number;
+  categoryId?: number | string;
 }
 
 export interface PaginatedResponse<T> {
