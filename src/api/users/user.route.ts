@@ -3,21 +3,29 @@ import { validate } from "../../middlewares/validation.middleware";
 import { userIdSchema, userSearchSchema } from "./user.validator";
 import { paginationQuerySchema } from "../../utils/pagination.schema";
 import userController from "./user.controller";
+import { authJwt } from "../../middlewares/auth.middleware";
+import { permissionMiddleware } from "../../middlewares/permission.middleware";
 
 const router = Router();
 
+router.use(authJwt);
+
 /**
  * GET /users
- * Retrieves a paginated list of all non-deleted users.
  */
-router.get("/", validate(paginationQuerySchema), userController.getUsers);
+router.get(
+  "/", 
+  permissionMiddleware("users:read"),
+  validate(paginationQuerySchema), 
+  userController.getUsers
+);
 
 /**
  * GET /users/search
- * Searches for users with optional filtering and pagination.
  */
 router.get(
   "/search",
+  permissionMiddleware("users:read"),
   validate(userSearchSchema),
   validate(paginationQuerySchema),
   userController.searchUsers,
@@ -25,35 +33,48 @@ router.get(
 
 /**
  * GET /users/:id
- * Retrieves a specific user by their ID.
  */
-router.get("/:id", validate(userIdSchema), userController.getUserById);
+router.get(
+  "/:id", 
+  permissionMiddleware("users:read"),
+  validate(userIdSchema), 
+  userController.getUserById
+);
 
 /**
  * GET /users/email/:email
- * Retrieves a user by their email address.
  */
-router.get("/email/:email", userController.getUserByEmail);
+router.get(
+  "/email/:email", 
+  permissionMiddleware("users:read"),
+  userController.getUserByEmail
+);
 
 /**
  * POST /users/register
- * Registers a new user in the system.
  */
-router.post("/register", userController.registerUser);
+router.post(
+  "/register", 
+  permissionMiddleware("users:create"),
+  userController.registerUser
+);
 
 /**
  * PATCH /users/:id
- * Updates an existing user's information.
  */
-router.patch("/:id", validate(userIdSchema), userController.updateUser);
+router.patch(
+  "/:id", 
+  permissionMiddleware("users:update"),
+  validate(userIdSchema), 
+  userController.updateUser
+);
 
 /**
  * GET /users/:id/roles-permissions
- * Retrieves a user with their complete role and permission information.
- * This endpoint is useful for authentication and authorization purposes.
  */
 router.get(
   "/:id/roles-permissions",
+  permissionMiddleware("users:read"),
   validate(userIdSchema),
   userController.getUserWithRolesAndPermissions,
 );

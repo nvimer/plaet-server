@@ -3,86 +3,44 @@ import categoryController from "./category.controller";
 import { validate } from "../../../middlewares/validation.middleware";
 import { categoryIdSchema, categorySearchSchema } from "./category.validator";
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
+import { authJwt } from "../../../middlewares/auth.middleware";
+import { permissionMiddleware } from "../../../middlewares/permission.middleware";
 
 const router = Router();
 
+router.use(authJwt);
+
 /**
  * GET /categories
- * Retrieves a paginated list of all menu categories.
  */
 router.get(
   "/",
+  permissionMiddleware("menu:read"),
   validate(paginationQuerySchema),
   categoryController.getCategories,
 );
 
 /**
  * GET /categories/search
- * Searches for menu categories with optional filtering and pagination.
  */
 router.get(
   "/search",
+  permissionMiddleware("menu:read"),
   validate(categorySearchSchema),
   validate(paginationQuerySchema),
   categoryController.searchCategories,
 );
 
 /**
- * POST /categories
- * Creates a new menu category.
- * (DISABLED: Categories are managed via seeds for now)
- */
-/*
-router.post(
-  "/",
-  validate(createMenuCategorySchema),
-  categoryController.postCategory,
-);
-*/
-
-/**
  * GET /categories/:id
- * Retrieves a specific menu category by its ID.
  */
-router.get("/:id", validate(categoryIdSchema), categoryController.getCategory);
-
-/**
- * PATCH /categories/:id
- * Updates an existing menu category.
- * (DISABLED: Categories are managed via seeds for now)
- */
-/*
-router.patch(
-  "/:id",
-  validate(categoryIdSchema),
-  validate(updateMenuCategorySchema),
-  categoryController.patchCategory,
+router.get(
+  "/:id", 
+  permissionMiddleware("menu:read"),
+  validate(categoryIdSchema), 
+  categoryController.getCategory
 );
-*/
 
-/**
- * DELETE /categories/:id
- * (DISABLED)
- */
-/*
-router.delete(
-  "/:id",
-  validate(categoryIdSchema),
-  categoryController.deleteCategory,
-);
-*/
-
-/**
- * DELETE /categories/bulk
- * (DISABLED)
- */
-/*
-router.delete(
-  "/bulk",
-  authJwt,
-  validate(bulkCategorySchema),
-  categoryController.bulkDeleteCategories,
-);
-*/
+// NOTE: POST, PATCH, DELETE are currently disabled in original file
 
 export default router;

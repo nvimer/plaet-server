@@ -19,23 +19,28 @@ import {
 import { paginationQuerySchema } from "../../../utils/pagination.schema";
 import { authJwt } from "../../../middlewares/auth.middleware";
 import { uploadSingle } from "../../../middlewares/upload.middleware";
+import { permissionMiddleware } from "../../../middlewares/permission.middleware";
 
 const router = Router();
 
+router.use(authJwt);
+
 /**
  * GET /items
- * Retrieves a paginated list of all Menu-Items in the system.
- * This endpoint supports pagination parameters for efficient
- * data retrieval and display
  */
-router.get("/", validate(paginationQuerySchema), itemController.getMenuItems);
+router.get(
+  "/", 
+  permissionMiddleware("menu:read"), 
+  validate(paginationQuerySchema), 
+  itemController.getMenuItems
+);
 
 /*
  * GET /items/search
- * Searches for menu items with optional filtering and pagination.
  */
 router.get(
   "/search",
+  permissionMiddleware("menu:read"),
   validate(menuItemSearchSchema),
   validate(paginationQuerySchema),
   itemController.searchMenuItems,
@@ -43,11 +48,10 @@ router.get(
 
 /**
  * GET /items/set-lunch
- * Retrieves menu items filtered by set lunch-specific criteria.
- * Used for set lunch order creation.
  */
 router.get(
   "/set-lunch",
+  permissionMiddleware("menu:read"),
   validate(setLunchFilterSchema),
   validate(paginationQuerySchema),
   itemController.getSetLunchItems,
@@ -55,12 +59,10 @@ router.get(
 
 /**
  * POST /items
- * Creates a new menu item in the system with the provided information.
- * This endpoint handles menu item creation with comprehensive validation
- * and ensures proper data structure and business rules.
  */
 router.post(
   "/",
+  permissionMiddleware("menu:manage"),
   uploadSingle("image"),
   validate(createItemSchema),
   itemController.postItem,
@@ -68,130 +70,136 @@ router.post(
 
 /**
  * POST /items/stock/daily-reset
- * Register a initial stock of the day. The system creates a new stock every day with
- * value provided for admin
  */
 router.post(
   "/stock/daily-reset",
+  permissionMiddleware("stock:manage"),
   validate(dailyStockResetSchema),
   itemController.dailyStockReset,
 );
 
 /**
  * GET /items/low-stock
- * Retrieves a list of items with low stock.
  */
-router.get("/low-stock", authJwt, itemController.getLowStock);
+router.get(
+  "/low-stock", 
+  permissionMiddleware("stock:manage"), 
+  itemController.getLowStock
+);
 
 /**
  * GET /items/out-of-stock
- * Retrieves a list of items without stock.
  */
-router.get("/out-of-stock", authJwt, itemController.getOutOfStock);
+router.get(
+  "/out-of-stock", 
+  permissionMiddleware("stock:manage"), 
+  itemController.getOutOfStock
+);
 
 /**
  * GET /items/by-category/:categoryId
- * Retrieves all menu items belonging to a specific category.
  */
-router.get("/by-category/:categoryId", itemController.getItemsByCategory);
+router.get(
+  "/by-category/:categoryId", 
+  permissionMiddleware("menu:read"), 
+  itemController.getItemsByCategory
+);
 
 /**
  * GET /items/:id
- * Retrieves a specific menu item by its ID
  */
-router.get("/:id", validate(menuItemIdSchema), itemController.getMenuItem);
+router.get(
+  "/:id", 
+  permissionMiddleware("menu:read"), 
+  validate(menuItemIdSchema), 
+  itemController.getMenuItem
+);
 
 /**
  * POST /items/:id/stock/add
- * Creates a new daily stock. This operation only has been manage for admin user. This user
- * update every day of items.
  */
 router.post(
   "/:id/stock/add",
-  authJwt,
+  permissionMiddleware("stock:manage"),
   validate(addStockSchema),
   itemController.addStock,
 );
 
 /**
  * POST /items/:id/stock/remove
- * Remove stock manually.
- * This operation can be restore stock of item by id.
  */
 router.post(
   "/:id/stock/remove",
-  authJwt,
+  permissionMiddleware("stock:manage"),
   validate(removeStockSchema),
   itemController.removeStock,
 );
 
 /**
  * GET /items/:id/stock/history
- * Get a adjusment history of a item by his id.
  */
 router.get(
   "/:id/stock/history",
+  permissionMiddleware("stock:manage"),
   validate(stockHistorySchema),
   itemController.getStockHistory,
 );
 
 /**
  * PATCH /items/:id/inventory-type
- * Configure inventory type of item by id
  */
 router.patch(
   "/:id/inventory-type",
+  permissionMiddleware("stock:manage"),
   validate(inventoryTypeSchema),
   itemController.setInventoryType,
 );
 
 /**
  * POST /items/bulk-stock-update
- * Update stock for multiple items at once
  */
 router.post(
   "/bulk-stock-update",
-  authJwt,
+  permissionMiddleware("stock:manage"),
   validate(bulkStockUpdateSchema),
   itemController.bulkStockUpdate,
 );
 
 /**
  * POST /items/bulk-inventory-type
- * Change inventory type for multiple items
  */
 router.post(
   "/bulk-inventory-type",
-  authJwt,
+  permissionMiddleware("stock:manage"),
   validate(bulkInventoryTypeSchema),
   itemController.bulkInventoryTypeUpdate,
 );
 
 /**
  * GET /items/inventory-report
- * Generate comprehensive inventory report
  */
 router.get(
   "/inventory-report",
-  authJwt,
+  permissionMiddleware("stock:manage"),
   validate(inventoryReportSchema),
   itemController.getInventoryReport,
 );
 
 /**
  * GET /items/stock-summary
- * Get summary of current stock status
  */
-router.get("/stock-summary", authJwt, itemController.getStockSummary);
+router.get(
+  "/stock-summary", 
+  permissionMiddleware("stock:manage"), 
+  itemController.getStockSummary
+);
 
 /**
  * PATCH /items/:id
- *
- * Updates menu item information. All fields are optional to support
- * partial updates. This endpoint allows modifying any menu item field.
  */
 router.patch(
   "/:id",
+  permissionMiddleware("menu:manage"),
   uploadSingle("image"),
   validate(updateItemSchema),
   itemController.patchItem,
@@ -200,11 +208,10 @@ router.patch(
 
 /**
  * DELETE /items/:id
- * Soft delete a menu item
  */
 router.delete(
   "/:id",
-  authJwt,
+  permissionMiddleware("menu:manage"),
   validate(menuItemIdSchema),
   itemController.deleteItem,
 );

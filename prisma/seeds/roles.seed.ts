@@ -6,108 +6,71 @@ const prisma = new PrismaClient();
 export const rolesConfig = [
   {
     name: RoleName.SUPERADMIN,
-    description: "System superadmin with global access",
+    description: "Administrador global del sistema (SaaS)",
     permissions: [
-      "user.view",
-      "users.create",
-      "users.update",
-      "users.delete",
-      "profiles.view",
-      "profiles.update",
-      "roles.view",
-      "roles.create",
-      "roles.update",
-      "roles.delete",
-      "menu.view",
-      "menu.create",
-      "menu.update",
-      "menu.delete",
-      "tables.view",
-      "tables.create",
-      "tables.update",
-      "tables.delete",
-      "restaurants.view",
-      "restaurants.create",
-      "restaurants.update",
-      "restaurants.delete",
+      "users:read", "users:create", "users:update", "users:delete",
+      "roles:manage",
+      "restaurants:manage",
+      "menu:read", "menu:manage",
+      "stock:manage",
+      "tables:manage",
+      "orders:read", "orders:create", "orders:update", "orders:cancel", "orders:pay",
+      "kitchen:view", "kitchen:update",
+      "cash:manage",
+      "expenses:manage",
+      "analytics:view",
+      "settings:update"
     ],
   },
   {
     name: RoleName.ADMIN,
-    description: "Admin with complete access to system",
+    description: "Dueño/Gerente del restaurante con acceso total local",
     permissions: [
-      "user.view",
-      "users.create",
-      "users.update",
-      "users.delete",
-      "profiles.view",
-      "profiles.update",
-      "roles.view",
-      "roles.create",
-      "roles.update",
-      "roles.delete",
-      "menu.view",
-      "menu.create",
-      "menu.update",
-      "menu.delete",
-      "tables.view",
-      "tables.create",
-      "tables.update",
-      "tables.delete",
+      "users:read", "users:create", "users:update", "users:delete",
+      "roles:manage",
+      "menu:read", "menu:manage",
+      "stock:manage",
+      "tables:manage",
+      "orders:read", "orders:create", "orders:update", "orders:cancel", "orders:pay",
+      "kitchen:view", "kitchen:update",
+      "cash:manage",
+      "expenses:manage",
+      "analytics:view",
+      "settings:update"
     ],
   },
   {
     name: RoleName.WAITER,
-    description: "Waiter - Take orders and manage tables",
+    description: "Mesero - Toma pedidos y gestiona mesas",
     permissions: [
-      "users.update",
-      "profiles.view",
-      "profiles.update",
-      "menu.view",
-      "menu.create",
-      "menu.update",
-      "menu.delete",
-      "tables.view",
-      "tables.update",
-      "tables.delete",
+      "menu:read",
+      "tables:manage",
+      "orders:read", "orders:create", "orders:update"
     ],
   },
   {
     name: RoleName.CASHIER,
-    description: "Cashier, manage pays and close orders",
+    description: "Cajero - Gestiona pagos y cierres de caja",
     permissions: [
-      "users.update",
-      "profiles.view",
-      "profiles.update",
-      "menu.view",
-      "menu.create",
-      "menu.update",
-      "menu.delete",
-      "tables.view",
-      "tables.update",
-      "tables.delete",
+      "menu:read",
+      "orders:read", "orders:pay",
+      "cash:manage",
+      "expenses:manage",
+      "analytics:view"
     ],
   },
   {
     name: RoleName.KITCHEN_MANAGER,
-    description: "Admin with complete access to system",
+    description: "Cocina - Visualiza y prepara pedidos",
     permissions: [
-      "users.update",
-      "profiles.view",
-      "profiles.update",
-      "menu.view",
-      "menu.create",
-      "menu.update",
-      "menu.delete",
-      "tables.view",
-      "tables.update",
-      "tables.delete",
+      "menu:read",
+      "kitchen:view", "kitchen:update"
     ],
   },
 ];
 
 export async function seedRoles() {
-  logger.info("🌱 Seeding roles...");
+  logger.info("🌱 Seeding roles and assigning granular permissions...");
 
   for (const roleConfig of rolesConfig) {
     const role = await prisma.role.upsert({
@@ -118,7 +81,7 @@ export async function seedRoles() {
         description: roleConfig.description,
       },
     });
-    logger.info(` 📝 Role "${roleConfig.name}" seeded`);
+    logger.info(` 📝 Role "\${roleConfig.name}" seeded`);
 
     for (const permissionName of roleConfig.permissions) {
       const permission = await prisma.permission.findUnique({
@@ -142,8 +105,8 @@ export async function seedRoles() {
       }
     }
     logger.info(
-      `  ✅ ${roleConfig.permissions.length} permissions assigned to ${roleConfig.name}`,
+      `  ✅ \${roleConfig.permissions.length} granular permissions assigned to \${roleConfig.name}`,
     );
   }
-  logger.info(`✅ ${rolesConfig.length} roles seeded successfully!`);
+  logger.info(`✅ \${rolesConfig.length} roles seeded successfully!`);
 }

@@ -9,6 +9,7 @@ import {
 import orderController from "./order.controller";
 import { validate } from "../../middlewares/validation.middleware";
 import { authJwt } from "../../middlewares/auth.middleware";
+import { permissionMiddleware } from "../../middlewares/permission.middleware";
 
 const router = Router();
 
@@ -18,28 +19,42 @@ router.use(authJwt);
  * GET /orders
  * Retrieves paginated list of orders with optional filtering.
  */
-router.get("/", validate(orderSearchSchema), orderController.getOrders);
+router.get(
+  "/", 
+  permissionMiddleware("orders:read"), 
+  validate(orderSearchSchema), 
+  orderController.getOrders
+);
 
 /**
  * GET /orders/:id
  * Retrieves detailed information about a specific order
  */
-router.get("/:id", validate(orderIdSchema), orderController.getOrder);
+router.get(
+  "/:id", 
+  permissionMiddleware("orders:read"), 
+  validate(orderIdSchema), 
+  orderController.getOrder
+);
 
 /**
  * POST /orders
  * Creates a new order with items and stock management
  */
-router.post("/", validate(createOrderSchema), orderController.createOrder);
+router.post(
+  "/", 
+  permissionMiddleware("orders:create"), 
+  validate(createOrderSchema), 
+  orderController.createOrder
+);
 
 /**
  * POST /orders/batch
  * Creates multiple orders in a single atomic transaction.
- * Used for setLunch orders where multiple diners at the same table
- * create separate orders simultaneously.
  */
 router.post(
   "/batch",
+  permissionMiddleware("orders:create"),
   validate(batchCreateOrderSchema),
   orderController.batchCreateOrders,
 );
@@ -50,6 +65,7 @@ router.post(
  */
 router.patch(
   "/:id/status",
+  permissionMiddleware("orders:update"),
   validate(updateOrderStatusSchema),
   orderController.updateOrderStatus,
 );
@@ -58,6 +74,11 @@ router.patch(
  * DELETE /orders/:id
  * Cancels order and reverts stock
  */
-router.delete("/:id", validate(orderIdSchema), orderController.cancelOrder);
+router.delete(
+  "/:id", 
+  permissionMiddleware("orders:cancel"), 
+  validate(orderIdSchema), 
+  orderController.cancelOrder
+);
 
 export default router;
