@@ -197,4 +197,16 @@ router.patch(
   itemController.patchItem,
 );
 
+
+/**
+ * DELETE /items/:id
+ * Soft delete a menu item
+ */
+router.delete(
+  "/:id",
+  authJwt,
+  validate(menuItemIdSchema),
+  itemController.deleteItem,
+);
+
 export default router;
