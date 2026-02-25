@@ -12,6 +12,7 @@ import dailyMenuRouter from "./daily-menu/daily-menu.route";
 import expensesRouter from "./expenses/expense.route";
 import cashClosuresRouter from "./cash-closures/cash-closure.route";
 import analyticsRouter from "./analytics/analytics.route";
+import restaurantsRouter from "./restaurants/restaurant.route";
 
 /**
  * Main API Router for v1 endpoints.
@@ -78,5 +79,10 @@ router.use("/cash-closures", cashClosuresRouter);
  * Analytics Routes
  */
 router.use("/analytics", analyticsRouter);
+
+/**
+ * Restaurant Management Routes (SuperAdmin only)
+ */
+router.use("/restaurants", restaurantsRouter);
 
 export default router;
