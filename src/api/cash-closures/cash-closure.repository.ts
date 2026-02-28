@@ -1,4 +1,4 @@
-import { CashClosureStatus, OrderStatus } from "@prisma/client";
+import { CashClosureStatus, PaymentMethod } from "@prisma/client";
 import prisma from "../../database/prisma";
 import { OpenCashClosureDto } from "./cash-closure.validator";
 
@@ -66,20 +66,35 @@ export class CashClosureRepository {
     });
   }
 
-  async sumPaidOrdersTotalAmount(startDate: Date, endDate: Date) {
-    const result = await prisma.order.aggregate({
+  async sumCashPayments(startDate: Date, endDate: Date) {
+    const result = await prisma.payment.aggregate({
       where: {
-        status: OrderStatus.PAID,
+        method: PaymentMethod.CASH,
         createdAt: {
           gte: startDate,
           lte: endDate,
         },
       },
       _sum: {
-        totalAmount: true,
+        amount: true,
       },
     });
+    return Number(result._sum.amount || 0);
+  }
 
-    return Number(result._sum.totalAmount || 0);
+  async sumExpenses(startDate: Date, endDate: Date) {
+    const result = await prisma.expense.aggregate({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        deleted: false,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    return Number(result._sum.amount || 0);
   }
 }

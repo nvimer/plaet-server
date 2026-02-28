@@ -1,3 +1,4 @@
+import paymentRouter from "./payments/payment.route";
 import { Router } from "express";
 import permissionsRouter from "./permissions/permission.routes";
 import rolesRouter from "./roles/role.route";
@@ -58,6 +59,7 @@ router.use("/profile", profilesRouter);
  * Orders Management Routes
  */
 router.use("/orders", ordersRouter);
+router.use("/payments", paymentRouter);
 router.use("/customers", customerRoutes);
 
 /**

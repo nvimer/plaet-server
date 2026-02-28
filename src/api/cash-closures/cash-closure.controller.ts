@@ -17,35 +17,27 @@ export class CashClosureController {
 
   getCurrent = asyncHandler(async (req: Request, res: Response) => {
     const current = await this.service.getCurrentOpen();
+    res.status(HttpStatus.OK).json({ success: true, data: current });
+  });
 
-    res.status(HttpStatus.OK).json({
-      success: true,
-      data: current,
-    });
+  getSummary = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const summary = await this.service.getSummary(id);
+    res.status(HttpStatus.OK).json({ success: true, data: summary });
   });
 
   open = asyncHandler(async (req: Request, res: Response) => {
     const data: OpenCashClosureDto = req.body;
     const userId = (req.user as AuthenticatedUser).id;
-
     const closure = await this.service.openShift(data, userId);
-
-    res.status(HttpStatus.CREATED).json({
-      success: true,
-      data: closure,
-    });
+    res.status(HttpStatus.CREATED).json({ success: true, data: closure });
   });
 
   close = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { actualBalance }: CloseCashClosureDto = req.body;
     const userId = (req.user as AuthenticatedUser).id;
-
     const closure = await this.service.closeShift(id, actualBalance, userId);
-
-    res.status(HttpStatus.OK).json({
-      success: true,
-      data: closure,
-    });
+    res.status(HttpStatus.OK).json({ success: true, data: closure });
   });
 }

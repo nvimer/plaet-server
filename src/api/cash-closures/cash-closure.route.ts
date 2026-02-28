@@ -24,6 +24,7 @@ router.use(roleMiddleware([RoleName.ADMIN, RoleName.CASHIER]));
  * @desc Get the current open cash closure shift
  */
 router.get("/current", controller.getCurrent);
+router.get("/:id/summary", controller.getSummary);
 
 /**
  * @route POST /api/v1/cash-closures

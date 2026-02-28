@@ -27,5 +27,6 @@ export interface ICustomerRepository {
 
   // Business specific methods
   searchByNameOrPhone(query: string): Promise<Customer[]>;
+  findByPhoneWithActiveTickets(phone: string): Promise<any | null>;
   findActiveCustomers(): Promise<Customer[]>;
 }

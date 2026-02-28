@@ -13,18 +13,10 @@ export class AnalyticsService {
     const startDate = date.startOf("day").toDate();
     const endDate = date.endOf("day").toDate();
 
-    const salesSummary = await this.repository.getSalesSummary(
-      startDate,
-      endDate,
-    );
-    const topProducts = await this.repository.getTopProducts(
-      startDate,
-      endDate,
-    );
-    const totalExpenses = await this.repository.getTotalExpenses(
-      startDate,
-      endDate,
-    );
+    const salesSummary = await this.repository.getSalesSummary(startDate, endDate);
+    const topProducts = await this.repository.getTopProducts(startDate, endDate);
+    const salesByCategory = await this.repository.getSalesByCategory(startDate, endDate);
+    const totalExpenses = await this.repository.getTotalExpenses(startDate, endDate);
 
     const netBalance = salesSummary.totalSold - totalExpenses;
 
@@ -32,9 +24,11 @@ export class AnalyticsService {
       salesSummary: {
         totalSold: salesSummary.totalSold,
         orderCount: salesSummary.orderCount,
-        breakdown: salesSummary.breakdown,
+        byPaymentMethod: salesSummary.breakdown,
+        byCategory: salesByCategory,
       },
       topProducts,
+      totalExpenses,
       netBalance,
     };
   }

@@ -99,7 +99,7 @@ export async function seedRoles() {
         description: roleConfig.description,
       },
     });
-    logger.info(` 📝 Role "\${roleConfig.name}" seeded`);
+    logger.info(` 📝 Role ${roleConfig.name} seeded`);
 
     for (const permissionName of roleConfig.permissions) {
       const permission = await prisma.permission.findUnique({
@@ -123,8 +123,8 @@ export async function seedRoles() {
       }
     }
     logger.info(
-      `  ✅ \${roleConfig.permissions.length} granular permissions assigned to \${roleConfig.name}`,
+      `  ✅ `${roleConfig.permissions.length} granular permissions assigned to `${roleConfig.name}`,
     );
   }
-  logger.info(`✅ \${rolesConfig.length} roles seeded successfully!`);
+  logger.info(`✅ ${rolesConfig.length} roles seeded successfully!`);
 }

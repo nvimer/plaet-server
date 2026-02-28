@@ -86,6 +86,42 @@ export class AnalyticsRepository {
       .slice(0, limit);
   }
 
+  async getSalesByCategory(startDate: Date, endDate: Date) {
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: OrderStatus.PAID,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      },
+      include: {
+        menuItem: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+
+    const categoryStats: Record<string, number> = {};
+
+    orderItems.forEach((item) => {
+      const categoryName = item.menuItem?.category?.name || "Otros";
+      if (!categoryStats[categoryName]) {
+        categoryStats[categoryName] = 0;
+      }
+      categoryStats[categoryName] += Number(item.priceAtOrder) * item.quantity;
+    });
+
+    return Object.entries(categoryStats).map(([name, total]) => ({
+      name,
+      total,
+    }));
+  }
+
   async getTotalExpenses(startDate: Date, endDate: Date) {
     const expenses = await prisma.expense.aggregate({
       where: {

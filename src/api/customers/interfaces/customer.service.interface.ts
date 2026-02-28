@@ -43,6 +43,7 @@ export interface ICustomerService {
   createCustomer(data: CreateCustomerData): Promise<Customer>;
   getCustomerById(id: string): Promise<Customer | null>;
   getCustomerByPhone(phone: string): Promise<Customer | null>;
+  findByPhoneWithActiveTickets(phone: string): Promise<any | null>;
 
   // Search and listing
   searchCustomers(
