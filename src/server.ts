@@ -1,3 +1,4 @@
+import { startTableCleanupJob } from "./jobs/table-cleanup.job";
 import app from "./app";
 import { config } from "./config";
 import { logger } from "./config/logger";
@@ -7,6 +8,7 @@ async function startServer() {
   try {
     await prisma.$connect();
     logger.info("✅ Connected to the database successfully.");
+    startTableCleanupJob();
 
     app.listen(config.port, () =>
       logger.info(
