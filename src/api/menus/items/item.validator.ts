@@ -48,7 +48,7 @@ export const createItemSchema = z.object({
       .optional()
       .default(InventoryType.UNLIMITED),
     stockQuantity: z.coerce.number().int().min(0).optional(),
-    lowStockAlert: z.coerce.number().int().min(0).optional(),
+    lowStockAlert: z.coerce.number().int().min(4).optional(),
     autoMarkUnavailable: z
       .union([z.boolean(), z.string()])
       .transform((val) => val === true || val === "true")
@@ -119,7 +119,7 @@ export const dailyStockResetSchema = z.object({
         z.object({
           itemId: z.number().int().positive("Item ID must be positive"),
           quantity: z.number().int().min(0, "Quantity must be 0 or greater"),
-          lowStockAlert: z.number().int().min(0).optional(),
+          lowStockAlert: z.number().int().min(4).optional(),
         }),
       )
       .min(1, "At least one item must be provided"),
@@ -170,7 +170,7 @@ export const inventoryTypeSchema = z.object({
   params: idParamsSchema,
   body: z.object({
     inventoryType: inventoryType,
-    lowStockAlert: z.number().int().min(0).optional(),
+    lowStockAlert: z.number().int().min(4).optional(),
   }),
 });
 
@@ -235,7 +235,7 @@ export const updateItemSchema = z.object({
     imagePublicId: z.string().optional(),
     inventoryType: z.nativeEnum(InventoryType).optional(),
     stockQuantity: z.coerce.number().int().min(0).optional(),
-    lowStockAlert: z.coerce.number().int().min(0).optional(),
+    lowStockAlert: z.coerce.number().int().min(4).optional(),
     autoMarkUnavailable: z
       .union([z.boolean(), z.string()])
       .transform((val) => val === true || val === "true")
@@ -286,7 +286,7 @@ export const bulkInventoryTypeSchema = z.object({
   body: z.object({
     menuItemIds: z.array(z.coerce.number().int().positive()).min(1),
     inventoryType: z.nativeEnum(InventoryType),
-    lowStockAlert: z.coerce.number().int().min(1).optional(),
+    lowStockAlert: z.coerce.number().int().min(4).optional(),
   }),
 });
 
