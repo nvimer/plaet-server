@@ -47,6 +47,7 @@ export const createItemSchema = z.object({
       .nativeEnum(InventoryType)
       .optional()
       .default(InventoryType.UNLIMITED),
+    stockQuantity: z.coerce.number().int().min(0).optional(),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
     autoMarkUnavailable: z
       .union([z.boolean(), z.string()])
@@ -233,6 +234,7 @@ export const updateItemSchema = z.object({
     imageUrl: z.string().url("Invalid URL format").optional().or(z.literal("")),
     imagePublicId: z.string().optional(),
     inventoryType: z.nativeEnum(InventoryType).optional(),
+    stockQuantity: z.coerce.number().int().min(0).optional(),
     lowStockAlert: z.coerce.number().int().min(0).optional(),
     autoMarkUnavailable: z
       .union([z.boolean(), z.string()])
