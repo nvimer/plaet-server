@@ -64,6 +64,23 @@ class DailyMenuController {
    * POST /daily-menu/today
    * Update or create today's daily menu
    */
+  
+  /**
+   * GET /daily-menu/history
+   * Get history of daily menus
+   */
+  getHistory = asyncHandler(async (req: Request, res: Response) => {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (this.service as any).getHistory(page, limit);
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data: result.data,
+      meta: result.meta
+    });
+  });
+
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

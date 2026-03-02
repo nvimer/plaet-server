@@ -16,6 +16,9 @@ router.use(authJwt);
  * GET /daily-menu/current
  * Get today's daily menu
  */
+
+router.get("/history", authJwt, dailyMenuController.getHistory);
+
 router.get("/current", dailyMenuController.getTodayMenu);
 
 /**
