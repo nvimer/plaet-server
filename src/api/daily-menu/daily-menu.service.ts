@@ -147,10 +147,16 @@ class DailyMenuService implements DailyMenuServiceInterface {
    * Update or create daily menu for today
    */
   
+  
   async getHistory(page: number, limit: number): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await (this.repository as any).getHistory(page, limit);
+    const result = await (this.repository as any).getHistory(page, limit);
+    const mappedData = await Promise.all(result.data.map((m: any) => this.toResponse(m)));
+    return {
+      data: mappedData,
+      meta: result.meta
+    };
   }
+
 
   async updateTodayMenu(
     data: UpdateDailyMenuInput,
