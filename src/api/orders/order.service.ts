@@ -204,14 +204,15 @@ export class OrderService implements OrderServiceInterface {
     const client = getPrismaClient();
 
     // Step 1: Validate and fetch all menu items
-    const menuItemsPromises = data.items.map((item) =>
-      this.itemService.findMenuItemById(item.menuItemId),
+    // Fetch menu items only for items that have a menuItemId
+    const menuItemsPromises = data.items.map((item) => 
+      item.menuItemId ? this.itemService.findMenuItemById(item.menuItemId) : Promise.resolve(null)
     );
     const menuItems = await Promise.all(menuItemsPromises);
 
-    const unavailableItems = menuItems.filter((item) => !item.isAvailable);
+    const unavailableItems = menuItems.filter((item) => item && !item.isAvailable);
     if (unavailableItems.length > 0) {
-      const itemNames = unavailableItems.map((item) => item.name).join(", ");
+      const itemNames = unavailableItems.map((item) => item?.name).join(", ");
       throw new CustomError(
         `The following items are not available: ${itemNames}`,
         HttpStatus.BAD_REQUEST,
@@ -223,11 +224,11 @@ export class OrderService implements OrderServiceInterface {
     for (let i = 0; i < data.items.length; i++) {
       const orderItem = data.items[i];
       const menuItem = menuItems[i];
-      if (menuItem.inventoryType === InventoryType.TRACKED) {
-        const availableStock = menuItem.stockQuantity ?? 0;
+      if (menuItem && menuItem.inventoryType === InventoryType.TRACKED) {
+        const availableStock = menuItem?.stockQuantity ?? 0;
         if (availableStock < orderItem.quantity) {
           throw new CustomError(
-            `Insufficient stock for ${menuItem.name}`,
+            `Insufficient stock for ${menuItem?.name}`,
             HttpStatus.BAD_REQUEST,
             "INSUFFICIENT_STOCK",
           );
@@ -259,9 +260,9 @@ export class OrderService implements OrderServiceInterface {
         await tx.orderItem.createMany({
           data: data.items.map((item, index) => ({
             orderId,
-            menuItemId: item.menuItemId,
+            menuItemId: item.menuItemId!,
             quantity: item.quantity,
-            priceAtOrder: menuItems[index].price,
+            priceAtOrder: menuItems[index]?.price ?? 0,
             notes: item.notes,
           })),
         });
@@ -278,7 +279,7 @@ export class OrderService implements OrderServiceInterface {
       // Calculate total for NEW items
       const newItemsTotal = data.items.reduce(
         (sum, item, index) =>
-          sum + Number(menuItems[index].price) * item.quantity,
+          sum + Number(menuItems[index]?.price || 0) * item.quantity,
         0,
       );
 
@@ -292,9 +293,9 @@ export class OrderService implements OrderServiceInterface {
       // Deduct stock for TRACKED items
       const stockDeductionPromises = data.items.map((item, index) => {
         const menuItem = menuItems[index];
-        if (menuItem.inventoryType === InventoryType.TRACKED) {
+        if (menuItem && menuItem.inventoryType === InventoryType.TRACKED) {
           return this.itemService.deductStockForOrder(
-            item.menuItemId,
+            item.menuItemId!,
             item.quantity,
             orderId,
             tx,
@@ -507,7 +508,6 @@ export class OrderService implements OrderServiceInterface {
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
     const client = getPrismaClient();
 
-    // Find if there is an existing OPEN order for this table
     const existingOrder = await client.order.findFirst({
       where: {
         tableId: data.tableId,
@@ -519,7 +519,6 @@ export class OrderService implements OrderServiceInterface {
       let masterOrderId: string;
       let tableTotal = existingOrder ? Number(existingOrder.totalAmount) : 0;
 
-      // 1. Setup the Master Order
       if (existingOrder) {
         masterOrderId = existingOrder.id;
       } else {
@@ -532,6 +531,7 @@ export class OrderService implements OrderServiceInterface {
             customerId: firstSubOrder.customerId,
             items: [],
             notes: "Group Order",
+            createdAt: firstSubOrder.createdAt,
           } as any,
           tx,
         );
@@ -539,42 +539,47 @@ export class OrderService implements OrderServiceInterface {
       }
 
       const allMenuItemIds = new Set<number>();
-      data.orders.forEach((o) =>
-        o.items.forEach((i) => allMenuItemIds.add(i.menuItemId)),
-      );
+      data.orders.forEach(o => o.items.forEach(i => { if (i.menuItemId) allMenuItemIds.add(i.menuItemId); }));
+      
       const menuItems = await tx.menuItem.findMany({
-        where: { id: { in: Array.from(allMenuItemIds) }, deleted: false },
+        where: { id: { in: Array.from(allMenuItemIds) }, deleted: false }
       });
 
       for (const subOrder of data.orders) {
-        const orderMenuItems = subOrder.items.map(
-          (item) => menuItems.find((mi) => mi.id === item.menuItemId)!,
-        );
+        const orderMenuItems = subOrder.items
+          .map(item => item.menuItemId ? menuItems.find(mi => mi.id === item.menuItemId) : null)
+          .filter(mi => mi !== null) as any[];
 
         const serviceAmount = this.calculateOrderTotal(
-          subOrder.items,
-          orderMenuItems,
+          subOrder.items.filter(i => i.menuItemId) as any,
+          orderMenuItems
         );
-        tableTotal += serviceAmount;
+
+        const manualItemsAmount = subOrder.items
+          .filter(i => !i.menuItemId)
+          .reduce((sum, i) => sum + (Number(i.priceAtOrder || 0) * i.quantity), 0);
+
+        tableTotal += serviceAmount + manualItemsAmount;
 
         await tx.orderItem.createMany({
           data: subOrder.items.map((item) => {
-            const mi = menuItems.find((m) => m.id === item.menuItemId)!;
+            const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
             return {
               orderId: masterOrderId,
-              menuItemId: item.menuItemId,
+              menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
-              priceAtOrder: mi.price,
-              notes: item.notes,
+              priceAtOrder: (mi ? mi.price : item.priceAtOrder) ?? 0,
+              notes: item.notes ?? null,
+              createdAt: subOrder.createdAt ?? undefined,
             };
           }),
         });
 
         for (const item of subOrder.items) {
-          const mi = menuItems.find((m) => m.id === item.menuItemId)!;
-          if (mi.inventoryType === InventoryType.TRACKED) {
+          const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
+          if (mi && mi.inventoryType === InventoryType.TRACKED) {
             await this.itemService.deductStockForOrder(
-              item.menuItemId,
+              item.menuItemId!,
               item.quantity,
               masterOrderId,
               tx,
@@ -587,12 +592,13 @@ export class OrderService implements OrderServiceInterface {
 
       const completeOrder = await tx.order.findUnique({
         where: { id: masterOrderId },
-        include: { items: { include: { menuItem: true } } },
+        include: { items: { include: { menuItem: true } } }
       });
 
       return { orders: [completeOrder as OrderWithItems], tableTotal };
     });
   }
+
   /**
    * Updates the status of an individual order item
    *

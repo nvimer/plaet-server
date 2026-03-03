@@ -291,7 +291,7 @@ class OrderController {
       success: true,
       message: `${result.orders.length} orders created successfully`,
       data: {
-        createdOrders: result.orders,
+        orders: result.orders,
         tableTotal: result.tableTotal,
       },
     });
