@@ -18,7 +18,8 @@ export class CustomerService implements ICustomerService {
 
   async createCustomer(data: CreateCustomerData): Promise<Customer> {
     const phoneAvailable = await this.isPhoneAvailable(data.phone);
-    if (!phoneAvailable) throw new CustomError("Phone number already exists", 409);
+    if (!phoneAvailable)
+      throw new CustomError("Phone number already exists", 409);
     if (data.email) {
       const emailAvailable = await this.isEmailAvailable(data.email);
       if (!emailAvailable) throw new CustomError("Email already exists", 409);
@@ -47,37 +48,89 @@ export class CustomerService implements ICustomerService {
     return await this.customerRepository.findByPhoneWithActiveTickets(phone);
   }
 
-  async searchCustomers(params: CustomerSearchParams): Promise<PaginationResult<Customer>> {
-    const { query, page = 1, limit = 10, sortBy = "firstName", sortOrder = "asc" } = params;
+  async searchCustomers(
+    params: CustomerSearchParams,
+  ): Promise<PaginationResult<Customer>> {
+    const {
+      query,
+      page = 1,
+      limit = 10,
+      sortBy = "firstName",
+      sortOrder = "asc",
+    } = params;
     const skip = (page - 1) * limit;
     let where = {};
     if (query) {
-      where = { OR: [{ firstName: { contains: query, mode: "insensitive" } }, { lastName: { contains: query, mode: "insensitive" } }, { phone: { contains: query } }] };
+      where = {
+        OR: [
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+          { phone: { contains: query } },
+        ],
+      };
     }
     const orderBy = { [sortBy]: sortOrder };
-    const [data, total] = await Promise.all([this.customerRepository.findMany({ skip, take: limit, where, orderBy }), this.customerRepository.count({ where })]);
+    const [data, total] = await Promise.all([
+      this.customerRepository.findMany({ skip, take: limit, where, orderBy }),
+      this.customerRepository.count({ where }),
+    ]);
     const totalPages = Math.ceil(total / limit);
-    return { data, pagination: { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 } };
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
-  async listCustomers(params: CustomerSearchParams): Promise<PaginationResult<Customer>> {
-    const { page = 1, limit = 10, sortBy = "firstName", sortOrder = "asc" } = params;
+  async listCustomers(
+    params: CustomerSearchParams,
+  ): Promise<PaginationResult<Customer>> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "firstName",
+      sortOrder = "asc",
+    } = params;
     const skip = (page - 1) * limit;
     const orderBy = { [sortBy]: sortOrder };
-    const [data, total] = await Promise.all([this.customerRepository.findMany({ skip, take: limit, orderBy }), this.customerRepository.count({})]);
+    const [data, total] = await Promise.all([
+      this.customerRepository.findMany({ skip, take: limit, orderBy }),
+      this.customerRepository.count({}),
+    ]);
     const totalPages = Math.ceil(total / limit);
-    return { data, pagination: { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 } };
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
-  async updateCustomer(id: string, data: UpdateCustomerData): Promise<Customer> {
+  async updateCustomer(
+    id: string,
+    data: UpdateCustomerData,
+  ): Promise<Customer> {
     const existingCustomer = await this.customerRepository.findById(id);
     if (!existingCustomer) throw new CustomError("Customer not found", 404);
     if (data.phone && data.phone !== existingCustomer.phone) {
       const phoneAvailable = await this.isPhoneAvailable(data.phone, id);
-      if (!phoneAvailable) throw new CustomError("Phone number already exists", 409);
+      if (!phoneAvailable)
+        throw new CustomError("Phone number already exists", 409);
     }
     const updateData: Prisma.CustomerUpdateInput = {};
-    if (data.firstName !== undefined) updateData.firstName = data.firstName.trim();
+    if (data.firstName !== undefined)
+      updateData.firstName = data.firstName.trim();
     if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
     if (data.phone !== undefined) updateData.phone = data.phone.trim();
     if (data.email !== undefined) updateData.email = data.email?.trim() || null;

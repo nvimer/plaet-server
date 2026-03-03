@@ -1,4 +1,4 @@
-import { Order } from "@prisma/client";
+import { Order, OrderItem } from "@prisma/client";
 import {
   PaginatedResponse,
   PaginationParams,
@@ -6,6 +6,7 @@ import {
 import {
   OrderWithItems,
   OrderWithRelations,
+  OrderItemStatus,
 } from "../../../types/prisma.types";
 import { CreateOrderBodyInput, OrderSearchParams } from "../order.validator";
 
@@ -88,4 +89,19 @@ export interface OrderRepositoryInterface {
     totalAmount: number,
     tx?: import("../../../types/prisma-transaction.types").PrismaTransaction,
   ): Promise<Order>;
+  /**
+   * Updates the status of an order item
+   *
+   * @param orderId - Order identifier
+   * @param itemId - Item identifier
+   * @param status - New item status
+   * @param tx - Optional transaction client
+   * @returns Updated order item
+   */
+  updateItemStatus(
+    orderId: string,
+    itemId: number,
+    status: OrderItemStatus,
+    tx?: import("../../../types/prisma-transaction.types").PrismaTransaction,
+  ): Promise<OrderItem>;
 }

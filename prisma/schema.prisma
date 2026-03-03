@@ -1,9 +1,3 @@
-// This is your Prisma schema file,schema
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,42 +6,453 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Restaurant {
+  id           String           @id @default(uuid())
+  name         String           @unique
+  slug         String           @unique
+  status       RestaurantStatus @default(TRIAL)
+  address      String?
+  phone        String?
+  nit          String?          @unique
+  logoUrl      String?          @map("logo_url")
+  currency     String           @default("COP")
+  timezone     String           @default("America/Bogota")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  deleted      Boolean          @default(false)
+  deletedAt    DateTime?        @map("deleted_at")
+  cashClosures CashClosure[]
+  customers    Customer[]
+  dailyMenus   DailyMenu[]
+  expenses     Expense[]
+  categories   MenuCategory[]
+  items        MenuItem[]
+  orders       Order[]
+  tables       Table[]
+  users        User[]
+
+  @@map("restaurants")
+}
+
+model Token {
+  id          String    @id @default(uuid())
+  token       String
+  type        TokenType
+  expires     DateTime
+  blacklisted Boolean
+  createdAt   DateTime  @default(now())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        RoleName         @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deleted     Boolean          @default(false)
+  deletedAt   DateTime?        @map("deleted_at")
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deleted     Boolean          @default(false)
+  deletedAt   DateTime?        @map("deleted_at")
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  assignedAt   DateTime   @default(now()) @map("assigned_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deleted      Boolean    @default(false)
+  deletedAt    DateTime?  @map("deleted_at")
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id                  String        @id @default(uuid())
+  firstName           String        @map("first_name")
+  lastName            String        @map("last_name")
+  email               String        @unique
+  phone               String?       @unique
+  password            String
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  deleted             Boolean       @default(false)
+  deletedAt           DateTime?     @map("deleted_at")
+  emailVerified       Boolean       @default(false) @map("email_verified")
+  emailVerifiedAt     DateTime?     @map("email_verified_at")
+  failedLoginAttempts Int           @default(0) @map("failed_login_attempts")
+  lastFailedLogin     DateTime?     @map("last_failed_login")
+  lockedUntil         DateTime?     @map("locked_until")
+  passwordChangedAt   DateTime?     @default(now()) @map("password_changed_at")
+  restaurantId        String?       @map("restaurant_id")
+  token               Token[]
+  closedCashClosures  CashClosure[] @relation("ClosedBy")
+  openedCashClosures  CashClosure[] @relation("OpenedBy")
+  registeredExpenses  Expense[]     @relation("ExpensesRecordedBy")
+  ordersTaken         Order[]       @relation("OrdersTakenByWaiter")
+  profile             Profile?
+  roles               UserRole[]
+  restaurant          Restaurant?   @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@map("users")
+}
+
+model UserRole {
+  roleId     Int       @map("role_id")
+  userId     String    @map("user_id")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deleted    Boolean   @default(false)
+  deletedAt  DateTime? @map("deleted_at")
+  role       Role      @relation(fields: [roleId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@id([roleId, userId])
+  @@map("user_roles")
+}
+
+model Profile {
+  id             String    @id @default(uuid())
+  userId         String    @unique @map("user_id")
+  photoUrl       String?   @map("photo_url")
+  birthDate      DateTime? @map("birthDate")
+  identification String?
+  address        String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deleted        Boolean   @default(false)
+  deletedAt      DateTime? @map("deleted_at")
+  imagePublicId  String?   @map("image_public_id")
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+model Table {
+  id           Int         @id @default(autoincrement())
+  number       String
+  status       TableStatus @default(AVAILABLE)
+  location     String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  deleted      Boolean     @default(false)
+  deletedAt    DateTime?   @map("deleted_at")
+  restaurantId String?     @map("restaurant_id")
+  orders       Order[]
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, number])
+  @@map("tables")
+}
+
+/// *
+///  * MenuCategory Model
+///  * Categories for organizing menu items (e.g., Sopas, Principios, Proteínas, etc.)
+model MenuCategory {
+  id           Int         @id @default(autoincrement())
+  name         String
+  description  String?
+  order        Int         @default(0)
+  deleted      Boolean     @default(false)
+  deletedAt    DateTime?   @map("deleted_at")
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  items        MenuItem[]
+
+  @@unique([restaurantId, name])
+  @@map("menu_categories")
+}
+
+/// *
+///  * MenuItem Model
+///  * Simplified - removed unused fields for corrientazo
+model MenuItem {
+  id                  Int               @id @default(autoincrement())
+  categoryId          Int               @map("category_id")
+  name                String
+  description         String?
+  price               Decimal           @db.Decimal(10, 2)
+  isAvailable         Boolean           @default(true) @map("is_available")
+  imageUrl            String?           @map("image_url")
+  inventoryType       String            @default("UNLIMITED") @map("inventory_type")
+  stockQuantity       Int?              @map("stock_quantity")
+  lowStockAlert       Int?              @default(5) @map("low_stock_alert")
+  autoMarkUnavailable Boolean           @default(true) @map("auto_mark_unavailable)")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  deleted             Boolean           @default(false)
+  deletedAt           DateTime?         @map("deleted_at")
+  imagePublicId       String?           @map("image_public_id")
+  restaurantId        String?           @map("restaurant_id")
+  category            MenuCategory      @relation(fields: [categoryId], references: [id])
+  restaurant          Restaurant?       @relation(fields: [restaurantId], references: [id])
+  orderItems          OrderItem[]
+  stockAdjustments    StockAdjustment[]
+
+  @@unique([restaurantId, categoryId, name])
+  @@map("menu_items")
+}
+
+model StockAdjustment {
+  id             String              @id @default(uuid())
+  menuItemId     Int                 @map("menu_item_id")
+  previousStock  Int                 @map("previous_stock")
+  newStock       Int                 @map("new_stock")
+  quantity       Int
+  reason         String?
+  userId         String?             @map("user_id")
+  orderId        String?             @map("order_id")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  adjustmentType StockAdjustmentType @map("adjustment_type")
+  menuItem       MenuItem            @relation(fields: [menuItemId], references: [id])
+
+  @@map("stock_adjustments")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  tableId         Int?        @map("table_id")
+  waiterId        String      @map("waiter_id")
+  customerId      String?     @map("customerId")
+  status          OrderStatus @default(OPEN)
+  type            OrderType   @default(DINE_IN)
+  totalAmount     Decimal     @default(0.00) @map("total_amount") @db.Decimal(10, 2)
+  notes           String?
+  whatsappOrderId String?     @unique @map("whatsapp_order_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  restaurantId    String?     @map("restaurant_id")
+  deleted         Boolean     @default(false)
+  deletedAt       DateTime?   @map("deleted_at")
+  items           OrderItem[]
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  restaurant      Restaurant? @relation(fields: [restaurantId], references: [id])
+  table           Table?      @relation(fields: [tableId], references: [id])
+  waiter          User        @relation("OrdersTakenByWaiter", fields: [waiterId], references: [id])
+  payments        Payment[]
+
+  @@index([restaurantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           Int             @id @default(autoincrement())
+  orderId      String          @map("order_id")
+  menuItemId   Int?            @map("menu_item_id")
+  quantity     Int
+  priceAtOrder Decimal         @map("price_at_order") @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  deleted      Boolean         @default(false)
+  deletedAt    DateTime?       @map("deleted_at")
+  status       OrderItemStatus @default(PENDING)
+  menuItem     MenuItem?       @relation(fields: [menuItemId], references: [id])
+  order        Order           @relation(fields: [orderId], references: [id])
+
+  @@map("order_items")
+}
+
+model Customer {
+  id           String                @id @default(uuid())
+  firstName    String                @map("first_name")
+  lastName     String                @map("last_name")
+  phone        String                @unique
+  email        String?
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+  deleted      Boolean               @default(false)
+  deletedAt    DateTime?             @map("deleted_at")
+  restaurantId String?               @map("restaurant_id")
+  restaurant   Restaurant?           @relation(fields: [restaurantId], references: [id])
+  dailyCodes   DailyTicketBookCode[]
+  orders       Order[]
+  ticketBooks  TicketBook[]
+
+  @@unique([restaurantId, phone])
+  @@unique([restaurantId, email])
+  @@map("customers")
+}
+
+model TicketBook {
+  id               String            @id @default(uuid())
+  customerId       String?           @map("customerId")
+  purchaseDate     DateTime          @default(now()) @map("purchase_date")
+  expiryDate       DateTime          @map("expiry_date")
+  totalPortions    Int               @map("total_portions")
+  consumedPortions Int               @default(0) @map("consumed_portions")
+  status           String            @default("active")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deleted          Boolean           @default(false)
+  deletedAt        DateTime?         @map("deleted_at")
+  usages           TicketBookUsage[]
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+
+  @@map("ticket_books")
+}
+
+model TicketBookUsage {
+  id           String              @id @default(uuid())
+  ticketBookId String              @map("ticket_book_id")
+  paymentId    String              @map("payment_id")
+  dailyCodeId  String              @map("daily_code_id")
+  portionCount Int                 @default(1) @map("portion_count")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  deleted      Boolean             @default(false)
+  deletedAt    DateTime?           @map("deleted_at")
+  dailyCode    DailyTicketBookCode @relation(fields: [dailyCodeId], references: [id])
+  payments     Payment             @relation("TicketUsages", fields: [paymentId], references: [id])
+  ticketBook   TicketBook          @relation(fields: [ticketBookId], references: [id])
+
+  @@map("ticket_book_usages")
+}
+
+model Payment {
+  id                    String               @id @default(uuid())
+  orderId               String?              @map("order_id")
+  method                PaymentMethod        @default(CASH)
+  amount                Decimal              @db.Decimal(10, 2)
+  transactionRef        String?              @map("transaction_ref")
+  dailyTicketBookCodeId String?              @unique @map("daily_ticket_book_code_id")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  dailyTicketBookCode   DailyTicketBookCode? @relation("CodeUsedInPayment", fields: [dailyTicketBookCodeId], references: [id])
+  order                 Order?               @relation(fields: [orderId], references: [id])
+  ticketUsages          TicketBookUsage[]    @relation("TicketUsages")
+
+  @@map("payments")
+}
+
+model Expense {
+  id             String      @id @default(uuid())
+  date           DateTime
+  amount         Decimal     @db.Decimal(10, 2)
+  description    String?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deleted        Boolean     @default(false)
+  deletedAt      DateTime?   @map("deleted_at")
+  category       String
+  registeredById String      @map("registered_by_id")
+  restaurantId   String?     @map("restaurant_id")
+  registeredBy   User        @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
+  restaurant     Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@map("expenses")
+}
+
+model CashClosure {
+  id              String            @id @default(uuid())
+  openedById      String            @map("opened_by_id")
+  closedById      String?           @map("closed_by_id")
+  openingDate     DateTime          @default(now()) @map("opening_date")
+  closingDate     DateTime?         @map("closing_date")
+  openingBalance  Decimal           @map("opening_balance") @db.Decimal(10, 2)
+  expectedBalance Decimal           @default(0) @map("expected_balance") @db.Decimal(10, 2)
+  actualBalance   Decimal?          @map("actual_balance") @db.Decimal(10, 2)
+  difference      Decimal?          @map("difference") @db.Decimal(10, 2)
+  status          CashClosureStatus @default(OPEN)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  restaurantId    String?           @map("restaurant_id")
+  deleted         Boolean           @default(false)
+  deletedAt       DateTime?         @map("deleted_at")
+  closedBy        User?             @relation("ClosedBy", fields: [closedById], references: [id])
+  openedBy        User              @relation("OpenedBy", fields: [openedById], references: [id])
+  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@map("cash_closures")
+}
+
+model DailyTicketBookCode {
+  id              String            @id @default(uuid())
+  customerId      String?           @map("customerId")
+  code            String            @unique
+  date            DateTime          @db.Date
+  isUsed          Boolean           @default(false) @map("is_used")
+  usedAtPaymentId Int?              @unique @map("used_at_payment_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  customer        Customer?         @relation(fields: [customerId], references: [id])
+  usedAtPayment   Payment?          @relation("CodeUsedInPayment")
+  ticketBookUsage TicketBookUsage[]
+
+  @@unique([customerId, date])
+  @@map("daily_ticket_book_codes")
+}
+
+/// *
+///  * DailyMenu Model
+///  * Redesigned to store references to actual MenuItems
+///  * Each day can have multiple options for soup, principle, protein, drink, and extra
+model DailyMenu {
+  id                  String      @id @default(uuid())
+  isActive            Boolean     @default(true)
+  createdAt           DateTime    @unique @map("created_at") @db.Date
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+  basePrice           Decimal     @default(4000.00) @map("base_price") @db.Decimal(10, 2)
+  drinkCategoryId     Int?        @map("drink_category_id")
+  drinkOption1Id      Int?        @map("drink_option_1_id")
+  drinkOption2Id      Int?        @map("drink_option_2_id")
+  extraCategoryId     Int?        @map("extra_category_id")
+  extraOption1Id      Int?        @map("extra_option_1_id")
+  extraOption2Id      Int?        @map("extra_option_2_id")
+  principleCategoryId Int?        @map("principle_category_id")
+  principleOption1Id  Int?        @map("principle_option_1_id")
+  principleOption2Id  Int?        @map("principle_option_2_id")
+  proteinCategoryId   Int?        @map("protein_category_id")
+  soupCategoryId      Int?        @map("soup_category_id")
+  soupOption1Id       Int?        @map("soup_option_1_id")
+  soupOption2Id       Int?        @map("soup_option_2_id")
+  dessertCategoryId   Int?        @map("dessert_category_id")
+  dessertOption1Id    Int?        @map("dessert_option_1_id")
+  dessertOption2Id    Int?        @map("dessert_option_2_id")
+  proteinIds          Int[]       @default([]) @map("protein_ids")
+  saladCategoryId     Int?        @map("salad_category_id")
+  saladOption1Id      Int?        @map("salad_option_1_id")
+  saladOption2Id      Int?        @map("salad_option_2_id")
+  restaurantId        String?     @map("restaurant_id")
+  deleted             Boolean     @default(false)
+  deletedAt           DateTime?   @map("deleted_at")
+  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  @@index([createdAt])
+  @@index([isActive])
+  @@index([restaurantId])
+  @@map("daily_menus")
+}
+
 enum RestaurantStatus {
   ACTIVE
   SUSPENDED
   TRIAL
   PAST_DUE
 }
-
-model Restaurant {
-  id          String           @id @default(uuid())
-  name        String  @unique
-  slug        String           @unique
-  status      RestaurantStatus @default(TRIAL)
-  address     String?
-  phone       String?
-  nit         String?          @unique
-  logoUrl     String?          @map("logo_url")
-  currency    String           @default("COP")
-  timezone    String           @default("America/Bogota")
-  users           User[]
-  categories      MenuCategory[]
-  items           MenuItem[]
-  tables          Table[]
-  orders          Order[]
-  expenses        Expense[]
-  dailyMenus      DailyMenu[]
-  cashClosures    CashClosure[]
-  customers       Customer[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-  @@map("restaurants")
-}
-
-
-// ENUMS
 
 enum TokenType {
   ACCESS
@@ -58,11 +463,11 @@ enum TokenType {
 }
 
 enum RoleName {
-  SUPERADMIN
   ADMIN
   CASHIER
   WAITER
   KITCHEN_MANAGER
+  SUPERADMIN
 }
 
 enum TableStatus {
@@ -72,13 +477,18 @@ enum TableStatus {
 }
 
 enum OrderStatus {
-  PENDING
+  OPEN
   SENT_TO_CASHIER
   PAID
   CANCELLED
+}
+
+enum OrderItemStatus {
+  PENDING
   IN_KITCHEN
   READY
   DELIVERED
+  CANCELLED
 }
 
 enum OrderType {
@@ -107,512 +517,3 @@ enum CashClosureStatus {
   OPEN
   CLOSED
 }
-
-// DATA-MODELS
-
-model Token {
-  id          String    @id @default(uuid())
-  token       String
-  type        TokenType
-  expires     DateTime
-  blacklisted Boolean
-  createdAt   DateTime  @default(now())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-}
-
-model Role {
-  id          Int      @id @default(autoincrement())
-  name        RoleName @unique
-  description String?
-
-  permissions RolePermission[]
-  users       UserRole[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@map("roles")
-}
-
-model Permission {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  description String?
-
-  roles RolePermission[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@map("permissions")
-}
-
-model RolePermission {
-  roleId Int  @map("role_id")
-  role   Role @relation(fields: [roleId], references: [id])
-
-  permissionId Int        @map("permission_id")
-  permission   Permission @relation(fields: [permissionId], references: [id])
-
-  assignedAt DateTime @default(now()) @map("assigned_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@id([roleId, permissionId])
-  @@map("role_permissions")
-}
-
-model User {
-  restaurantId String?    @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id        String  @id @default(uuid())
-  firstName String  @map("first_name")
-  lastName  String  @map("last_name")
-  email     String  @unique
-  phone     String? @unique
-  password  String
-
-  roles UserRole[]
-
-  profile Profile?
-
-  token Token[]
-
-  ordersTaken         Order[]       @relation("OrdersTakenByWaiter")
-  registeredExpenses  Expense[]     @relation("ExpensesRecordedBy")
-  openedCashClosures  CashClosure[] @relation("OpenedBy")
-  closedCashClosures  CashClosure[] @relation("ClosedBy")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  // Email verification fields
-  emailVerified   Boolean   @default(false) @map("email_verified")
-  emailVerifiedAt DateTime? @map("email_verified_at")
-
-  // Account lockout fields (brute force protection)
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-  lockedUntil         DateTime? @map("locked_until")
-  lastFailedLogin     DateTime? @map("last_failed_login")
-
-  // Password history and tracking
-  passwordChangedAt DateTime? @default(now()) @map("password_changed_at")
-
-  @@index([restaurantId])
-  @@map("users")
-}
-
-model UserRole {
-  roleId Int  @map("role_id")
-  role   Role @relation(fields: [roleId], references: [id])
-
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
-
-  assignedAt DateTime @default(now()) @map("assigned_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@id([roleId, userId])
-  @@map("user_roles")
-}
-
-model Profile {
-  id     String @id @default(uuid())
-  userId String @unique @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
-
-  photoUrl       String?   @map("photo_url")
-  imagePublicId  String?   @map("image_public_id")
-  birthDate      DateTime? @map("birthDate")
-  identification String?
-  address        String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@map("profiles")
-}
-
-model Table {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id       Int         @id @default(autoincrement())
-  number   String
-  status   TableStatus @default(AVAILABLE)
-  location String?
-
-  orders Order[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@unique([restaurantId, number])
-  @@map("tables")
-}
-
-/**
- * MenuCategory Model
- * Categories for organizing menu items (e.g., Sopas, Principios, Proteínas, etc.)
- */
-model MenuCategory {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-  order       Int     @default(0)
-
-  items MenuItem[]
-
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@unique([restaurantId, name])
-  @@map("menu_categories")
-}
-
-/**
- * MenuItem Model
- * Simplified - removed unused fields for corrientazo
- */
-model MenuItem {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id         Int          @id @default(autoincrement())
-  categoryId Int          @map("category_id")
-  category   MenuCategory @relation(fields: [categoryId], references: [id])
-
-  name        String
-  description String?
-  price       Decimal @db.Decimal(10, 2)
-  isAvailable Boolean @default(true) @map("is_available")
-  imageUrl    String? @map("image_url")
-  imagePublicId String? @map("image_public_id")
-
-  // Inventory management
-  inventoryType       String  @default("UNLIMITED") @map("inventory_type")
-  stockQuantity       Int?    @map("stock_quantity")
-  lowStockAlert       Int?    @default(5) @map("low_stock_alert")
-  autoMarkUnavailable Boolean @default(true) @map("auto_mark_unavailable)")
-
-  // Relations
-  orderItems          OrderItem[]
-  stockAdjustments    StockAdjustment[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@unique([restaurantId, categoryId, name])
-  @@map("menu_items")
-}
-
-model StockAdjustment {
-  id         String   @id @default(uuid())
-  menuItemId Int      @map("menu_item_id")
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-
-  adjustmentType StockAdjustmentType @map("adjustment_type")
-  previousStock  Int                 @map("previous_stock")
-  newStock       Int                 @map("new_stock")
-  quantity       Int
-
-  reason  String?
-  userId  String? @map("user_id")
-  orderId String? @map("order_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("stock_adjustments")
-}
-
-model Order {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id      String @id @default(uuid())
-  tableId Int?   @map("table_id")
-  table   Table? @relation(fields: [tableId], references: [id])
-
-  waiterId String @map("waiter_id")
-  waiter   User   @relation("OrdersTakenByWaiter", fields: [waiterId], references: [id])
-
-  customerId String?   @map("customerId")
-  customer   Customer? @relation(fields: [customerId], references: [id])
-
-  status OrderStatus @default(PENDING)
-  type   OrderType   @default(DINE_IN)
-
-  totalAmount Decimal @default(0.00) @map("total_amount") @db.Decimal(10, 2)
-  notes       String?
-
-  whatsappOrderId String? @unique @map("whatsapp_order_id")
-
-  items    OrderItem[]
-  payments Payment[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@index([restaurantId])
-  @@map("orders")
-}
-
-model OrderItem {
-  id      Int    @id @default(autoincrement())
-  orderId String @map("order_id")
-  order   Order  @relation(fields: [orderId], references: [id])
-
-  menuItemId Int?      @map("menu_item_id")
-  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
-
-  quantity     Int
-  priceAtOrder Decimal @map("price_at_order") @db.Decimal(10, 2)
-  notes        String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@map("order_items")
-}
-
-model Customer {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id        String  @id @default(uuid())
-  firstName String  @map("first_name")
-  lastName  String  @map("last_name")
-  phone     String  @unique
-  email     String?
-
-  orders      Order[]
-  ticketBooks TicketBook[]
-  dailyCodes  DailyTicketBookCode[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@unique([restaurantId, phone])
-  @@unique([restaurantId, email])
-  @@map("customers")
-}
-
-model TicketBook {
-  id String @id @default(uuid())
-
-  customerId String?   @map("customerId")
-  customer   Customer? @relation(fields: [customerId], references: [id])
-
-  purchaseDate     DateTime @default(now()) @map("purchase_date")
-  expiryDate       DateTime @map("expiry_date")
-  totalPortions    Int      @map("total_portions")
-  consumedPortions Int      @default(0) @map("consumed_portions")
-
-  status String @default("active")
-
-  usages TicketBookUsage[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@map("ticket_books")
-}
-
-model TicketBookUsage {
-  id           String     @id @default(uuid())
-  ticketBookId String     @map("ticket_book_id")
-  ticketBook   TicketBook @relation(fields: [ticketBookId], references: [id])
-
-  paymentId String  @map("payment_id")
-  payments  Payment @relation("TicketUsages", fields: [paymentId], references: [id])
-
-  dailyCodeId String              @map("daily_code_id")
-  dailyCode   DailyTicketBookCode @relation(fields: [dailyCodeId], references: [id])
-
-  portionCount Int @default(1) @map("portion_count")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@map("ticket_book_usages")
-}
-
-model Payment {
-  id String @id @default(uuid())
-
-  orderId String? @map("order_id")
-  order   Order?  @relation(fields: [orderId], references: [id])
-
-  method PaymentMethod @default(CASH)
-  amount Decimal       @db.Decimal(10, 2)
-
-  transactionRef String? @map("transaction_ref")
-
-  ticketUsages          TicketBookUsage[]    @relation("TicketUsages")
-  dailyTicketBookCodeId String?              @unique @map("daily_ticket_book_code_id")
-  dailyTicketBookCode   DailyTicketBookCode? @relation("CodeUsedInPayment", fields: [dailyTicketBookCodeId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("payments")
-}
-
-model Expense {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id String @id @default(uuid())
-
-  registeredById String @map("registered_by_id")
-  registeredBy   User   @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
-
-  date        DateTime
-  amount      Decimal  @db.Decimal(10, 2)
-  category    String
-  description String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-
-  @@index([restaurantId])
-  @@map("expenses")
-}
-
-model CashClosure {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id String @id @default(uuid())
-
-  openedById String @map("opened_by_id")
-  openedBy   User   @relation("OpenedBy", fields: [openedById], references: [id])
-
-  closedById String? @map("closed_by_id")
-  closedBy   User?   @relation("ClosedBy", fields: [closedById], references: [id])
-
-  openingDate DateTime  @default(now()) @map("opening_date")
-  closingDate DateTime? @map("closing_date")
-
-  openingBalance  Decimal @map("opening_balance") @db.Decimal(10, 2)
-  expectedBalance Decimal @default(0) @map("expected_balance") @db.Decimal(10, 2)
-  actualBalance   Decimal? @map("actual_balance") @db.Decimal(10, 2)
-  difference      Decimal? @map("difference") @db.Decimal(10, 2)
-
-  status CashClosureStatus @default(OPEN)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  @@index([restaurantId])
-  @@map("cash_closures")
-}
-
-model DailyTicketBookCode {
-  id String @id @default(uuid())
-
-  customerId String?   @map("customerId")
-  customer   Customer? @relation(fields: [customerId], references: [id])
-
-  code String   @unique
-  date DateTime @db.Date
-
-  isUsed Boolean @default(false) @map("is_used")
-
-  usedAtPaymentId Int?              @unique @map("used_at_payment_id")
-  usedAtPayment   Payment?          @relation("CodeUsedInPayment")
-  ticketBookUsage TicketBookUsage[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@unique([customerId, date])
-  @@map("daily_ticket_book_codes")
-}
-
-/**
- * DailyMenu Model
- * Redesigned to store references to actual MenuItems
- * Each day can have multiple options for soup, principle, protein, drink, and extra
- */
-model DailyMenu {
-  restaurantId String?     @map("restaurant_id")
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  id        String   @id @default(uuid())
-  isActive  Boolean  @default(true)
-  createdAt DateTime @unique @map("created_at") @db.Date
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deleted   Boolean   @default(false)
-  deletedAt DateTime? @map("deleted_at")
-
-  // Price configuration - base margin added to protein individual price
-  basePrice          Decimal  @default(4000.00) @db.Decimal(10, 2) @map("base_price") // Base margin for lunch (e.g., $4,000). Total = basePrice + proteinPrice
-
-  // Category references (just IDs - no relations needed)
-  soupCategoryId     Int?          @map("soup_category_id")
-  principleCategoryId Int?          @map("principle_category_id")
-  proteinCategoryId  Int?          @map("protein_category_id")
-  drinkCategoryId    Int?          @map("drink_category_id")
-  extraCategoryId    Int?          @map("extra_category_id")
-  saladCategoryId    Int?          @map("salad_category_id")
-  dessertCategoryId  Int?          @map("dessert_category_id")
-
-  // Available items for today (just IDs - queried manually in code)
-  soupOption1Id     Int?      @map("soup_option_1_id")
-  soupOption2Id     Int?      @map("soup_option_2_id")
-  principleOption1Id Int?      @map("principle_option_1_id")
-  principleOption2Id Int?      @map("principle_option_2_id")
-  drinkOption1Id    Int?      @map("drink_option_1_id")
-  drinkOption2Id    Int?      @map("drink_option_2_id")
-  extraOption1Id    Int?      @map("extra_option_1_id")
-  extraOption2Id    Int?      @map("extra_option_2_id")
-  saladOption1Id    Int?      @map("salad_option_1_id")
-  saladOption2Id    Int?      @map("salad_option_2_id")
-  dessertOption1Id  Int?      @map("dessert_option_1_id")
-  dessertOption2Id  Int?      @map("dessert_option_2_id")
-  
-  // All available protein IDs for today (array for multiple selections)
-  proteinIds        Int[]     @default([]) @map("protein_ids")
-
-  @@index([createdAt])
-  @@index([isActive])
-  @@index([restaurantId])
-  @@map("daily_menus")
-}
-

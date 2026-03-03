@@ -6,7 +6,10 @@ import { PrismaTransaction } from "../../types/prisma-transaction.types";
 export class PaymentRepository implements IPaymentRepository {
   private prisma = getPrismaClient();
 
-  async create(data: Prisma.PaymentUncheckedCreateInput, tx?: PrismaTransaction): Promise<Payment> {
+  async create(
+    data: Prisma.PaymentUncheckedCreateInput,
+    tx?: PrismaTransaction,
+  ): Promise<Payment> {
     const client = tx || this.prisma;
     return await client.payment.create({
       data,

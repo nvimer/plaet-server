@@ -123,7 +123,7 @@ export async function seedRoles() {
       }
     }
     logger.info(
-        `  ✅ ${roleConfig.permissions.length} granular permissions assigned to ${roleConfig.name}`,
+      `  ✅ ${roleConfig.permissions.length} granular permissions assigned to ${roleConfig.name}`,
     );
   }
   logger.info(`✅ ${rolesConfig.length} roles seeded successfully!`);

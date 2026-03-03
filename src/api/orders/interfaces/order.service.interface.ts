@@ -1,4 +1,4 @@
-import { Order } from "@prisma/client";
+import { Order, OrderItem } from "@prisma/client";
 import {
   PaginatedResponse,
   PaginationParams,
@@ -6,6 +6,7 @@ import {
 import {
   OrderWithItems,
   OrderWithRelations,
+  OrderItemStatus,
 } from "../../../types/prisma.types";
 import {
   CreateOrderBodyInput,
@@ -48,7 +49,11 @@ export interface OrderServiceInterface {
    * @return Created order with items
    * @throws Custom Error if validation fails or insufficient stock
    */
-  createOrder(id: string, data: CreateOrderBodyInput): Promise<OrderWithItems>;
+  createOrder(
+    waiterId: string,
+    restaurantId: string | null | undefined,
+    data: CreateOrderBodyInput,
+  ): Promise<OrderWithItems>;
 
   /**
    * Updates order status with validation
@@ -87,4 +92,17 @@ export interface OrderServiceInterface {
     waiterId: string,
     data: BatchCreateOrderBodyInput,
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }>;
+  /**
+   * Updates the status of an individual order item
+   *
+   * @param orderId - Order identifier
+   * @param itemId - Item identifier
+   * @param status - New status
+   * @returns Updated order item
+   */
+  updateOrderItemStatus(
+    orderId: string,
+    itemId: number,
+    status: OrderItemStatus,
+  ): Promise<OrderItem>;
 }

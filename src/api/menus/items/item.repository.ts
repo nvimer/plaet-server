@@ -26,7 +26,7 @@ class ItemRepository implements ItemRepositoryInterface {
     const skip = (page - 1) * limit;
 
     const where: Prisma.MenuItemWhereInput = { deleted: false };
-    
+
     if (categoryId) {
       where.categoryId = Number(categoryId);
     }
@@ -36,7 +36,7 @@ class ItemRepository implements ItemRepositoryInterface {
         where,
         skip,
         take: limit,
-        orderBy: { name: "asc" }
+        orderBy: { name: "asc" },
       }),
       prisma.menuItem.count({ where }),
     ]);
@@ -183,7 +183,7 @@ class ItemRepository implements ItemRepositoryInterface {
     const item = await client.menuItem.findUnique({ where: { id } });
 
     if (!item) {
-      throw new Error(`MenuItem with id \${id} not found`);
+      throw new Error("MenuItem with id ${id} not found");
     }
     const previousStock = item.stockQuantity ?? 0;
     const newStock = previousStock + quantity;

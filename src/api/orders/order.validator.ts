@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { OrderStatus, OrderType } from "../../types/prisma.types";
+import {
+  OrderStatus,
+  OrderType,
+  OrderItemStatus,
+} from "../../types/prisma.types";
 import { idParamsSchema } from "../../utils/params.schema";
 
 /**
@@ -17,6 +21,14 @@ const orderStatusEnum = z.enum(
  *
  * Validates order type to ensure proper classification.
  */
+
+/**
+ * Order Item Status Enum Validation
+ */
+const orderItemStatusEnum = z.enum(
+  Object.values(OrderItemStatus) as [OrderItemStatus, ...OrderItemStatus[]],
+);
+
 const orderTypeEnum = z.enum(
   Object.values(OrderType) as [OrderType, ...OrderType[]],
 );
@@ -80,6 +92,20 @@ export const createOrderSchema = z.object({
  * Validates requests to updated order status.
  * Status updates must follow business logic and permissions
  */
+
+/**
+ * Validation Schema for Order Item Status Update
+ */
+export const updateOrderItemStatusSchema = z.object({
+  params: z.object({
+    id: z.string().uuid("Order ID must be a valid UUID"),
+    itemId: z.coerce.number().int().positive("Item ID must be positive"),
+  }),
+  body: z.object({
+    status: orderItemStatusEnum,
+  }),
+});
+
 export const updateOrderStatusSchema = z.object({
   params: idParamsSchema,
   body: z.object({
@@ -143,4 +169,8 @@ export type OrderSearchParams = z.infer<typeof orderSearchSchema>["query"];
 export type OrderItemInput = z.infer<typeof orderItemSchema>;
 export type BatchCreateOrderBodyInput = z.infer<
   typeof batchCreateOrderSchema
+>["body"];
+
+export type UpdateOrderItemStatusBodyInput = z.infer<
+  typeof updateOrderItemStatusSchema
 >["body"];

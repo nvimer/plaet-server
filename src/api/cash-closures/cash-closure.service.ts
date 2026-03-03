@@ -19,21 +19,29 @@ export class CashClosureService {
     const closure = await this.repository.findById(id);
     if (!closure) throw new CustomError("Not found", HttpStatus.NOT_FOUND);
     const now = new Date();
-    const cashSales = await this.repository.sumCashPayments(closure.openingDate, now);
-    const totalExpenses = await this.repository.sumExpenses(closure.openingDate, now);
-    const expectedBalance = Number(closure.openingBalance) + cashSales - totalExpenses;
+    const cashSales = await this.repository.sumCashPayments(
+      closure.openingDate,
+      now,
+    );
+    const totalExpenses = await this.repository.sumExpenses(
+      closure.openingDate,
+      now,
+    );
+    const expectedBalance =
+      Number(closure.openingBalance) + cashSales - totalExpenses;
     return {
       openingBalance: Number(closure.openingBalance),
       cashSales,
       totalExpenses,
       expectedBalance,
-      openingDate: closure.openingDate
+      openingDate: closure.openingDate,
     };
   }
 
   async openShift(data: OpenCashClosureDto, openedById: string) {
     const existingOpen = await this.repository.findCurrentOpen();
-    if (existingOpen) throw new CustomError("Already open", HttpStatus.BAD_REQUEST);
+    if (existingOpen)
+      throw new CustomError("Already open", HttpStatus.BAD_REQUEST);
     return this.repository.create({ ...data, openedById });
   }
 

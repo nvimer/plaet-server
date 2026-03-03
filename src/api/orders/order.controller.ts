@@ -14,6 +14,7 @@ import {
   OrderSearchParams,
   UpdateOrderStatusBodyInput,
   BatchCreateOrderBodyInput,
+  UpdateOrderItemStatusBodyInput,
 } from "./order.validator";
 import { OrderStatus, OrderType } from "../../types/prisma.types";
 
@@ -143,9 +144,13 @@ class OrderController {
    */
   createOrder = asyncHandler(async (req: Request, res: Response) => {
     const data: CreateOrderBodyInput = req.body;
-    const id = (req.user as AuthenticatedUser).id;
+    const user = req.user as AuthenticatedUser;
 
-    const newOrder = await this.orderService.createOrder(id, data);
+    const newOrder = await this.orderService.createOrder(
+      user.id,
+      user.restaurantId,
+      data,
+    );
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -289,6 +294,29 @@ class OrderController {
         createdOrders: result.orders,
         tableTotal: result.tableTotal,
       },
+    });
+  });
+  /**
+   * PATCH /orders/:id/items/:itemId/status
+   *
+   * Updates the status of an individual item in an order.
+   * Used by kitchen staff to move dishes through lifecycle.
+   */
+  updateOrderItemStatus = asyncHandler(async (req: Request, res: Response) => {
+    const orderId = req.params.id;
+    const itemId = Number(req.params.itemId);
+    const { status }: UpdateOrderItemStatusBodyInput = req.body;
+
+    const updatedItem = await this.orderService.updateOrderItemStatus(
+      orderId,
+      itemId,
+      status,
+    );
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Item status updated successfully",
+      data: updatedItem,
     });
   });
 }

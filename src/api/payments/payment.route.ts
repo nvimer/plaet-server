@@ -10,7 +10,7 @@ router.post(
   "/:orderId",
   authJwt,
   roleMiddleware([RoleName.CASHIER, RoleName.ADMIN, RoleName.SUPERADMIN]),
-  paymentController.createPayment
+  paymentController.createPayment,
 );
 
 export default router;

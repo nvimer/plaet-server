@@ -38,31 +38,54 @@ export class CustomerRepository implements ICustomerRepository {
     });
   }
 
-  async findMany(params: { skip?: number; take?: number; where?: Prisma.CustomerWhereInput; orderBy?: Prisma.CustomerOrderByWithRelationInput }): Promise<Customer[]> {
+  async findMany(params: {
+    skip?: number;
+    take?: number;
+    where?: Prisma.CustomerWhereInput;
+    orderBy?: Prisma.CustomerOrderByWithRelationInput;
+  }): Promise<Customer[]> {
     const { skip, take, where, orderBy } = params;
     return await this.prisma.customer.findMany({
-      skip, take, where: { ...where, deleted: false }, orderBy,
+      skip,
+      take,
+      where: { ...where, deleted: false },
+      orderBy,
       include: { orders: false, ticketBooks: false, dailyCodes: false },
     });
   }
 
   async count(params: { where?: Prisma.CustomerWhereInput }): Promise<number> {
-    return await this.prisma.customer.count({ where: { ...params.where, deleted: false } });
+    return await this.prisma.customer.count({
+      where: { ...params.where, deleted: false },
+    });
   }
 
-  async update(id: string, data: Prisma.CustomerUpdateInput): Promise<Customer> {
-    return await this.prisma.customer.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+  async update(
+    id: string,
+    data: Prisma.CustomerUpdateInput,
+  ): Promise<Customer> {
+    return await this.prisma.customer.update({
+      where: { id },
+      data: { ...data, updatedAt: new Date() },
+    });
   }
 
   async softDelete(id: string): Promise<Customer> {
-    return await this.prisma.customer.update({ where: { id }, data: { deleted: true, deletedAt: new Date(), updatedAt: new Date() } });
+    return await this.prisma.customer.update({
+      where: { id },
+      data: { deleted: true, deletedAt: new Date(), updatedAt: new Date() },
+    });
   }
 
   async searchByNameOrPhone(query: string): Promise<Customer[]> {
     return await this.prisma.customer.findMany({
       where: {
         deleted: false,
-        OR: [{ firstName: { contains: query, mode: "insensitive" } }, { lastName: { contains: query, mode: "insensitive" } }, { phone: { contains: query } }],
+        OR: [
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+          { phone: { contains: query } },
+        ],
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
       take: 20,

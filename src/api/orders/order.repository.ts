@@ -1,4 +1,4 @@
-import { Order, Prisma } from "@prisma/client";
+import { Order, OrderItem, Prisma } from "@prisma/client";
 import { OrderRepositoryInterface } from "./interfaces/order.repository.interface";
 import { CreateOrderBodyInput, OrderSearchParams } from "./order.validator";
 import {
@@ -9,6 +9,7 @@ import {
   OrderStatus,
   OrderWithItems,
   OrderWithRelations,
+  OrderItemStatus,
 } from "../../types/prisma.types";
 import { getPrismaClient } from "../../database/prisma";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
@@ -61,6 +62,7 @@ class OrderRepository implements OrderRepositoryInterface {
               menuItem: true,
             },
           },
+          payments: true,
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -131,17 +133,14 @@ class OrderRepository implements OrderRepositoryInterface {
       data: {
         ...orderData,
         waiterId,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
         totalAmount: 0,
         createdAt: orderData.createdAt, // Support historical date entry
         items: {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
-            priceAtOrder:
-              (
-                item /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ as any
-              ).priceAtOrder || 0,
+            priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
           })),
         },
@@ -152,6 +151,7 @@ class OrderRepository implements OrderRepositoryInterface {
             menuItem: true,
           },
         },
+        payments: true,
       },
     });
     return order;
@@ -214,6 +214,28 @@ class OrderRepository implements OrderRepositoryInterface {
     return client.order.update({
       where: { id },
       data: { totalAmount },
+    });
+  }
+
+  /**
+   * Updates the status of an order item
+   *
+   * @param orderId - Order identifier
+   * @param itemId - Item identifier
+   * @param status - New item status
+   * @param tx - Optional transaction client
+   * @returns Updated order item
+   */
+  async updateItemStatus(
+    orderId: string,
+    itemId: number,
+    status: OrderItemStatus,
+    tx?: PrismaTransaction,
+  ): Promise<OrderItem> {
+    const client = tx || getPrismaClient();
+    return client.orderItem.update({
+      where: { id: itemId, orderId },
+      data: { status },
     });
   }
 }

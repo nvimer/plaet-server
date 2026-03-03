@@ -1,4 +1,4 @@
-import { Order, Prisma, MenuItem } from "@prisma/client";
+import { Order, OrderItem, Prisma, MenuItem } from "@prisma/client";
 import {
   PaginationParams,
   PaginatedResponse,
@@ -9,6 +9,7 @@ import {
   OrderStatus,
   OrderWithItems,
   OrderWithRelations,
+  OrderItemStatus,
 } from "../../types/prisma.types";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { ItemServiceInterface } from "../menus/items/interfaces/item.service.interface";
@@ -196,14 +197,16 @@ export class OrderService implements OrderServiceInterface {
    * @throws CustomError if validation fails or insufficient stock
    */
   async createOrder(
-    id: string,
+    waiterId: string,
+    restaurantId: string | null | undefined,
     data: CreateOrderBodyInput,
   ): Promise<OrderWithItems> {
+    const client = getPrismaClient();
+
     // Step 1: Validate and fetch all menu items
     const menuItemsPromises = data.items.map((item) =>
       this.itemService.findMenuItemById(item.menuItemId),
     );
-
     const menuItems = await Promise.all(menuItemsPromises);
 
     const unavailableItems = menuItems.filter((item) => !item.isAvailable);
@@ -216,15 +219,12 @@ export class OrderService implements OrderServiceInterface {
       );
     }
 
-    // Step 3: Validate stock for TRACKED items
+    // Step 2: Validate stock for TRACKED items
     for (let i = 0; i < data.items.length; i++) {
       const orderItem = data.items[i];
       const menuItem = menuItems[i];
-
-      // Only validate stock for TRACKED items
       if (menuItem.inventoryType === InventoryType.TRACKED) {
         const availableStock = menuItem.stockQuantity ?? 0;
-
         if (availableStock < orderItem.quantity) {
           throw new CustomError(
             `Insufficient stock for ${menuItem.name}`,
@@ -235,35 +235,59 @@ export class OrderService implements OrderServiceInterface {
       }
     }
 
-    // Step 4: Prepare order data with prices
-    const orderDataWithPrices = {
-      ...data,
-      items: data.items.map((item, index) => ({
-        ...item,
-        priceAtOrder: menuItems[index].price,
-      })),
-      createdAt: data.createdAt, // Pass historical date if provided
-    };
+    // Step 3: Find existing OPEN order for the table (DINE_IN only)
+    let existingOrder: Order | null = null;
+    if (data.type === "DINE_IN" && data.tableId && restaurantId) {
+      existingOrder = await client.order.findFirst({
+        where: {
+          tableId: data.tableId,
+          restaurantId: restaurantId,
+          status: OrderStatus.OPEN,
+        },
+      });
+    }
 
-    // Step 5: Calculate total amount
-    const totalAmount = orderDataWithPrices.items.reduce(
-      (sum, item) => sum + Number(item.priceAtOrder) * item.quantity,
-      0,
-    );
-
-    // Step 6-8: Create order, update total, and deduct stock in atomic transaction
-    // Use the appropriate Prisma client based on environment
-    const client = getPrismaClient();
     return await client.$transaction(async (tx: PrismaTransaction) => {
-      // Create order with items
-      const order = await this.orderRepository.create(
-        id,
-        orderDataWithPrices,
-        tx,
+      let orderId: string;
+      let currentTotal = 0;
+
+      if (existingOrder) {
+        orderId = existingOrder.id;
+        currentTotal = Number(existingOrder.totalAmount);
+
+        // Add items to existing order
+        await tx.orderItem.createMany({
+          data: data.items.map((item, index) => ({
+            orderId,
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            priceAtOrder: menuItems[index].price,
+            notes: item.notes,
+          })),
+        });
+      } else {
+        // Create new order
+        const order = await this.orderRepository.create(
+          waiterId,
+          { ...data, restaurantId } as any,
+          tx,
+        );
+        orderId = order.id;
+      }
+
+      // Calculate total for NEW items
+      const newItemsTotal = data.items.reduce(
+        (sum, item, index) =>
+          sum + Number(menuItems[index].price) * item.quantity,
+        0,
       );
 
-      // Update total amount
-      await this.orderRepository.updateTotal(order.id, totalAmount, tx);
+      // Update total amount (previous total + new items)
+      await this.orderRepository.updateTotal(
+        orderId,
+        currentTotal + newItemsTotal,
+        tx,
+      );
 
       // Deduct stock for TRACKED items
       const stockDeductionPromises = data.items.map((item, index) => {
@@ -272,19 +296,17 @@ export class OrderService implements OrderServiceInterface {
           return this.itemService.deductStockForOrder(
             item.menuItemId,
             item.quantity,
-            order.id,
+            orderId,
             tx,
           );
         }
         return Promise.resolve();
       });
-
       await Promise.all(stockDeductionPromises);
 
       // Fetch the updated order with correct totalAmount
-      // Use the transaction client to ensure we get the updated data
       const updatedOrder = await tx.order.findUnique({
-        where: { id: order.id },
+        where: { id: orderId },
         include: {
           items: {
             include: {
@@ -296,7 +318,7 @@ export class OrderService implements OrderServiceInterface {
 
       if (!updatedOrder) {
         throw new CustomError(
-          `Order with ID ${order.id} not found after creation`,
+          `Order with ID ${orderId} not found after creation/update`,
           HttpStatus.INTERNAL_SERVER_ERROR,
           "ORDER_NOT_FOUND",
         );
@@ -325,9 +347,9 @@ export class OrderService implements OrderServiceInterface {
     const order = await this.findOrderByIdOrFail(id);
 
     // Validate terminal statuses cannot be changed
-    if (order.status === OrderStatus.DELIVERED) {
+    if (order.status === OrderStatus.PAID) {
       throw new CustomError(
-        "Cannot change status of delivered order",
+        "Cannot change status of paid order",
         HttpStatus.BAD_REQUEST,
         "INVALID_STATUS_TRANSITION",
       );
@@ -365,9 +387,9 @@ export class OrderService implements OrderServiceInterface {
     const order = await this.findOrderByIdOrFail(id);
 
     // Step 2: Validate order can be cancelled
-    if (order.status === OrderStatus.DELIVERED) {
+    if (order.status === OrderStatus.PAID) {
       throw new CustomError(
-        "Cannot cancel delivered order",
+        "Cannot cancel paid order",
         HttpStatus.BAD_REQUEST,
         "CANNOT_CANCEL_DELIVERED_ORDER",
       );
@@ -485,156 +507,110 @@ export class OrderService implements OrderServiceInterface {
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
     const client = getPrismaClient();
 
+    // Find if there is an existing OPEN order for this table
+    const existingOrder = await client.order.findFirst({
+      where: {
+        tableId: data.tableId,
+        status: OrderStatus.OPEN,
+      },
+    });
+
     return await client.$transaction(async (tx: PrismaTransaction) => {
-      const createdOrders: OrderWithItems[] = [];
-      let tableTotal = 0;
+      let masterOrderId: string;
+      let tableTotal = existingOrder ? Number(existingOrder.totalAmount) : 0;
 
-      // Collect all unique menu item IDs from all orders
+      // 1. Setup the Master Order
+      if (existingOrder) {
+        masterOrderId = existingOrder.id;
+      } else {
+        const firstSubOrder = data.orders[0];
+        const newOrder = await this.orderRepository.create(
+          waiterId,
+          {
+            tableId: data.tableId,
+            type: firstSubOrder.type,
+            customerId: firstSubOrder.customerId,
+            items: [],
+            notes: "Group Order",
+          } as any,
+          tx,
+        );
+        masterOrderId = newOrder.id;
+      }
+
       const allMenuItemIds = new Set<number>();
-      data.orders.forEach((order) => {
-        order.items.forEach((item) => allMenuItemIds.add(item.menuItemId));
-      });
-
-      // Fetch all menu items in a single query
-      const menuItems = await tx.menuItem.findMany({
-        where: {
-          id: { in: Array.from(allMenuItemIds) },
-          deleted: false,
-        },
-      });
-
-      // Validate all items exist
-      const foundIds = new Set(menuItems.map((mi) => mi.id));
-      const missingIds = Array.from(allMenuItemIds).filter(
-        (id) => !foundIds.has(id),
+      data.orders.forEach((o) =>
+        o.items.forEach((i) => allMenuItemIds.add(i.menuItemId)),
       );
-      if (missingIds.length > 0) {
-        throw new CustomError(
-          `Menu items not found: ${missingIds.join(", ")}`,
-          HttpStatus.NOT_FOUND,
-          "ITEMS_NOT_FOUND",
-        );
-      }
-
-      // Validate all items are available
-      const unavailableItems = menuItems.filter((item) => !item.isAvailable);
-      if (unavailableItems.length > 0) {
-        const itemNames = unavailableItems.map((item) => item.name).join(", ");
-        throw new CustomError(
-          `The following items are not available: ${itemNames}`,
-          HttpStatus.BAD_REQUEST,
-          "ITEMS_NOT_AVAILABLE",
-        );
-      }
-
-      // Validate stock for all orders
-      const stockRequirements = new Map<number, number>();
-      data.orders.forEach((order) => {
-        order.items.forEach((item) => {
-          const current = stockRequirements.get(item.menuItemId) || 0;
-          stockRequirements.set(item.menuItemId, current + item.quantity);
-        });
+      const menuItems = await tx.menuItem.findMany({
+        where: { id: { in: Array.from(allMenuItemIds) }, deleted: false },
       });
 
-      for (const [itemId, requiredQty] of stockRequirements.entries()) {
-        const menuItem = menuItems.find((mi) => mi.id === itemId);
-        if (menuItem?.inventoryType === InventoryType.TRACKED) {
-          const availableStock = menuItem.stockQuantity ?? 0;
-          if (availableStock < requiredQty) {
-            throw new CustomError(
-              `Insufficient stock for ${menuItem.name}. Available: ${availableStock}, Required: ${requiredQty}`,
-              HttpStatus.BAD_REQUEST,
-              "INSUFFICIENT_STOCK",
-            );
-          }
-        }
-      }
-
-      // Create each order
-      for (const orderData of data.orders) {
-        const orderItems = orderData.items;
-        const orderMenuItems = orderItems.map(
+      for (const subOrder of data.orders) {
+        const orderMenuItems = subOrder.items.map(
           (item) => menuItems.find((mi) => mi.id === item.menuItemId)!,
         );
 
-        // Calculate total using combo pricing
-        const totalAmount = this.calculateOrderTotal(
-          orderItems,
+        const serviceAmount = this.calculateOrderTotal(
+          subOrder.items,
           orderMenuItems,
         );
+        tableTotal += serviceAmount;
 
-        // Prepare order data with prices and setLunch fields
-        const preparedItems = orderItems.map((item) => {
-          const menuItem = orderMenuItems.find(
-            (mi) => mi.id === item.menuItemId,
-          )!;
-          return {
-            ...item,
-            priceAtOrder: Number(menuItem.price),
-          };
+        await tx.orderItem.createMany({
+          data: subOrder.items.map((item) => {
+            const mi = menuItems.find((m) => m.id === item.menuItemId)!;
+            return {
+              orderId: masterOrderId,
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              priceAtOrder: mi.price,
+              notes: item.notes,
+            };
+          }),
         });
 
-        // Create the order
-        const createData: CreateOrderBodyInput = {
-          tableId: data.tableId,
-          type: orderData.type,
-          customerId: orderData.customerId,
-          items: preparedItems,
-          notes: orderData.notes,
-        };
-
-        const order = await this.orderRepository.create(
-          waiterId,
-          createData,
-          tx,
-        );
-
-        // Update order total
-        await this.orderRepository.updateTotal(order.id, totalAmount, tx);
-
-        // Deduct stock
-        const stockDeductionPromises = orderItems.map((item) => {
-          const menuItem = orderMenuItems.find(
-            (mi) => mi.id === item.menuItemId,
-          )!;
-          if (menuItem.inventoryType === InventoryType.TRACKED) {
-            return this.itemService.deductStockForOrder(
+        for (const item of subOrder.items) {
+          const mi = menuItems.find((m) => m.id === item.menuItemId)!;
+          if (mi.inventoryType === InventoryType.TRACKED) {
+            await this.itemService.deductStockForOrder(
               item.menuItemId,
               item.quantity,
-              order.id,
+              masterOrderId,
               tx,
             );
           }
-          return Promise.resolve();
-        });
-        await Promise.all(stockDeductionPromises);
-
-        // Fetch the complete order with items
-        const completeOrder = await tx.order.findUnique({
-          where: { id: order.id },
-          include: {
-            items: {
-              include: {
-                menuItem: true,
-              },
-            },
-          },
-        });
-
-        if (!completeOrder) {
-          throw new CustomError(
-            `Order ${order.id} not found after creation`,
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "ORDER_NOT_FOUND",
-          );
         }
-
-        createdOrders.push(completeOrder as OrderWithItems);
-        tableTotal += totalAmount;
       }
 
-      return { orders: createdOrders, tableTotal };
+      await this.orderRepository.updateTotal(masterOrderId, tableTotal, tx);
+
+      const completeOrder = await tx.order.findUnique({
+        where: { id: masterOrderId },
+        include: { items: { include: { menuItem: true } } },
+      });
+
+      return { orders: [completeOrder as OrderWithItems], tableTotal };
     });
+  }
+  /**
+   * Updates the status of an individual order item
+   *
+   * @param orderId - Order identifier
+   * @param itemId - Item identifier
+   * @param status - New status
+   * @returns Updated order item
+   */
+  async updateOrderItemStatus(
+    orderId: string,
+    itemId: number,
+    status: OrderItemStatus,
+  ): Promise<OrderItem> {
+    // 1. Ensure order exists
+    await this.findOrderByIdOrFail(orderId);
+
+    // 2. Update item status
+    return await this.orderRepository.updateItemStatus(orderId, itemId, status);
   }
 }
 

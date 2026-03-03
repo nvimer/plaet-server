@@ -1036,7 +1036,7 @@ export class ItemService implements ItemServiceInterface {
       try {
         await storageService.deleteImage(existingItem.imagePublicId);
       } catch (error) {
-        logger.error(`Failed to delete image from Cloudinary:`, error);
+        logger.error("Failed to delete image from Cloudinary:", error);
       }
     }
 

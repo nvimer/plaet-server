@@ -146,17 +146,17 @@ class DailyMenuService implements DailyMenuServiceInterface {
   /**
    * Update or create daily menu for today
    */
-  
-  
+
   async getHistory(page: number, limit: number): Promise<any> {
     const result = await (this.repository as any).getHistory(page, limit);
-    const mappedData = await Promise.all(result.data.map((m: any) => this.toResponse(m)));
+    const mappedData = await Promise.all(
+      result.data.map((m: any) => this.toResponse(m)),
+    );
     return {
       data: mappedData,
-      meta: result.meta
+      meta: result.meta,
     };
   }
-
 
   async updateTodayMenu(
     data: UpdateDailyMenuInput,

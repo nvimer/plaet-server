@@ -4,6 +4,7 @@ import {
   orderIdSchema,
   orderSearchSchema,
   updateOrderStatusSchema,
+  updateOrderItemStatusSchema,
   batchCreateOrderSchema,
 } from "./order.validator";
 import orderController from "./order.controller";
@@ -79,6 +80,17 @@ router.delete(
   permissionMiddleware("orders:cancel"),
   validate(orderIdSchema),
   orderController.cancelOrder,
+);
+
+/**
+ * PATCH /orders/:id/items/:itemId/status
+ * Updates the status of an individual item.
+ */
+router.patch(
+  "/:id/items/:itemId/status",
+  permissionMiddleware("orders:update"),
+  validate(updateOrderItemStatusSchema),
+  orderController.updateOrderItemStatus,
 );
 
 export default router;

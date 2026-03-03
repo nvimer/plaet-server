@@ -93,9 +93,14 @@ export type OrderWithItems = Prisma.OrderGetPayload<{
  * CANCELLED (can happen from any status)
  */
 export enum OrderStatus {
-  PENDING = "PENDING",
+  OPEN = "OPEN",
   SENT_TO_CASHIER = "SENT_TO_CASHIER",
   PAID = "PAID",
+  CANCELLED = "CANCELLED",
+}
+
+export enum OrderItemStatus {
+  PENDING = "PENDING",
   IN_KITCHEN = "IN_KITCHEN",
   READY = "READY",
   DELIVERED = "DELIVERED",

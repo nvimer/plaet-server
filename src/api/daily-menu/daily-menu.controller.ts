@@ -64,7 +64,7 @@ class DailyMenuController {
    * POST /daily-menu/today
    * Update or create today's daily menu
    */
-  
+
   /**
    * GET /daily-menu/history
    * Get history of daily menus
@@ -77,7 +77,7 @@ class DailyMenuController {
     res.status(HttpStatus.OK).json({
       success: true,
       data: result.data,
-      meta: result.meta
+      meta: result.meta,
     });
   });
 

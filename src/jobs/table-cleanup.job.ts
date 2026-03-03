@@ -25,22 +25,27 @@ export const startTableCleanupJob = () => {
 
       for (const table of occupiedTables) {
         const ongoingOrders = table.orders.filter(
-          (o: Order) => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.CANCELLED
+          (o: Order) =>
+            o.status !== OrderStatus.PAID && o.status !== OrderStatus.CANCELLED,
         );
 
         if (ongoingOrders.length > 0) continue;
 
-        const deliveredOrders = table.orders.filter((o: Order) => o.status === OrderStatus.DELIVERED);
-        
+        const deliveredOrders = table.orders.filter(
+          (o: Order) => o.status === OrderStatus.PAID,
+        );
+
         if (deliveredOrders.length > 0) {
           const latestDelivery = deliveredOrders[0].updatedAt;
-          
+
           if (latestDelivery < twentyMinutesAgo) {
-             await prisma.table.update({
-               where: { id: table.id },
-               data: { status: TableStatus.NEEDS_CLEANING }
-             });
-             logger.info(`🧹 CronJob: Mesa ${table.number} ha pasado a Limpieza tras 20 min de inactividad.`);
+            await prisma.table.update({
+              where: { id: table.id },
+              data: { status: TableStatus.NEEDS_CLEANING },
+            });
+            logger.info(
+              `🧹 CronJob: Mesa ${table.number} ha pasado a Limpieza tras 20 min de inactividad.`,
+            );
           }
         }
       }

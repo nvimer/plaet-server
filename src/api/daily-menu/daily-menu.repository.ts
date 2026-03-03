@@ -233,28 +233,30 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   /**
    * Update daily menu for a specific createdAt
    */
-  
+
   async getHistory(page: number, limit: number): Promise<any> {
     const skip = (page - 1) * limit;
     const [menus, total] = await Promise.all([
       this.prismaClient.dailyMenu.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      this.prismaClient.dailyMenu.count()
+      this.prismaClient.dailyMenu.count(),
     ]);
-    
-    const builtMenus = await Promise.all(menus.map((m: any) => this.buildWithRelations(m)));
-    
+
+    const builtMenus = await Promise.all(
+      menus.map((m: any) => this.buildWithRelations(m)),
+    );
+
     return {
       data: builtMenus,
       meta: {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
