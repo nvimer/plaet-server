@@ -10,5 +10,4 @@ const morganStream = {
 
 export function requestLogger(app: Application) {
   app.use(morgan("dev", { stream: morganStream }));
-  logger.info("Request logger middleware configured");
 }

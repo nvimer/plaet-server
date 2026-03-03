@@ -53,5 +53,4 @@ export const startTableCleanupJob = () => {
       logger.error("Error running table cleanup job:", error);
     }
   });
-  logger.info("🕒 Table cleanup cron job started (Runs every minute).");
 };

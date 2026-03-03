@@ -368,7 +368,7 @@ export class TokenService implements TokenServiceInterface {
 
     // Blacklist old refresh token (rotation)
     await this.tokenRepository.blacklistToken(refreshToken);
-    logger.info(`[REFRESH] Rotated token for user ${tokenRecord.userId}`);
+    logger.debug(`[REFRESH] Rotated token for user ${tokenRecord.userId}`);
 
     const user = await userService.findById(tokenRecord.userId);
     // Generate new token pair

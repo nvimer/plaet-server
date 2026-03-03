@@ -1,3 +1,4 @@
+import { logger } from "../config/logger";
 import { PrismaClient } from "@prisma/client";
 import cron from "node-cron";
 
@@ -41,20 +42,30 @@ export const startOrderAutoCancelJob = () => {
       });
 
       if (ordersToCancel.length > 0) {
-        console.log(`[Auto-Cancel Job] Found ${ordersToCancel.length} expired orders.`);
+        logger.info(`[Auto-Cancel Job] Found ${ordersToCancel.length} expired orders.`);
         
         for (const order of ordersToCancel) {
-          await prisma.order.update({
-            where: { id: order.id },
-            data: { status: "CANCELLED" },
+          await prisma.$transaction(async (tx) => {
+            // 1. Mark order as CANCELLED
+            await tx.order.update({
+              where: { id: order.id },
+              data: { status: "CANCELLED" },
+            });
+
+            // 2. If it has a table, mark it as AVAILABLE
+            if (order.tableId) {
+              await tx.table.update({
+                where: { id: order.tableId },
+                data: { status: "AVAILABLE" },
+              });
+            }
           });
-          console.log(`[Auto-Cancel Job] Cancelled order ${order.id} due to inactivity.`);
+          logger.info(`[Auto-Cancel Job] Cancelled order ${order.id} and released table ${order.tableId || "N/A"} due to inactivity.`);
         }
       }
     } catch (error) {
-      console.error("[Auto-Cancel Job] Error:", error);
+      logger.error("[Auto-Cancel Job] Error:", error);
     }
   });
 
-  console.log("[Auto-Cancel Job] Scheduled: Every 1 minute.");
 };

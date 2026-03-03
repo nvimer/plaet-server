@@ -421,7 +421,7 @@ class AuthController {
       path: "/",
     });
 
-    logger.info("[REFRESH] Tokens refreshed successfully");
+    logger.debug("[REFRESH] Tokens refreshed successfully");
 
     res.status(HttpStatus.OK).json({
       success: true,

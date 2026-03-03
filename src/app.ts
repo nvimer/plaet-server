@@ -94,7 +94,6 @@ app.use(tokenBlacklistMiddleware);
 app.use("/api/v1", apiRouter);
 
 app.get("/api/v1", (_: Request, res: Response) => {
-  logger.info("GET / request received");
   res.send("Plaet Restaurants API");
 });
 

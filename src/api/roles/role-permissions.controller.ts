@@ -48,8 +48,6 @@ class RolePermissionController {
     async (req: Request, res: Response) => {
       const roleId = parseInt(req.params.id);
       const { permissionIds } = req.body;
-
-      logger.info(`aquí están los id de permissions: ${permissionIds}`);
       const role = await rolePermissionService.assignPermissionsToRole(
         roleId,
         permissionIds,

@@ -94,8 +94,6 @@ class ProfileController {
   updateProfile = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id;
     const data: UpdateProfileInput = req.body;
-
-    logger.info(`aqui si llega el id:  ${id}`);
     const profileUpdated = await profileService.updateUser(id, data);
 
     res.status(HttpStatus.ACCEPTED).json({
