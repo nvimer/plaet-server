@@ -416,6 +416,7 @@ model DailyMenu {
   createdAt           DateTime    @unique @map("created_at") @db.Date
   updatedAt           DateTime    @updatedAt @map("updated_at")
   basePrice           Decimal     @default(4000.00) @map("base_price") @db.Decimal(10, 2)
+  packagingFee        Decimal     @default(1000.00) @map("packaging_fee") @db.Decimal(10, 2)
   drinkCategoryId     Int?        @map("drink_category_id")
   drinkOption1Id      Int?        @map("drink_option_1_id")
   drinkOption2Id      Int?        @map("drink_option_2_id")

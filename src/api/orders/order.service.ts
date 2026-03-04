@@ -523,12 +523,21 @@ export class OrderService implements OrderServiceInterface {
         masterOrderId = existingOrder.id;
       } else {
         const firstSubOrder = data.orders[0];
+        const restaurantId = (await tx.user.findUnique({ where: { id: waiterId }, select: { restaurantId: true } }))?.restaurantId;
+        
+        // Handle customer info for first sub-order
+        const customerId = await this.getOrCreateCustomer(
+          restaurantId,
+          { id: firstSubOrder.customerId, name: (firstSubOrder as any).customerName, phone: (firstSubOrder as any).customerPhone },
+          tx
+        );
+
         const newOrder = await this.orderRepository.create(
           waiterId,
           {
             tableId: data.tableId,
             type: firstSubOrder.type,
-            customerId: firstSubOrder.customerId,
+            customerId: customerId || undefined,
             items: [],
             notes: "Group Order",
             createdAt: firstSubOrder.createdAt,
@@ -607,6 +616,41 @@ export class OrderService implements OrderServiceInterface {
    * @param status - New status
    * @returns Updated order item
    */
+    private async getOrCreateCustomer(
+    restaurantId: string | null | undefined,
+    data: { id?: string; name?: string; phone?: string },
+    tx: PrismaTransaction
+  ): Promise<string | null> {
+    if (data.id) return data.id;
+    if (!data.phone || !restaurantId) return null;
+
+    const existing = await tx.customer.findFirst({
+      where: { 
+        restaurantId,
+        phone: data.phone
+      }
+    });
+
+    if (existing) return existing.id;
+
+    // Create new customer
+    const nameParts = (data.name || "Cliente").trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Sazonarte";
+
+    const newCustomer = await tx.customer.create({
+      data: {
+        restaurantId,
+        firstName,
+        lastName,
+        phone: data.phone,
+      }
+    });
+
+    return newCustomer.id;
+  }
+
+
   async updateOrderItemStatus(
     orderId: string,
     itemId: number,

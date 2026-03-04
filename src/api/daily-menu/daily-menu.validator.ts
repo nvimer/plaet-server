@@ -21,6 +21,7 @@ export const updateDailyMenuBodySchema = z.object({
   body: z.object({
     // Prices - base margin added to protein individual price
     basePrice: z.number().positive().optional(),
+    packagingFee: z.number().nonnegative().optional(),
 
     // Category IDs
     soupCategoryId: z.number().int().positive().optional().nullable(),

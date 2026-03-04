@@ -71,6 +71,8 @@ export const createOrderSchema = z.object({
   body: z.object({
     tableId: z.number().int().positive("Table ID must be positive").optional(),
     customerId: z.string().uuid("Customer ID must be a valid UUID").optional(),
+    customerName: z.string().max(100).optional(),
+    customerPhone: z.string().max(20).optional(),
     type: orderTypeEnum,
     items: z
       .array(orderItemSchema)
@@ -147,6 +149,8 @@ export const batchCreateOrderSchema = z.object({
             .string()
             .uuid("Customer ID must be a valid UUID")
             .optional(),
+          customerName: z.string().max(100).optional(),
+          customerPhone: z.string().max(20).optional(),
           items: z
             .array(orderItemSchema)
             .min(1, "Order must contain at least one item."),

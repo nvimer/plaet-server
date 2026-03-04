@@ -48,6 +48,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
       id: menu.id,
       isActive: menu.isActive ?? true,
       basePrice: Number(menu.basePrice ?? 4000), // Base margin (e.g., $4,000)
+      packagingFee: Number(menu.packagingFee ?? 1000), // Packaging cost
       createdAt: menu.createdAt,
       updatedAt: menu.updatedAt || new Date(),
 
@@ -119,6 +120,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
   private transformInput(data: UpdateDailyMenuInput) {
     return {
       basePrice: data.basePrice, // Base margin for lunch
+      packagingFee: data.packagingFee, // Packaging cost
       soupCategoryId: data.soupCategoryId,
       principleCategoryId: data.principleCategoryId,
       proteinCategoryId: data.proteinCategoryId,

@@ -39,6 +39,7 @@ export interface CreateDailyMenuData {
   createdAt: Date;
   isActive?: boolean;
   basePrice?: number; // Base margin for lunch
+  packagingFee?: number;
   soupCategoryId?: number | null;
   principleCategoryId?: number | null;
   proteinCategoryId?: number | null;
@@ -66,6 +67,7 @@ export interface CreateDailyMenuData {
  */
 export interface UpdateDailyMenuData {
   basePrice?: number; // Base margin for lunch
+  packagingFee?: number;
   soupCategoryId?: number | null;
   principleCategoryId?: number | null;
   proteinCategoryId?: number | null;
