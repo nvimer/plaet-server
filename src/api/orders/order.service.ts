@@ -267,10 +267,19 @@ export class OrderService implements OrderServiceInterface {
           })),
         });
       } else {
-        // Create new order
+        // Handle customer info (Find or Create)
+        const customerId = await this.getOrCreateCustomer(
+          restaurantId, 
+          { id: data.customerId, name: (data as any).customerName, phone: (data as any).customerPhone }, 
+          tx
+        );
+
+        // Remove non-prisma fields to avoid validation errors
+        const { customerName, customerPhone, ...cleanData } = data as any;
+
         const order = await this.orderRepository.create(
           waiterId,
-          { ...data, restaurantId } as any,
+          { ...cleanData, customerId, restaurantId },
           tx,
         );
         orderId = order.id;
