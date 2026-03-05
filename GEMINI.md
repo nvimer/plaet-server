@@ -1,92 +1,44 @@
 # Plaet API - Project Context
 
-## Project Overview
+This document provides the high-level context and technical overview for the Plaet backend.
 
-Plaet API is a robust, enterprise-level backend API for managing restaurant operations. It is built using Node.js, Express, TypeScript, and Prisma. The project serves as the backend for the "Plaet" application, handling core business logic, database operations, and user authentication.
+## 🚀 Project Overview
+Plaet API is an enterprise-level backend designed to power a multi-tenant Restaurant POS system. It handles high-concurrency operations, secure data isolation, and complex business logic for kitchen workflows and stock management.
 
-**Key Technologies:**
-
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Language:** TypeScript
+- **Runtime:** Node.js 18+
+- **Framework:** Express.js + TypeScript
 - **ORM:** Prisma
 - **Database:** PostgreSQL
-- **Authentication:** JWT (Passport.js), bcrypt
+- **Security:** JWT (Passport.js) + bcrypt
 - **Validation:** Zod
-- **Logging:** Winston, Morgan
-- **API Documentation:** Swagger (OpenAPI 3.0)
 
-## Architecture & Structure
+## 🏗️ Architecture & Structure
+The API follows a **Modular Service-Repository Pattern** designed for testability and scalability.
 
-The project follows a modular, RESTful architecture with a service-repository pattern:
+### Business Modules (`src/api/`)
+- `auth`: JWT authentication, token management, and password recovery.
+- `menus`: Catalog management, including Items and Categories.
+- `items`: Advanced stock management, history tracking, and inventory reports.
+- `orders`: Master-Detail order system, billing logic, and kitchen status updates.
+- `tables`: Physical layout management and real-time status tracking.
+- `users`: User management and Role-Based Access Control (RBAC).
+- `analytics`: Multi-tenant business intelligence and sales summaries.
 
-- `src/api/`: Contains business modules (e.g., auth, customers, menus, orders, users), each encapsulating its routes, controllers, services, repositories, and validators.
-- `src/config/`: Configuration files for external services, logging, and environment variables.
-- `src/database/`: Database connection and Prisma setup.
-- `src/middlewares/`: Express middlewares for authentication, error handling, rate limiting, and request logging.
-- `src/app.ts`: Express application setup and middleware configuration.
-- `src/server.ts`: Application entry point and server startup.
-- `prisma/`: Prisma schema (`schema.prisma`), migrations, and seed scripts.
+### Shared Infrastructure
+- `src/middlewares/`: Global security, logging, and error handling.
+- `src/config/`: Environment configuration and external services.
+- `src/database/`: Database connection pooling and Prisma setup.
 
-## Building and Running
+## 🛠️ Core Paradigms
+1.  **Automatic Multi-Tenancy:** Strict data isolation enforced at the database driver level.
+2.  **Stateless Auth:** JWT-based authentication via secure cookies or headers.
+3.  **Predictable Validation:** No request reaches business logic without passing Zod schema validation.
+4.  **Audit Logs:** Critical stock movements and billing actions are tracked in dedicated history tables.
 
-### Prerequisites
+## 🍽️ Order Workflow
+- **Creation:** Orders are tied to a `Table` or `Customer` (for Take-out).
+- **Preparation:** Orders move to the Kitchen Kanban only after payment validation.
+- **Stock:** Inventory is automatically deducted based on configured recipes/items upon order confirmation.
 
-- Node.js 18+
-- npm 9+
-- PostgreSQL 14+
-
-### Setup
-
-1.  Install dependencies:
-    ```bash
-    npm install
-    ```
-2.  Environment setup:
-    Create a `.env` file based on `.env.example`.
-3.  Database initialization:
-    ```bash
-    npm run prisma:generate
-    npm run prisma:migrate
-    npm run prisma:seed
-    ```
-
-### Development
-
-Start the development server with hot reload:
-
-```bash
-npm run dev
-```
-
-The API runs by default on `http://localhost:8080/api/v1`.
-Interactive Swagger documentation is available at `/api/v1/docs`.
-
-### Production Build
-
-Compile TypeScript to JavaScript and run:
-
-```bash
-npm run build
-npm run start
-```
-
-## Testing
-
-The project uses Jest for testing, with different layers of tests:
-
-- **All Tests:** `npm test`
-- **Watch Mode:** `npm run test:watch`
-- **Coverage Report:** `npm run test:coverage`
-- **Integration Tests:** `npm run test:integration`
-- **End-to-End (E2E) Tests:** `npm run test:e2e`
-
-## Development Conventions
-
-- **Code Style:** ESLint and Prettier are configured to enforce code quality and formatting.
-  - Check: `npm run eslint-check-only`
-  - Fix: `npm run eslint-fix`
-  - Format: `npm run prettier`
-- **Validation:** All incoming requests must be validated using Zod schemas before hitting the business logic.
-- **Error Handling:** Use custom error classes and the centralized error handling middleware to ensure consistent API responses.
-- **Authentication:** Endpoints are protected using JWTs (passed via `httpOnly` cookies or `Authorization` headers) and role-based access control.
+---
+*For detailed technical guidelines and coding rules, see `AGENTS.md`.*
