@@ -7,6 +7,7 @@ import {
   bulkStockUpdateSchema,
   createItemSchema,
   dailyStockResetSchema,
+  dailyStockResetByCategorySchema,
   inventoryReportSchema,
   inventoryTypeSchema,
   menuItemIdSchema,
@@ -76,6 +77,16 @@ router.post(
   permissionMiddleware("stock:manage"),
   validate(dailyStockResetSchema),
   itemController.dailyStockReset,
+);
+
+/**
+ * POST /items/stock/daily-reset/by-category
+ */
+router.post(
+  "/stock/daily-reset/by-category",
+  permissionMiddleware("stock:manage"),
+  validate(dailyStockResetByCategorySchema),
+  itemController.dailyStockResetByCategory,
 );
 
 /**
@@ -192,6 +203,15 @@ router.get(
   "/stock-summary",
   permissionMiddleware("stock:manage"),
   itemController.getStockSummary,
+);
+
+/**
+ * GET /items/stock-movements
+ */
+router.get(
+  "/stock-movements",
+  permissionMiddleware("stock:manage"),
+  itemController.getStockMovements,
 );
 
 /**

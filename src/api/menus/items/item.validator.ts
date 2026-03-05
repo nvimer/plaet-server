@@ -126,6 +126,20 @@ export const dailyStockResetSchema = z.object({
   }),
 });
 
+export const dailyStockResetByCategorySchema = z.object({
+  body: z.object({
+    categoryId: z.number().int().positive("Category ID must be positive"),
+    items: z
+      .array(
+        z.object({
+          itemId: z.number().int().positive("Item ID must be positive"),
+          quantity: z.number().int().min(0, "Quantity must be 0 or greater"),
+        }),
+      )
+      .min(1, "At least one item must be provided"),
+  }),
+});
+
 /**
  * Validation Schema for Manual Stock Addition
  *
@@ -196,6 +210,9 @@ export type MenuItemSearchParams = z.infer<
 >["query"];
 export type DailyStockResetInput = z.infer<
   typeof dailyStockResetSchema
+>["body"];
+export type DailyStockResetByCategoryInput = z.infer<
+  typeof dailyStockResetByCategorySchema
 >["body"];
 export type AddStockInput = z.infer<typeof addStockSchema>;
 export type AddStockBodyInput = z.infer<typeof addStockSchema>["body"];

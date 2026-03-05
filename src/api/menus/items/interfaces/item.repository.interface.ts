@@ -75,4 +75,7 @@ export interface ItemRepositoryInterface {
   ): Promise<MenuItem>;
   update(id: number, data: Partial<MenuItem>): Promise<MenuItem>;
   delete(id: number): Promise<void>;
+  getStockMovementsByDay(
+    days?: number,
+  ): Promise<{ day: string; entradas: number; salidas: number }[]>;
 }

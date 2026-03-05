@@ -7,6 +7,7 @@ import {
   BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  DailyStockResetByCategoryInput,
   InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
@@ -236,6 +237,91 @@ export class ItemService implements ItemServiceInterface {
       });
     } else {
       await this.itemRepository.dailyStockReset(data);
+    }
+  }
+
+  async dailyStockResetByCategory(
+    data: DailyStockResetByCategoryInput,
+  ): Promise<void> {
+    const { categoryId, items } = data;
+
+    const itemIds = items.map((i) => i.itemId);
+    let existingItems: (MenuItem | null)[];
+
+    if (process.env.NODE_ENV === "test") {
+      const client = getPrismaClient();
+      existingItems = await Promise.all(
+        itemIds.map((id) => client.menuItem.findUnique({ where: { id } })),
+      );
+    } else {
+      existingItems = await Promise.all(
+        itemIds.map((id) => this.itemRepository.findById(id)),
+      );
+    }
+
+    const notFound = itemIds.filter((_id, idx) => !existingItems[idx]);
+    if (notFound.length > 0) {
+      throw new CustomError(
+        `Items not found: ${notFound.join(", ")}`,
+        HttpStatus.NOT_FOUND,
+        "ITEMS_NOT_FOUND",
+      );
+    }
+
+    const nonTracked = existingItems.filter(
+      (item) => item && item.inventoryType !== InventoryType.TRACKED,
+    );
+
+    if (nonTracked.length > 0) {
+      throw new CustomError(
+        "Only TRACKED items can have stock reset",
+        HttpStatus.BAD_REQUEST,
+        "INVALID_INVENTORY_TYPE",
+      );
+    }
+
+    const negativeQuantities = items.filter((item) => item.quantity < 0);
+    if (negativeQuantities.length > 0) {
+      throw new CustomError(
+        "Stock quantities cannot be negative",
+        HttpStatus.BAD_REQUEST,
+        "INVALID_QUANTITY",
+      );
+    }
+
+    if (process.env.NODE_ENV === "test") {
+      const client = getPrismaClient();
+      await client.$transaction(async (tx: PrismaTransaction) => {
+        await Promise.all(
+          items.map((item) =>
+            tx.menuItem.update({
+              where: { id: item.itemId },
+              data: {
+                stockQuantity: item.quantity,
+                isAvailable: true,
+                updatedAt: new Date(),
+              },
+            }),
+          ),
+        );
+
+        await Promise.all(
+          items.map((item) =>
+            tx.stockAdjustment.create({
+              data: {
+                menuItemId: item.itemId,
+                adjustmentType: "DAILY_RESET",
+                previousStock: 0,
+                newStock: item.quantity,
+                quantity: item.quantity,
+                reason: `Begin of the day - Category ${categoryId}`,
+              },
+            }),
+          ),
+        );
+      });
+    } else {
+      await this.itemRepository.dailyStockReset({ items });
     }
   }
 
@@ -1042,6 +1128,12 @@ export class ItemService implements ItemServiceInterface {
 
     await this.itemRepository.delete(id);
     logger.info(`Menu Item deleted: ${existingItem.name}`);
+  }
+
+  async getStockMovementsByDay(
+    days: number = 7,
+  ): Promise<{ day: string; entradas: number; salidas: number }[]> {
+    return this.itemRepository.getStockMovementsByDay(days);
   }
 }
 

@@ -8,6 +8,7 @@ import {
   BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  DailyStockResetByCategoryInput,
   InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
@@ -206,6 +207,20 @@ class ItemController {
   });
 
   /**
+   * POST /items/stock/daily-reset/by-category
+   */
+  dailyStockResetByCategory = asyncHandler(
+    async (req: Request, res: Response) => {
+      const data: DailyStockResetByCategoryInput = req.body;
+      await this.itemService.dailyStockResetByCategory(data);
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: "Daily stock reset by category successfully",
+      });
+    },
+  );
+
+  /**
    * POST /items/:id/stock/add
    */
   addStock = asyncHandler(async (req: Request, res: Response) => {
@@ -378,6 +393,16 @@ class ItemController {
     const id = parseInt(req.params.id);
     await this.itemService.deleteItem(id);
     res.status(HttpStatus.NO_CONTENT).send();
+  });
+
+  getStockMovements = asyncHandler(async (req: Request, res: Response) => {
+    const days = parseInt(req.query.days as string) || 7;
+    const movements = await this.itemService.getStockMovementsByDay(days);
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Stock movements retrieved successfully",
+      data: movements,
+    });
   });
 }
 

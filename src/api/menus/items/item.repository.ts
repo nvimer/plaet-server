@@ -385,6 +385,69 @@ class ItemRepository implements ItemRepositoryInterface {
       where: { id },
     });
   }
+
+  async getStockMovementsByDay(
+    days: number = 7,
+  ): Promise<{ day: string; entradas: number; salidas: number }[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const adjustments = await prisma.stockAdjustment.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+        },
+      },
+      select: {
+        quantity: true,
+        adjustmentType: true,
+        createdAt: true,
+      },
+    });
+
+    const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const movementsByDay: Record<string, { entradas: number; salidas: number }> =
+      {};
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dayName = dayNames[date.getDay()];
+      movementsByDay[dayName] = { entradas: 0, salidas: 0 };
+    }
+
+    const entryTypes = [
+      StockAdjustmentType.MANUAL_ADD,
+      StockAdjustmentType.DAILY_RESET,
+    ];
+    const exitTypes = [
+      StockAdjustmentType.MANUAL_REMOVE,
+      StockAdjustmentType.ORDER_DEDUCT,
+    ];
+
+    adjustments.forEach((adj) => {
+      const adjDate = new Date(adj.createdAt);
+      const dayName = dayNames[adjDate.getDay()];
+
+      if (!movementsByDay[dayName]) {
+        movementsByDay[dayName] = { entradas: 0, salidas: 0 };
+      }
+
+      if (entryTypes.includes(adj.adjustmentType as any)) {
+        movementsByDay[dayName].entradas += adj.quantity;
+      } else if (exitTypes.includes(adj.adjustmentType as any)) {
+        movementsByDay[dayName].salidas += adj.quantity;
+      } else if (adj.adjustmentType === "ORDER_CANCELLED") {
+        movementsByDay[dayName].entradas += adj.quantity;
+      }
+    });
+
+    return Object.entries(movementsByDay).map(([day, data]) => ({
+      day,
+      ...data,
+    }));
+  }
 }
 
 export default new ItemRepository();

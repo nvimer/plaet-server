@@ -5,6 +5,7 @@ import {
   BulkStockUpdateInput,
   CreateItemInput,
   DailyStockResetInput,
+  DailyStockResetByCategoryInput,
   InventoryReportParams,
   InventoryTypeInput,
   MenuItemSearchParams,
@@ -33,6 +34,9 @@ export interface ItemServiceInterface {
     params: PaginationParams & SetLunchFilterParams,
   ): Promise<PaginatedResponse<MenuItem>>;
   dailyStockReset(data: DailyStockResetInput): Promise<void>;
+  dailyStockResetByCategory(
+    data: DailyStockResetByCategoryInput,
+  ): Promise<void>;
   addStock(
     id: number,
     data: AddStockBodyInput,
@@ -94,4 +98,7 @@ export interface ItemServiceInterface {
     inStockItems: number;
   }>;
   deleteItem(id: number): Promise<void>;
+  getStockMovementsByDay(
+    days?: number,
+  ): Promise<{ day: string; entradas: number; salidas: number }[]>;
 }
