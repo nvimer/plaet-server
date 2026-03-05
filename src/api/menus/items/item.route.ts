@@ -117,6 +117,16 @@ router.get(
 );
 
 /**
+ * GET /items/stock/history
+ */
+router.get(
+  "/stock/history",
+  permissionMiddleware("stock:manage"),
+  validate(paginationQuerySchema),
+  itemController.getAllStockHistory,
+);
+
+/**
  * GET /items/:id
  */
 router.get(

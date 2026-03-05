@@ -18,6 +18,8 @@ import {
 import { ItemRepositoryInterface } from "./interfaces/item.repository.interface";
 import itemRepository from "./item.repository";
 import {
+  DEFAULT_LIMIT,
+  DEFAULT_PAGE,
   PaginatedResponse,
   PaginationParams,
 } from "../../../interfaces/pagination.interfaces";
@@ -681,6 +683,13 @@ export class ItemService implements ItemServiceInterface {
     }
 
     return this.itemRepository.getStockHistory(id, params.page, params.limit);
+  }
+
+  async getAllStockHistory(
+    params: Partial<PaginationParams> = {},
+  ): Promise<PaginatedResponse<StockAdjustment & { menuItem: MenuItem }>> {
+    const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = params;
+    return this.itemRepository.findAllStockHistory(page, limit);
   }
 
   /**

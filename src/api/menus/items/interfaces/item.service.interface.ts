@@ -65,6 +65,9 @@ export interface ItemServiceInterface {
     id: number,
     params: StockHistoryParams,
   ): Promise<PaginatedResponse<StockAdjustment>>;
+  getAllStockHistory(
+    params?: Partial<PaginationParams>,
+  ): Promise<PaginatedResponse<StockAdjustment & { menuItem: MenuItem }>>;
   setInventoryType(id: number, data: InventoryTypeInput): Promise<MenuItem>;
   updateItem(id: number, data: UpdateItemInput): Promise<MenuItem>;
   bulkStockUpdate(data: BulkStockUpdateInput, userId?: string): Promise<void>;

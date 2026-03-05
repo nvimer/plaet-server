@@ -68,6 +68,10 @@ export interface ItemRepositoryInterface {
     page: number,
     limit: number,
   ): Promise<PaginatedResponse<StockAdjustment>>;
+  findAllStockHistory(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<StockAdjustment & { menuItem: MenuItem }>>;
   setInventoryType(
     id: number,
     inventoryType: string,

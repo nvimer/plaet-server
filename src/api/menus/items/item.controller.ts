@@ -293,6 +293,22 @@ class ItemController {
   });
 
   /**
+   * GET /items/stock/history
+   */
+  getAllStockHistory = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
+    const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
+    const params: PaginationParams = { page, limit };
+    const history = await this.itemService.getAllStockHistory(params);
+    res.status(HttpStatus.OK).json({
+      success: true,
+      message: "All Stock History fetched successfully",
+      data: history.data,
+      meta: history.meta,
+    });
+  });
+
+  /**
    * PATCH /items/:id/inventory-type
    */
   setInventoryType = asyncHandler(async (req: Request, res: Response) => {

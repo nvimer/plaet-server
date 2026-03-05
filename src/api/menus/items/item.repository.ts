@@ -315,6 +315,25 @@ class ItemRepository implements ItemRepositoryInterface {
     return createPaginatedResponse(adjustments, total, { page, limit });
   }
 
+  async findAllStockHistory(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<StockAdjustment & { menuItem: MenuItem }>> {
+    const skip = (page - 1) * limit;
+
+    const [adjustments, total] = await Promise.all([
+      prisma.stockAdjustment.findMany({
+        include: { menuItem: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.stockAdjustment.count(),
+    ]);
+
+    return createPaginatedResponse(adjustments, total, { page, limit });
+  }
+
   async updateStockWithData(
     tx: PrismaTransaction,
     itemId: number,
