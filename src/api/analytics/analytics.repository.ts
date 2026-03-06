@@ -2,6 +2,39 @@ import { OrderStatus } from "@prisma/client";
 import prisma from "../../database/prisma";
 
 export class AnalyticsRepository {
+  async getOrdersByDateRange(startDate: Date, endDate: Date) {
+    return prisma.order.findMany({
+      where: {
+        status: OrderStatus.PAID,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        createdAt: true,
+        totalAmount: true,
+      },
+    });
+  }
+
+  async getItemsForEngineering(startDate: Date, endDate: Date) {
+    return prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: OrderStatus.PAID,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      },
+      include: {
+        menuItem: true,
+      },
+    });
+  }
+
   async getSalesSummary(startDate: Date, endDate: Date) {
     const orders = await prisma.order.findMany({
       where: {

@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 
 /**
  * Order Auto-Cancel Job
- * 
+ *
  * Runs every minute to find OPEN orders that are older than 10 minutes
  * and marks them as CANCELLED.
- * 
+ *
  * Safety features:
  * 1. Only targets orders created VERY RECENTLY (last 60 mins) to protect old historical data.
  * 2. Only targets orders with NO PAYMENTS.
@@ -36,14 +36,16 @@ export const startOrderAutoCancelJob = () => {
           },
           // CRITICAL: Only cancel if NO payments have been registered
           payments: {
-            none: {}
-          }
+            none: {},
+          },
         },
       });
 
       if (ordersToCancel.length > 0) {
-        logger.info(`[Auto-Cancel Job] Found ${ordersToCancel.length} expired orders.`);
-        
+        logger.info(
+          `[Auto-Cancel Job] Found ${ordersToCancel.length} expired orders.`,
+        );
+
         for (const order of ordersToCancel) {
           await prisma.$transaction(async (tx) => {
             // 1. Mark order as CANCELLED
@@ -60,12 +62,13 @@ export const startOrderAutoCancelJob = () => {
               });
             }
           });
-          logger.info(`[Auto-Cancel Job] Cancelled order ${order.id} and released table ${order.tableId || "N/A"} due to inactivity.`);
+          logger.info(
+            `[Auto-Cancel Job] Cancelled order ${order.id} and released table ${order.tableId || "N/A"} due to inactivity.`,
+          );
         }
       }
     } catch (error) {
       logger.error("[Auto-Cancel Job] Error:", error);
     }
   });
-
 };

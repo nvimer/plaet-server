@@ -26,4 +26,10 @@ router.get(
   controller.getDailySummary,
 );
 
+router.get("/menu-engineering", controller.getMenuEngineering);
+
+router.get("/predictions", controller.getSalesPrediction);
+
+router.get("/heatmap", controller.getHeatmap);
+
 export default router;

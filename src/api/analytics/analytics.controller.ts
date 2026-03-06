@@ -20,4 +20,40 @@ export class AnalyticsController {
       data: summary,
     });
   });
+
+  getMenuEngineering = asyncHandler(async (req: Request, res: Response) => {
+    const { startDate, endDate } = req.query as {
+      startDate: string;
+      endDate: string;
+    };
+    const data = await this.service.getMenuEngineering(startDate, endDate);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data,
+    });
+  });
+
+  getSalesPrediction = asyncHandler(async (req: Request, res: Response) => {
+    const { targetDate } = req.query as { targetDate: string };
+    const data = await this.service.getSalesPrediction(targetDate);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data,
+    });
+  });
+
+  getHeatmap = asyncHandler(async (req: Request, res: Response) => {
+    const { startDate, endDate } = req.query as {
+      startDate: string;
+      endDate: string;
+    };
+    const data = await this.service.getHeatmap(startDate, endDate);
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data,
+    });
+  });
 }

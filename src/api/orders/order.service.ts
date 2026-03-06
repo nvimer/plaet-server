@@ -205,12 +205,16 @@ export class OrderService implements OrderServiceInterface {
 
     // Step 1: Validate and fetch all menu items
     // Fetch menu items only for items that have a menuItemId
-    const menuItemsPromises = data.items.map((item) => 
-      item.menuItemId ? this.itemService.findMenuItemById(item.menuItemId) : Promise.resolve(null)
+    const menuItemsPromises = data.items.map((item) =>
+      item.menuItemId
+        ? this.itemService.findMenuItemById(item.menuItemId)
+        : Promise.resolve(null),
     );
     const menuItems = await Promise.all(menuItemsPromises);
 
-    const unavailableItems = menuItems.filter((item) => item && !item.isAvailable);
+    const unavailableItems = menuItems.filter(
+      (item) => item && !item.isAvailable,
+    );
     if (unavailableItems.length > 0) {
       const itemNames = unavailableItems.map((item) => item?.name).join(", ");
       throw new CustomError(
@@ -269,9 +273,13 @@ export class OrderService implements OrderServiceInterface {
       } else {
         // Handle customer info (Find or Create)
         const customerId = await this.getOrCreateCustomer(
-          restaurantId, 
-          { id: data.customerId, name: (data as any).customerName, phone: (data as any).customerPhone }, 
-          tx
+          restaurantId,
+          {
+            id: data.customerId,
+            name: (data as any).customerName,
+            phone: (data as any).customerPhone,
+          },
+          tx,
         );
 
         // Remove non-prisma fields to avoid validation errors
@@ -532,13 +540,22 @@ export class OrderService implements OrderServiceInterface {
         masterOrderId = existingOrder.id;
       } else {
         const firstSubOrder = data.orders[0];
-        const restaurantId = (await tx.user.findUnique({ where: { id: waiterId }, select: { restaurantId: true } }))?.restaurantId;
-        
+        const restaurantId = (
+          await tx.user.findUnique({
+            where: { id: waiterId },
+            select: { restaurantId: true },
+          })
+        )?.restaurantId;
+
         // Handle customer info for first sub-order
         const customerId = await this.getOrCreateCustomer(
           restaurantId,
-          { id: firstSubOrder.customerId, name: (firstSubOrder as any).customerName, phone: (firstSubOrder as any).customerPhone },
-          tx
+          {
+            id: firstSubOrder.customerId,
+            name: (firstSubOrder as any).customerName,
+            phone: (firstSubOrder as any).customerPhone,
+          },
+          tx,
         );
 
         const newOrder = await this.orderRepository.create(
@@ -557,31 +574,44 @@ export class OrderService implements OrderServiceInterface {
       }
 
       const allMenuItemIds = new Set<number>();
-      data.orders.forEach(o => o.items.forEach(i => { if (i.menuItemId) allMenuItemIds.add(i.menuItemId); }));
-      
+      data.orders.forEach((o) =>
+        o.items.forEach((i) => {
+          if (i.menuItemId) allMenuItemIds.add(i.menuItemId);
+        }),
+      );
+
       const menuItems = await tx.menuItem.findMany({
-        where: { id: { in: Array.from(allMenuItemIds) }, deleted: false }
+        where: { id: { in: Array.from(allMenuItemIds) }, deleted: false },
       });
 
       for (const subOrder of data.orders) {
         const orderMenuItems = subOrder.items
-          .map(item => item.menuItemId ? menuItems.find(mi => mi.id === item.menuItemId) : null)
-          .filter(mi => mi !== null) as any[];
+          .map((item) =>
+            item.menuItemId
+              ? menuItems.find((mi) => mi.id === item.menuItemId)
+              : null,
+          )
+          .filter((mi) => mi !== null) as any[];
 
         const serviceAmount = this.calculateOrderTotal(
-          subOrder.items.filter(i => i.menuItemId) as any,
-          orderMenuItems
+          subOrder.items.filter((i) => i.menuItemId) as any,
+          orderMenuItems,
         );
 
         const manualItemsAmount = subOrder.items
-          .filter(i => !i.menuItemId)
-          .reduce((sum, i) => sum + (Number(i.priceAtOrder || 0) * i.quantity), 0);
+          .filter((i) => !i.menuItemId)
+          .reduce(
+            (sum, i) => sum + Number(i.priceAtOrder || 0) * i.quantity,
+            0,
+          );
 
         tableTotal += serviceAmount + manualItemsAmount;
 
         await tx.orderItem.createMany({
           data: subOrder.items.map((item) => {
-            const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
+            const mi = item.menuItemId
+              ? menuItems.find((m) => m.id === item.menuItemId)
+              : null;
             return {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
@@ -594,7 +624,9 @@ export class OrderService implements OrderServiceInterface {
         });
 
         for (const item of subOrder.items) {
-          const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
+          const mi = item.menuItemId
+            ? menuItems.find((m) => m.id === item.menuItemId)
+            : null;
           if (mi && mi.inventoryType === InventoryType.TRACKED) {
             await this.itemService.deductStockForOrder(
               item.menuItemId!,
@@ -610,7 +642,7 @@ export class OrderService implements OrderServiceInterface {
 
       const completeOrder = await tx.order.findUnique({
         where: { id: masterOrderId },
-        include: { items: { include: { menuItem: true } } }
+        include: { items: { include: { menuItem: true } } },
       });
 
       return { orders: [completeOrder as OrderWithItems], tableTotal };
@@ -625,19 +657,19 @@ export class OrderService implements OrderServiceInterface {
    * @param status - New status
    * @returns Updated order item
    */
-    private async getOrCreateCustomer(
+  private async getOrCreateCustomer(
     restaurantId: string | null | undefined,
     data: { id?: string; name?: string; phone?: string },
-    tx: PrismaTransaction
+    tx: PrismaTransaction,
   ): Promise<string | null> {
     if (data.id) return data.id;
     if (!data.phone || !restaurantId) return null;
 
     const existing = await tx.customer.findFirst({
-      where: { 
+      where: {
         restaurantId,
-        phone: data.phone
-      }
+        phone: data.phone,
+      },
     });
 
     if (existing) return existing.id;
@@ -645,7 +677,8 @@ export class OrderService implements OrderServiceInterface {
     // Create new customer
     const nameParts = (data.name || "Cliente").trim().split(" ");
     const firstName = nameParts[0];
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Sazonarte";
+    const lastName =
+      nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Sazonarte";
 
     const newCustomer = await tx.customer.create({
       data: {
@@ -653,12 +686,11 @@ export class OrderService implements OrderServiceInterface {
         firstName,
         lastName,
         phone: data.phone,
-      }
+      },
     });
 
     return newCustomer.id;
   }
-
 
   async updateOrderItemStatus(
     orderId: string,
