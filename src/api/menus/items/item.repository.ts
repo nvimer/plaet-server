@@ -426,8 +426,10 @@ class ItemRepository implements ItemRepositoryInterface {
     });
 
     const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    const movementsByDay: Record<string, { entradas: number; salidas: number }> =
-      {};
+    const movementsByDay: Record<
+      string,
+      { entradas: number; salidas: number }
+    > = {};
 
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);

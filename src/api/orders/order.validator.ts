@@ -50,7 +50,11 @@ export const orderIdSchema = z.object({
  * Each item represents a menu item with quantity and optional notes.
  */
 const orderItemSchema = z.object({
-  menuItemId: z.number().int().positive("Menu item ID must be positive").optional(),
+  menuItemId: z
+    .number()
+    .int()
+    .positive("Menu item ID must be positive")
+    .optional(),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional(),
   priceAtOrder: z.number().nonnegative().optional(),
