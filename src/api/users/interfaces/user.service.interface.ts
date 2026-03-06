@@ -15,7 +15,7 @@ export interface UserServiceInterface {
   ): Promise<PaginatedResponse<UserWithRoles>>;
   findById(id: string): Promise<User>;
   findByEmail(email: string): Promise<User>;
-  register(data: RegisterInput): Promise<User>;
+  register(data: RegisterInput, restaurantId?: string): Promise<User>;
   updateUser(id: string, data: UpdateUserInput): Promise<User>;
   findUserWithRolesAndPermissions(
     id: string,

@@ -190,15 +190,18 @@ export class UserServices implements UserServiceInterface {
    * Error Codes:
    * - EMAIL_CONFLICT: Email already exists in the system
    */
-  async register(data: RegisterInput): Promise<User> {
+  async register(data: RegisterInput, restaurantId?: string): Promise<User> {
     await this.findByEmailOrFail(data.email);
 
     const hashedPass = hasherUtils.hash(data.password);
 
-    const newUser = await this.userRepository.create({
+    const createData = {
       ...data,
       password: hashedPass,
-    });
+      ...(restaurantId && { restaurantId }),
+    };
+
+    const newUser = await this.userRepository.create(createData);
 
     const { password: _password, ...dataWithoutPassword } = newUser;
 
@@ -223,6 +226,10 @@ export class UserServices implements UserServiceInterface {
     await this.findByIdOrFail(id);
 
     if (data.email) await this.findByEmailOrFail(data.email);
+
+    if (data.roleIds && data.roleIds.length > 0) {
+      await this.validateRoleIds(data.roleIds);
+    }
 
     return this.userRepository.update(id, data);
   }

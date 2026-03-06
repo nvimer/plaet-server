@@ -208,19 +208,46 @@ class BasicUserRepository implements UserRepositoryInterface {
    * the fields provided in the update data.
    *
    * @param id - User ID to update
-   * @param data - Update data (partial user fields)
+   * @param data - Update data (partial user fields, optional roleIds)
    * @returns Promise<User> - Updated user object
    *
    * Database Operations:
    * - Updates only provided fields
-   * - Uses optimistic locking for concurrency control
-   * - Returns updated user data
+   * - Handles role assignment via UserRole relations
+   * - Returns updated user data with roles included
    */
   async update(id: string, data: UpdateUserInput): Promise<User> {
     const client = getPrismaClient();
+    const { roleIds, ...userData } = data;
+
+    if (roleIds !== undefined) {
+      await client.userRole.deleteMany({
+        where: { userId: id },
+      });
+
+      if (roleIds.length > 0) {
+        await client.userRole.createMany({
+          data: roleIds.map((roleId) => ({
+            roleId,
+            userId: id,
+          })),
+        });
+      }
+
+      return client.user.update({
+        where: { id },
+        data: userData,
+        include: {
+          roles: {
+            include: { role: true },
+          },
+        },
+      });
+    }
+
     return client.user.update({
       where: { id },
-      data,
+      data: userData,
     });
   }
 

@@ -4,6 +4,7 @@ import userService from "./user.service";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { UpdateUserInput, UserSearchParams } from "./user.validator";
 import { RegisterInput } from "../auth/auth.validator";
+import { AuthenticatedUser } from "../../types/express";
 import {
   PaginationParams,
   DEFAULT_PAGE,
@@ -165,12 +166,14 @@ class UserController {
    */
   registerUser = asyncHandler(async (req: Request, res: Response) => {
     const data: RegisterInput = req.body;
+    const user = req.user as AuthenticatedUser;
+    const restaurantId = user?.restaurantId;
 
-    const user = await userService.register(data);
+    const newUser = await userService.register(data, restaurantId || undefined);
     res.status(HttpStatus.CREATED).json({
       success: true,
       message: "User registered successfully",
-      data: user,
+      data: newUser,
     });
   });
 

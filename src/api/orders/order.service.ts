@@ -525,12 +525,14 @@ export class OrderService implements OrderServiceInterface {
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
     const client = getPrismaClient();
 
-    const existingOrder = await client.order.findFirst({
-      where: {
-        tableId: data.tableId,
-        status: OrderStatus.OPEN,
-      },
-    });
+    const existingOrder = data.tableId
+      ? await client.order.findFirst({
+          where: {
+            tableId: data.tableId,
+            status: OrderStatus.OPEN,
+          },
+        })
+      : null;
 
     return await client.$transaction(async (tx: PrismaTransaction) => {
       let masterOrderId: string;
