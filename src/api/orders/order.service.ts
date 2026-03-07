@@ -398,7 +398,7 @@ export class OrderService implements OrderServiceInterface {
       const newItemsTotal = this.calculateOrderTotal(
         data.items,
         menuItems.filter((mi): mi is MenuItem => mi !== null),
-        basePrice,
+        dailyMenu,
       );
 
       // Update total amount (previous total + new items)
@@ -722,7 +722,7 @@ export class OrderService implements OrderServiceInterface {
         const serviceAmount = this.calculateOrderTotal(
           subOrder.items.filter((i) => i.menuItemId) as any,
           orderMenuItems,
-          basePrice,
+          dailyMenu,
         );
 
         const manualItemsAmount = subOrder.items
