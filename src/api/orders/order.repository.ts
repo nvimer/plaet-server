@@ -14,7 +14,7 @@ import {
 import { getPrismaClient } from "../../database/prisma";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
-import { getColombiaDayRange, nowInColombia } from "../../utils/date.utils";
+import { dateUtils } from "../../utils/date.utils";
 
 class OrderRepository implements OrderRepositoryInterface {
   /**
@@ -40,7 +40,7 @@ class OrderRepository implements OrderRepositoryInterface {
     if (waiterId) where.waiterId = waiterId;
     if (tableId) where.tableId = tableId;
     if (date) {
-      const { start, end } = getColombiaDayRange(date);
+      const { start, end } = dateUtils.getDayRange(date);
 
       where.createdAt = {
         gte: start,
@@ -132,7 +132,7 @@ class OrderRepository implements OrderRepositoryInterface {
         waiterId,
         status: OrderStatus.OPEN,
         totalAmount: 0,
-        createdAt: orderData.createdAt || nowInColombia(), // Support historical date entry or default to now in CO
+        createdAt: orderData.createdAt || dateUtils.now(), // Support historical date entry or default to now in CO
         items: {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,
@@ -140,7 +140,7 @@ class OrderRepository implements OrderRepositoryInterface {
             priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
             status: (item as any).status || OrderItemStatus.PENDING,
-            createdAt: orderData.createdAt || nowInColombia(),
+            createdAt: orderData.createdAt || dateUtils.now(),
           })),
         },
       },

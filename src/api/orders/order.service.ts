@@ -29,7 +29,7 @@ import { DailyMenuWithRelations } from "../daily-menu/interfaces/daily-menu.repo
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
-import { getColombiaDayRange, nowInColombia } from "../../utils/date.utils";
+import { dateUtils } from "../../utils/date.utils";
 import moment from "moment-timezone";
 
 export class OrderService implements OrderServiceInterface {
@@ -164,7 +164,7 @@ export class OrderService implements OrderServiceInterface {
     if (waiterId) where.waiterId = waiterId;
     if (tableId) where.tableId = tableId;
     if (date) {
-      const { start, end } = getColombiaDayRange(date);
+      const { start, end } = dateUtils.getDayRange(date);
 
       where.createdAt = {
         gte: start,
@@ -233,7 +233,7 @@ export class OrderService implements OrderServiceInterface {
     const client = getPrismaClient();
 
     // Fetch daily menu to get basePrice
-    const orderDate = data.createdAt ? moment.tz(data.createdAt, "America/Bogota").toDate() : nowInColombia();
+    const orderDate = data.createdAt ? dateUtils.startOfDay(data.createdAt) : dateUtils.now();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
@@ -642,7 +642,7 @@ export class OrderService implements OrderServiceInterface {
 
     // Fetch daily menu to get basePrice
     const firstSubOrder = data.orders[0];
-    const orderDate = firstSubOrder.createdAt ? moment.tz(firstSubOrder.createdAt, "America/Bogota").toDate() : nowInColombia();
+    const orderDate = firstSubOrder.createdAt ? dateUtils.startOfDay(firstSubOrder.createdAt) : dateUtils.today();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
@@ -692,7 +692,7 @@ export class OrderService implements OrderServiceInterface {
             customerId: customerId || undefined,
             items: [],
             notes: "Group Order",
-            createdAt: firstSubOrder.createdAt || nowInColombia(),
+            createdAt: firstSubOrder.createdAt || dateUtils.now(),
           } as any,
           tx,
         );
@@ -769,7 +769,7 @@ export class OrderService implements OrderServiceInterface {
                 dailyMenu,
                 isMainProtein
               ),
-              createdAt: subOrder.createdAt ?? nowInColombia(),
+              createdAt: subOrder.createdAt ?? dateUtils.now(),
             };
           }),
         });
