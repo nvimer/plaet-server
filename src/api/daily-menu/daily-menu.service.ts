@@ -10,7 +10,7 @@ import {
   DailyMenuWithRelations,
 } from "./interfaces/daily-menu.repository.interface";
 import { MenuItem } from "@prisma/client";
-import { nowInColombia } from "../../utils/date.utils";
+import { startOfDayInColombia, startOfTodayInColombia } from "../../utils/date.utils";
 
 /**
  * DailyMenu Service Implementation - Updated for Item-Based Daily Menu
@@ -164,8 +164,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
   async updateTodayMenu(
     data: UpdateDailyMenuInput,
   ): Promise<DailyMenuResponse> {
-    const today = nowInColombia();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfTodayInColombia();
 
     const existingMenu = await this.repository.findByCreatedAt(today);
     const repositoryData = this.transformInput({
@@ -196,8 +195,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
     createdAt: Date,
     data: UpdateDailyMenuInput,
   ): Promise<DailyMenuResponse> {
-    const normalizedDate = new Date(createdAt);
-    normalizedDate.setHours(0, 0, 0, 0);
+    const normalizedDate = startOfDayInColombia(createdAt);
 
     const existingMenu = await this.repository.findByCreatedAt(normalizedDate);
     const repositoryData = this.transformInput(data);

@@ -7,7 +7,7 @@ import {
 } from "./interfaces/daily-menu.repository.interface";
 import { DailyMenu, MenuItem, MenuCategory } from "@prisma/client";
 import { logger } from "../../config/logger";
-import { nowInColombia } from "../../utils/date.utils";
+import { startOfTodayInColombia, startOfDayInColombia } from "../../utils/date.utils";
 import moment from "moment-timezone";
 
 /**
@@ -154,7 +154,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
   async findByCreatedAt(
     createdAt: Date,
   ): Promise<DailyMenuWithRelations | null> {
-    const normalizedDate = moment.tz(createdAt, "America/Bogota").startOf("day").toDate();
+    const normalizedDate = startOfDayInColombia(createdAt);
 
     logger.debug("[DailyMenu] findByCreatedAt called", {
       date: normalizedDate.toISOString(),
@@ -186,8 +186,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
    * Get current daily menu (today) with all relations
    */
   async getCurrent(): Promise<DailyMenuWithRelations | null> {
-    const today = nowInColombia();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfTodayInColombia();
 
     logger.debug("[DailyMenu] getCurrent called", {
       today: today.toISOString(),

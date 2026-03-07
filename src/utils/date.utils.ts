@@ -3,20 +3,28 @@ import moment from "moment-timezone";
 const COLOMBIA_TZ = "America/Bogota";
 
 /**
- * Returns the current date and time in Colombia.
+ * Returns the start of the current day in Colombia as a Date object.
+ * This is the reliable way to get "today" for database queries.
  */
-export const nowInColombia = (): Date => {
-  return moment().tz(COLOMBIA_TZ).toDate();
+export const startOfTodayInColombia = (): Date => {
+  return moment().tz(COLOMBIA_TZ).startOf("day").toDate();
+};
+
+/**
+ * Returns the start of a given date in Colombia TZ.
+ * @param date - Date string (YYYY-MM-DD) or Date object
+ */
+export const startOfDayInColombia = (date: string | Date): Date => {
+  return moment.tz(date, COLOMBIA_TZ).startOf("day").toDate();
 };
 
 /**
  * Returns the start and end of a given date in Colombia TZ as UTC Dates for Prisma.
- * @param date - Date string (YYYY-MM-DD) or Date object
  */
 export const getColombiaDayRange = (date: string | Date): { start: Date; end: Date } => {
-  const m = moment.tz(date, COLOMBIA_TZ);
+  const m = moment.tz(date, COLOMBIA_TZ).startOf("day");
   return {
-    start: m.clone().startOf("day").toDate(),
+    start: m.toDate(),
     end: m.clone().endOf("day").toDate(),
   };
 };
