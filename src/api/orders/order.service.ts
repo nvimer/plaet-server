@@ -241,7 +241,7 @@ export class OrderService implements OrderServiceInterface {
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
     // Step 0: Ensure there is an open cash closure for new orders
-    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+    const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
     if (!activeClosure) {
       throw new CustomError(
         "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
@@ -660,8 +660,16 @@ export class OrderService implements OrderServiceInterface {
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
+    // Get restaurantId from waiter to find active closure
+    const restaurantId = (
+      await getPrismaClient().user.findUnique({
+        where: { id: waiterId },
+        select: { restaurantId: true },
+      })
+    )?.restaurantId;
+
     // Step 0: Ensure there is an open cash closure
-    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+    const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
     if (!activeClosure) {
       throw new CustomError(
         "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",

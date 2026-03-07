@@ -3,10 +3,11 @@ import prisma from "../../database/prisma";
 import { OpenCashClosureDto } from "./cash-closure.validator";
 
 export class CashClosureRepository {
-  async findCurrentOpen() {
+  async findCurrentOpen(restaurantId?: string) {
     return prisma.cashClosure.findFirst({
       where: {
         status: CashClosureStatus.OPEN,
+        ...(restaurantId && { restaurantId }),
       },
       include: {
         openedBy: {

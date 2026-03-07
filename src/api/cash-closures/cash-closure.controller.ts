@@ -16,7 +16,8 @@ export class CashClosureController {
   }
 
   getCurrent = asyncHandler(async (req: Request, res: Response) => {
-    const current = await this.service.getCurrentOpen();
+    const user = req.user as AuthenticatedUser;
+    const current = await this.service.getCurrentOpen(user.restaurantId || undefined);
     res.status(HttpStatus.OK).json({ success: true, data: current });
   });
 
@@ -28,8 +29,8 @@ export class CashClosureController {
 
   open = asyncHandler(async (req: Request, res: Response) => {
     const data: OpenCashClosureDto = req.body;
-    const userId = (req.user as AuthenticatedUser).id;
-    const closure = await this.service.openShift(data, userId);
+    const user = req.user as AuthenticatedUser;
+    const closure = await this.service.openShift(data, user.id, user.restaurantId || undefined);
     res.status(HttpStatus.CREATED).json({ success: true, data: closure });
   });
 
