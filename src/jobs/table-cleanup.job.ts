@@ -9,7 +9,7 @@ export const startTableCleanupJob = () => {
   cron.schedule("* * * * *", async () => {
     try {
       const now = new Date();
-      const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
+      const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -38,13 +38,13 @@ export const startTableCleanupJob = () => {
         if (deliveredOrders.length > 0) {
           const latestDelivery = deliveredOrders[0].updatedAt;
 
-          if (latestDelivery < twentyMinutesAgo) {
+          if (latestDelivery < thirtyMinutesAgo) {
             await prisma.table.update({
               where: { id: table.id },
               data: { status: TableStatus.NEEDS_CLEANING },
             });
             logger.info(
-              `🧹 CronJob: Mesa ${table.number} ha pasado a Limpieza tras 20 min de inactividad.`,
+              `🧹 CronJob: Mesa ${table.number} ha pasado a Limpieza tras 30 min de inactividad post-pago.`,
             );
           }
         }

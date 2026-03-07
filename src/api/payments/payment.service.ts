@@ -118,11 +118,11 @@ export class PaymentService {
           data: { status: OrderStatus.PAID },
         });
 
-        // If there is a table, mark it as available or needs cleaning
+        // If there is a table, mark it as occupied
         if (order.tableId) {
           await tx.table.update({
             where: { id: order.tableId },
-            data: { status: "AVAILABLE" },
+            data: { status: "OCCUPIED" },
           });
         }
       }

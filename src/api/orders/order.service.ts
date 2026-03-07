@@ -281,6 +281,12 @@ export class OrderService implements OrderServiceInterface {
             notes: item.notes,
           })),
         });
+
+        // Ensure table is marked as OCCUPIED
+        await tx.table.update({
+          where: { id: data.tableId! },
+          data: { status: "OCCUPIED" },
+        });
       } else {
         // Handle customer info (Find or Create)
         const customerId = await this.getOrCreateCustomer(
@@ -322,6 +328,14 @@ export class OrderService implements OrderServiceInterface {
           tx,
         );
         orderId = order.id;
+
+        // Mark table as OCCUPIED for DINE_IN
+        if (data.type === "DINE_IN" && data.tableId) {
+          await tx.table.update({
+            where: { id: data.tableId },
+            data: { status: "OCCUPIED" },
+          });
+        }
       }
 
       // Calculate total for NEW items
@@ -692,6 +706,14 @@ export class OrderService implements OrderServiceInterface {
       }
 
       await this.orderRepository.updateTotal(masterOrderId, tableTotal, tx);
+
+      // Ensure table is marked as OCCUPIED for DINE_IN
+      if (data.tableId) {
+        await tx.table.update({
+          where: { id: data.tableId },
+          data: { status: "OCCUPIED" },
+        });
+      }
 
       const completeOrder = await tx.order.findUnique({
         where: { id: masterOrderId },
