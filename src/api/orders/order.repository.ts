@@ -139,6 +139,7 @@ class OrderRepository implements OrderRepositoryInterface {
             quantity: item.quantity,
             priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
+            status: (item as any).status || OrderItemStatus.PENDING,
             createdAt: orderData.createdAt || nowInColombia(),
           })),
         },

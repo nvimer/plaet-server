@@ -25,6 +25,7 @@ import {
 import orderRepository from "./order.repository";
 import itemService from "../menus/items/item.service";
 import dailyMenuRepository from "../daily-menu/daily-menu.repository";
+import { DailyMenuWithRelations } from "../daily-menu/interfaces/daily-menu.repository.interface";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
@@ -38,6 +39,34 @@ export class OrderService implements OrderServiceInterface {
       "findMenuItemById" | "deductStockForOrder" | "revertStockForOrder"
     >,
   ) {}
+
+  /**
+   * Private Helper: Determine initial status for an item
+   * Fast delivery items (drinks, extras, manual items) are marked as READY immediately.
+   * Prep items (protein, soup) start as PENDING.
+   */
+  private determineItemStatus(
+    menuItemId: number | null,
+    dailyMenu: DailyMenuWithRelations | null,
+    isMainItem: boolean,
+  ): OrderItemStatus {
+    if (!menuItemId) return OrderItemStatus.READY; // Manual items are usually fast/extras
+
+    // If it's the main protein, it needs prep/serving flow
+    if (isMainItem) return OrderItemStatus.PENDING;
+
+    // If it's a soup, it usually needs serving flow
+    if (
+      dailyMenu &&
+      (menuItemId === dailyMenu.soupOption1Id ||
+        menuItemId === dailyMenu.soupOption2Id)
+    ) {
+      return OrderItemStatus.PENDING;
+    }
+
+    // Everything else (drinks, extras, desserts, salads) is usually ready or served fast
+    return OrderItemStatus.READY;
+  }
 
   /**
    * Private Helper: Find Order by ID or Fail
@@ -277,8 +306,15 @@ export class OrderService implements OrderServiceInterface {
             orderId,
             menuItemId: item.menuItemId!,
             quantity: item.quantity,
-            priceAtOrder: (Number(menuItems[index]?.price || 0) + (index === mainItemIndex ? basePrice : 0)),
+            priceAtOrder:
+              Number(menuItems[index]?.price || 0) +
+              (index === mainItemIndex ? basePrice : 0),
             notes: item.notes,
+            status: this.determineItemStatus(
+              item.menuItemId!,
+              dailyMenu,
+              index === mainItemIndex,
+            ),
           })),
         });
 
@@ -316,9 +352,15 @@ export class OrderService implements OrderServiceInterface {
         const itemsWithBasePrice = data.items.map(item => {
           const mi = menuItems.find(m => m?.id === item.menuItemId);
           const baseItemPrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
+          const isMainItem = item === mainItem;
           return {
             ...item,
-            priceAtOrder: baseItemPrice + (item === mainItem ? basePrice : 0)
+            priceAtOrder: baseItemPrice + (isMainItem ? basePrice : 0),
+            status: this.determineItemStatus(
+              item.menuItemId || null,
+              dailyMenu,
+              isMainItem
+            )
           };
         });
 
@@ -678,13 +720,20 @@ export class OrderService implements OrderServiceInterface {
             const mi = item.menuItemId
               ? menuItems.find((m) => m.id === item.menuItemId)
               : null;
-            const itemPrice = (mi ? Number(mi.price) : Number(item.priceAtOrder || 0));
+            const itemPrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
+            const isMainItem = index === mainSubItemIdx;
+            
             return {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
-              priceAtOrder: itemPrice + (index === mainSubItemIdx ? basePrice : 0),
+              priceAtOrder: itemPrice + (isMainItem ? basePrice : 0),
               notes: item.notes ?? null,
+              status: this.determineItemStatus(
+                item.menuItemId ?? null,
+                dailyMenu,
+                isMainItem
+              ),
               createdAt: subOrder.createdAt ?? nowInColombia(),
             };
           }),
