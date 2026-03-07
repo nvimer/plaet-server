@@ -9,9 +9,13 @@ import { AuthenticatedUser } from "../../../types/express";
 import { UserWithRoles } from "../user.repository";
 
 export interface UserServiceInterface {
-  findAll(params: PaginationParams): Promise<PaginatedResponse<UserWithRoles>>;
+  findAll(
+    params: PaginationParams,
+    restaurantId?: string,
+  ): Promise<PaginatedResponse<UserWithRoles>>;
   searchUsers(
     params: PaginationParams & UserSearchParams,
+    restaurantId?: string,
   ): Promise<PaginatedResponse<UserWithRoles>>;
   findById(id: string): Promise<User>;
   findByEmail(email: string): Promise<User>;

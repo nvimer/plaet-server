@@ -115,8 +115,9 @@ export class UserServices implements UserServiceInterface {
    */
   async findAll(
     params: PaginationParams,
+    restaurantId?: string,
   ): Promise<PaginatedResponse<UserWithRoles>> {
-    return this.userRepository.findAll(params);
+    return this.userRepository.findAll(params, restaurantId);
   }
 
   /**
@@ -139,6 +140,7 @@ export class UserServices implements UserServiceInterface {
    * Supports searching by firstName, lastName, or email.
    *
    * @param params - Pagination and search parameters
+   * @param restaurantId - Optional restaurant ID for filtering
    * @returns Promise<PaginatedResponse<UserWithRoles>> - Paginated search results
    *
    * Search Capabilities:
@@ -148,8 +150,9 @@ export class UserServices implements UserServiceInterface {
    */
   async searchUsers(
     params: PaginationParams & UserSearchParams,
+    restaurantId?: string,
   ): Promise<PaginatedResponse<UserWithRoles>> {
-    return this.userRepository.search(params);
+    return this.userRepository.search(params, restaurantId);
   }
 
   /**

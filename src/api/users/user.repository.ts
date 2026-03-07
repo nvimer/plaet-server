@@ -41,14 +41,22 @@ class BasicUserRepository implements UserRepositoryInterface {
    */
   async findAll(
     params: PaginationParams,
+    restaurantId?: string,
   ): Promise<PaginatedResponse<UserWithRoles>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
 
     const client = getPrismaClient();
+
+    // Build where clause
+    const where: Prisma.UserWhereInput = { deleted: false };
+    if (restaurantId) {
+      where.restaurantId = restaurantId;
+    }
+
     const [users, total] = await Promise.all([
       client.user.findMany({
-        where: { deleted: false },
+        where,
         orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         include: {
           roles: {
@@ -61,7 +69,7 @@ class BasicUserRepository implements UserRepositoryInterface {
         take: limit,
       }),
       client.user.count({
-        where: { deleted: false },
+        where,
       }),
     ]);
 
@@ -73,6 +81,7 @@ class BasicUserRepository implements UserRepositoryInterface {
    * Supports searching by firstName, lastName, or email.
    *
    * @param params - Pagination and search parameters
+   * @param restaurantId - Optional restaurant ID for filtering
    * @returns Promise<PaginatedResponse<UserWithRoles>> - Paginated search results
    *
    * Database Operations:
@@ -83,6 +92,7 @@ class BasicUserRepository implements UserRepositoryInterface {
    */
   async search(
     params: PaginationParams & UserSearchParams,
+    restaurantId?: string,
   ): Promise<PaginatedResponse<UserWithRoles>> {
     const { page, limit, search } = params;
     const skip = (page - 1) * limit;
@@ -91,6 +101,10 @@ class BasicUserRepository implements UserRepositoryInterface {
 
     // Build where clause
     const where: Prisma.UserWhereInput = { deleted: false };
+
+    if (restaurantId) {
+      where.restaurantId = restaurantId;
+    }
 
     // Add search filter if provided
     if (search) {
@@ -168,7 +182,7 @@ class BasicUserRepository implements UserRepositoryInterface {
    * - Role assignments (if provided)
    * - Profile creation
    *
-   * @param data - User registration data including optional role IDs
+   * @param data - User registration data including optional role IDs and restaurantId
    * @returns Promise<User> - Created user with role relationships
    *
    * Database Operations:
@@ -177,13 +191,14 @@ class BasicUserRepository implements UserRepositoryInterface {
    * - Creates associated profile record
    * - Returns user with role information included
    */
-  async create(data: RegisterInput): Promise<User> {
-    const { roleIds, ...userData } = data;
+  async create(data: RegisterInput & { restaurantId?: string }): Promise<User> {
+    const { roleIds, restaurantId, ...userData } = data;
 
     const client = getPrismaClient();
     return await client.user.create({
       data: {
         ...userData,
+        restaurantId,
         roles: {
           create:
             roleIds.map((roleId) => ({

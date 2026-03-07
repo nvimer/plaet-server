@@ -31,10 +31,11 @@ class UserController {
   getUsers = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
+    const user = req.user as AuthenticatedUser;
 
     const params: PaginationParams = { page, limit };
 
-    const users = await userService.findAll(params);
+    const users = await userService.findAll(params, user?.restaurantId || undefined);
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Users fetched successfully",
@@ -67,6 +68,7 @@ class UserController {
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
     const search = req.query.search as string;
+    const user = req.user as AuthenticatedUser;
 
     // Create combined parameters object
     const params: PaginationParams & UserSearchParams = {
@@ -75,7 +77,7 @@ class UserController {
       search,
     };
 
-    const users = await userService.searchUsers(params);
+    const users = await userService.searchUsers(params, user?.restaurantId || undefined);
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Users search completed successfully",
