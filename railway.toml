@@ -5,7 +5,7 @@
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npx prisma db push --accept-data-loss && node dist/server.js"
+startCommand = "node dist/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
