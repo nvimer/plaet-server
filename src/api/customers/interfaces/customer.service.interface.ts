@@ -4,6 +4,9 @@ export interface CreateCustomerData {
   firstName: string;
   lastName: string;
   phone: string;
+  phone2?: string;
+  address1?: string;
+  address2?: string;
   email?: string;
 }
 
@@ -11,6 +14,9 @@ export interface UpdateCustomerData {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  phone2?: string;
+  address1?: string;
+  address2?: string;
   email?: string;
 }
 

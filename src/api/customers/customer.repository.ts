@@ -32,8 +32,11 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async findByPhone(phone: string): Promise<Customer | null> {
-    return await this.prisma.customer.findUnique({
-      where: { phone, deleted: false },
+    return await this.prisma.customer.findFirst({
+      where: {
+        deleted: false,
+        OR: [{ phone: phone }, { phone2: phone }],
+      },
       include: { orders: false, ticketBooks: false, dailyCodes: false },
     });
   }
@@ -85,6 +88,7 @@ export class CustomerRepository implements ICustomerRepository {
           { firstName: { contains: query, mode: "insensitive" } },
           { lastName: { contains: query, mode: "insensitive" } },
           { phone: { contains: query } },
+          { phone2: { contains: query } },
         ],
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
@@ -95,7 +99,10 @@ export class CustomerRepository implements ICustomerRepository {
 
   async findByPhoneWithActiveTickets(phone: string): Promise<any | null> {
     return await this.prisma.customer.findFirst({
-      where: { phone, deleted: false },
+      where: {
+        deleted: false,
+        OR: [{ phone: phone }, { phone2: phone }],
+      },
       include: { ticketBooks: { where: { status: "active" } } },
     });
   }

@@ -281,6 +281,9 @@ model Customer {
   firstName    String                @map("first_name")
   lastName     String                @map("last_name")
   phone        String                @unique
+  phone2       String?
+  address1     String?
+  address2     String?
   email        String?
   createdAt    DateTime              @default(now()) @map("created_at")
   updatedAt    DateTime              @updatedAt @map("updated_at")

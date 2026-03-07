@@ -23,6 +23,17 @@ export const createCustomerSchema = z.object({
     .max(15, "Phone number cannot exceed 15 digits")
     .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format"),
 
+  phone2: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number cannot exceed 15 digits")
+    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+    .optional()
+    .or(z.literal("")),
+
+  address1: z.string().max(255).optional().or(z.literal("")),
+  address2: z.string().max(255).optional().or(z.literal("")),
+
   email: z
     .string()
     .email("Invalid email format")
@@ -56,6 +67,17 @@ export const updateCustomerSchema = z.object({
     .max(15, "Phone number cannot exceed 15 digits")
     .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
     .optional(),
+
+  phone2: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number cannot exceed 15 digits")
+    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+    .optional()
+    .or(z.literal("")),
+
+  address1: z.string().max(255).optional().or(z.literal("")),
+  address2: z.string().max(255).optional().or(z.literal("")),
 
   email: z
     .string()

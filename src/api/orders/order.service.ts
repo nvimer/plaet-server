@@ -275,12 +275,15 @@ export class OrderService implements OrderServiceInterface {
             id: data.customerId,
             name: (data as any).customerName,
             phone: (data as any).customerPhone,
+            phone2: (data as any).customerPhone2,
+            address1: (data as any).address1,
+            address2: (data as any).address2,
           },
           tx,
         );
 
         // Remove non-prisma fields to avoid validation errors
-        const { customerName, customerPhone, ...cleanData } = data as any;
+        const { customerName, customerPhone, customerPhone2, address1, address2, ...cleanData } = data as any;
 
         const order = await this.orderRepository.create(
           waiterId,
@@ -553,6 +556,9 @@ export class OrderService implements OrderServiceInterface {
             id: firstSubOrder.customerId,
             name: (firstSubOrder as any).customerName,
             phone: (firstSubOrder as any).customerPhone,
+            phone2: (firstSubOrder as any).customerPhone2,
+            address1: (firstSubOrder as any).address1,
+            address2: (firstSubOrder as any).address2,
           },
           tx,
         );
@@ -658,7 +664,14 @@ export class OrderService implements OrderServiceInterface {
    */
   private async getOrCreateCustomer(
     restaurantId: string | null | undefined,
-    data: { id?: string; name?: string; phone?: string },
+    data: { 
+      id?: string; 
+      name?: string; 
+      phone?: string;
+      phone2?: string;
+      address1?: string;
+      address2?: string;
+    },
     tx: PrismaTransaction,
   ): Promise<string | null> {
     if (data.id) return data.id;
@@ -667,11 +680,15 @@ export class OrderService implements OrderServiceInterface {
     const existing = await tx.customer.findFirst({
       where: {
         restaurantId,
-        phone: data.phone,
+        OR: [{ phone: data.phone }, { phone2: data.phone }],
       },
     });
 
-    if (existing) return existing.id;
+    if (existing) {
+      // Optional: Update customer data if found? 
+      // For now, let's just return the ID
+      return existing.id;
+    }
 
     // Create new customer
     const nameParts = (data.name || "Cliente").trim().split(" ");
@@ -685,6 +702,9 @@ export class OrderService implements OrderServiceInterface {
         firstName,
         lastName,
         phone: data.phone,
+        phone2: data.phone2,
+        address1: data.address1,
+        address2: data.address2,
       },
     });
 

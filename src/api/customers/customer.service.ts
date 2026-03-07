@@ -28,6 +28,9 @@ export class CustomerService implements ICustomerService {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       phone: data.phone.trim(),
+      phone2: data.phone2?.trim() || null,
+      address1: data.address1?.trim() || null,
+      address2: data.address2?.trim() || null,
       email: data.email?.trim() || null,
     });
   }
@@ -66,6 +69,7 @@ export class CustomerService implements ICustomerService {
           { firstName: { contains: query, mode: "insensitive" } },
           { lastName: { contains: query, mode: "insensitive" } },
           { phone: { contains: query } },
+          { phone2: { contains: query } },
         ],
       };
     }
@@ -133,6 +137,9 @@ export class CustomerService implements ICustomerService {
       updateData.firstName = data.firstName.trim();
     if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
     if (data.phone !== undefined) updateData.phone = data.phone.trim();
+    if (data.phone2 !== undefined) updateData.phone2 = data.phone2?.trim() || null;
+    if (data.address1 !== undefined) updateData.address1 = data.address1?.trim() || null;
+    if (data.address2 !== undefined) updateData.address2 = data.address2?.trim() || null;
     if (data.email !== undefined) updateData.email = data.email?.trim() || null;
     return await this.customerRepository.update(id, updateData);
   }
