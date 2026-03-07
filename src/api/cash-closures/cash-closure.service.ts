@@ -64,7 +64,7 @@ export class CashClosureService {
         HttpStatus.BAD_REQUEST,
         "CASH_CLOSURE_ALREADY_OPEN"
       );
-    return this.repository.create({ ...data, openedById });
+    return this.repository.create({ ...data, openedById, restaurantId });
   }
 
   async closeShift(id: string, actualBalance: number, closedById: string) {

@@ -37,10 +37,11 @@ export class CashClosureRepository {
     });
   }
 
-  async create(data: OpenCashClosureDto & { openedById: string }) {
+  async create(data: OpenCashClosureDto & { openedById: string; restaurantId: string }) {
     return prisma.cashClosure.create({
       data: {
         openingBalance: data.openingBalance,
+        restaurantId: data.restaurantId,
         openedBy: {
           connect: { id: data.openedById },
         },
