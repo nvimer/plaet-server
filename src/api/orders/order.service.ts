@@ -336,6 +336,7 @@ export class OrderService implements OrderServiceInterface {
                 dailyMenu,
                 isMainProtein,
               ),
+              cashClosureId: activeClosure.id,
             };
           }),
         });
@@ -793,6 +794,7 @@ export class OrderService implements OrderServiceInterface {
                 dailyMenu,
                 isMainProtein
               ),
+              cashClosureId: activeClosure.id,
               createdAt: subOrder.createdAt ?? dateUtils.now(),
             };
           }),

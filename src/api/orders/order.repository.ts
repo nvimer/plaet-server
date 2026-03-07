@@ -140,6 +140,7 @@ class OrderRepository implements OrderRepositoryInterface {
             priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
             status: (item as any).status || OrderItemStatus.PENDING,
+            cashClosureId: (orderData as any).cashClosureId,
             createdAt: orderData.createdAt || dateUtils.now(),
           })),
         },
