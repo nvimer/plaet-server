@@ -1,8 +1,6 @@
 import { logger } from "../config/logger";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../database/prisma";
 import cron from "node-cron";
-
-const prisma = new PrismaClient();
 
 /**
  * Order Auto-Cancel Job

@@ -1,17 +1,22 @@
 import { CashClosureStatus, PaymentMethod } from "@prisma/client";
 import prisma, { getBasePrismaClient } from "../../database/prisma";
+import { tenantContext } from "../../utils/tenant-context";
 import { OpenCashClosureDto } from "./cash-closure.validator";
 
 export class CashClosureRepository {
   /**
    * Find current open shift for the active tenant.
-   * Accepts an optional restaurantId for explicit filtering when context is not reliable.
+   * Always uses prisma with extension - tenant context must be set by middleware.
    */
-  async findCurrentOpen(restaurantId?: string) {
+  async findCurrentOpen(_restaurantId?: string) {
+    const context = tenantContext.getStore();
+    if (!context?.restaurantId) {
+      throw new Error("Tenant context not set. Ensure auth middleware runs before repository calls.");
+    }
+
     return prisma.cashClosure.findFirst({
       where: {
         status: CashClosureStatus.OPEN,
-        ...(restaurantId && { restaurantId }),
       },
       include: {
         openedBy: {
