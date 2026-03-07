@@ -568,7 +568,7 @@ export class OrderService implements OrderServiceInterface {
             customerId: customerId || undefined,
             items: [],
             notes: "Group Order",
-            createdAt: firstSubOrder.createdAt,
+            createdAt: firstSubOrder.createdAt || new Date(),
           } as any,
           tx,
         );
@@ -620,7 +620,7 @@ export class OrderService implements OrderServiceInterface {
               quantity: item.quantity,
               priceAtOrder: (mi ? mi.price : item.priceAtOrder) ?? 0,
               notes: item.notes ?? null,
-              createdAt: subOrder.createdAt ?? undefined,
+              createdAt: subOrder.createdAt ?? new Date(),
             };
           }),
         });

@@ -135,14 +135,14 @@ class OrderRepository implements OrderRepositoryInterface {
         waiterId,
         status: OrderStatus.OPEN,
         totalAmount: 0,
-        createdAt: orderData.createdAt, // Support historical date entry
+        createdAt: orderData.createdAt || new Date(), // Support historical date entry
         items: {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
-            createdAt: orderData.createdAt,
+            createdAt: orderData.createdAt || new Date(),
           })),
         },
       },
