@@ -24,6 +24,7 @@ import {
 } from "./order.validator";
 import orderRepository from "./order.repository";
 import itemService from "../menus/items/item.service";
+import dailyMenuRepository from "../daily-menu/daily-menu.repository";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
@@ -200,6 +201,11 @@ export class OrderService implements OrderServiceInterface {
   ): Promise<OrderWithItems> {
     const client = getPrismaClient();
 
+    // Fetch daily menu to get basePrice
+    const orderDate = data.createdAt ? new Date(data.createdAt) : nowInColombia();
+    const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
+
     // Step 1: Validate and fetch all menu items
     // Fetch menu items only for items that have a menuItemId
     const menuItemsPromises = data.items.map((item) =>
@@ -257,13 +263,21 @@ export class OrderService implements OrderServiceInterface {
         orderId = existingOrder.id;
         currentTotal = Number(existingOrder.totalAmount);
 
+        // Find the main item index to add basePrice to its priceAtOrder
+        const itemsWithPrices = data.items.map((item, index) => ({
+          index,
+          price: Number(menuItems[index]?.price || 0),
+        })).sort((a, b) => b.price - a.price);
+        
+        const mainItemIndex = itemsWithPrices[0]?.index;
+
         // Add items to existing order
         await tx.orderItem.createMany({
           data: data.items.map((item, index) => ({
             orderId,
             menuItemId: item.menuItemId!,
             quantity: item.quantity,
-            priceAtOrder: menuItems[index]?.price ?? 0,
+            priceAtOrder: (Number(menuItems[index]?.price || 0) + (index === mainItemIndex ? basePrice : 0)),
             notes: item.notes,
           })),
         });
@@ -285,19 +299,36 @@ export class OrderService implements OrderServiceInterface {
         // Remove non-prisma fields to avoid validation errors
         const { customerName, customerPhone, customerPhone2, address1, address2, ...cleanData } = data as any;
 
+        // Find main item to add basePrice
+        const itemsWithPrices = data.items.map((item, index) => ({
+          item,
+          price: Number(menuItems[index]?.price || item.priceAtOrder || 0),
+        })).sort((a, b) => b.price - a.price);
+        
+        const mainItem = itemsWithPrices[0]?.item;
+
+        const itemsWithBasePrice = data.items.map(item => {
+          const mi = menuItems.find(m => m?.id === item.menuItemId);
+          const baseItemPrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
+          return {
+            ...item,
+            priceAtOrder: baseItemPrice + (item === mainItem ? basePrice : 0)
+          };
+        });
+
         const order = await this.orderRepository.create(
           waiterId,
-          { ...cleanData, customerId, restaurantId },
+          { ...cleanData, items: itemsWithBasePrice, customerId, restaurantId },
           tx,
         );
         orderId = order.id;
       }
 
       // Calculate total for NEW items
-      const newItemsTotal = data.items.reduce(
-        (sum, item, index) =>
-          sum + Number(menuItems[index]?.price || 0) * item.quantity,
-        0,
+      const newItemsTotal = this.calculateOrderTotal(
+        data.items,
+        menuItems.filter((mi): mi is MenuItem => mi !== null),
+        basePrice,
       );
 
       // Update total amount (previous total + new items)
@@ -468,6 +499,7 @@ export class OrderService implements OrderServiceInterface {
   private calculateOrderTotal(
     items: OrderItemInput[],
     menuItems: MenuItem[],
+    basePrice: number = 0,
   ): number {
     // Find the most expensive item (assumed to be the main protein)
     const sortedItems = items
@@ -480,8 +512,8 @@ export class OrderService implements OrderServiceInterface {
     const mainItem = sortedItems[0];
 
     if (mainItem) {
-      // SetLunch pricing: start with main item price
-      let total = mainItem.price;
+      // SetLunch pricing: start with main item price + basePrice
+      let total = mainItem.price + basePrice;
 
       // Add paid extras (other items with price > 0)
       const extras = sortedItems.slice(1).filter((item) => item.price > 0);
@@ -524,6 +556,12 @@ export class OrderService implements OrderServiceInterface {
     data: BatchCreateOrderBodyInput,
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
     const client = getPrismaClient();
+
+    // Fetch daily menu to get basePrice
+    const firstSubOrder = data.orders[0];
+    const orderDate = firstSubOrder.createdAt ? new Date(firstSubOrder.createdAt) : nowInColombia();
+    const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
     const existingOrder = data.tableId
       ? await client.order.findFirst({
@@ -571,7 +609,7 @@ export class OrderService implements OrderServiceInterface {
             customerId: customerId || undefined,
             items: [],
             notes: "Group Order",
-            createdAt: firstSubOrder.createdAt || new Date(),
+            createdAt: firstSubOrder.createdAt || nowInColombia(),
           } as any,
           tx,
         );
@@ -601,6 +639,7 @@ export class OrderService implements OrderServiceInterface {
         const serviceAmount = this.calculateOrderTotal(
           subOrder.items.filter((i) => i.menuItemId) as any,
           orderMenuItems,
+          basePrice,
         );
 
         const manualItemsAmount = subOrder.items
@@ -612,18 +651,27 @@ export class OrderService implements OrderServiceInterface {
 
         tableTotal += serviceAmount + manualItemsAmount;
 
+        // Find main item in this sub-order to add basePrice to its priceAtOrder
+        const subItemsWithPrices = subOrder.items.map((item, idx) => {
+          const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
+          return { idx, price: Number(mi?.price || item.priceAtOrder || 0) };
+        }).sort((a, b) => b.price - a.price);
+        
+        const mainSubItemIdx = subItemsWithPrices[0]?.idx;
+
         await tx.orderItem.createMany({
-          data: subOrder.items.map((item) => {
+          data: subOrder.items.map((item, index) => {
             const mi = item.menuItemId
               ? menuItems.find((m) => m.id === item.menuItemId)
               : null;
+            const itemPrice = (mi ? Number(mi.price) : Number(item.priceAtOrder || 0));
             return {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
-              priceAtOrder: (mi ? mi.price : item.priceAtOrder) ?? 0,
+              priceAtOrder: itemPrice + (index === mainSubItemIdx ? basePrice : 0),
               notes: item.notes ?? null,
-              createdAt: subOrder.createdAt ?? new Date(),
+              createdAt: subOrder.createdAt ?? nowInColombia(),
             };
           }),
         });
