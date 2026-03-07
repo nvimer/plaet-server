@@ -26,6 +26,13 @@ class RoleRepository implements RoleRepositoryInterface {
       prisma.role.findMany({
         where: { deleted: false },
         orderBy: { name: "asc" },
+        include: {
+          permissions: {
+            include: {
+              permission: true,
+            },
+          },
+        },
         skip,
         take: limit,
       }),

@@ -83,7 +83,7 @@ export const rolesConfig = [
   {
     name: RoleName.KITCHEN_MANAGER,
     description: "Cocina - Visualiza y prepara pedidos",
-    permissions: ["menu:read", "kitchen:view", "kitchen:update"],
+    permissions: ["menu:read", "orders:read", "kitchen:view", "kitchen:update"],
   },
 ];
 
