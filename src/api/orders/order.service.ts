@@ -30,6 +30,7 @@ import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
 import { getColombiaDayRange, nowInColombia } from "../../utils/date.utils";
+import moment from "moment-timezone";
 
 export class OrderService implements OrderServiceInterface {
   constructor(
@@ -232,7 +233,7 @@ export class OrderService implements OrderServiceInterface {
     const client = getPrismaClient();
 
     // Fetch daily menu to get basePrice
-    const orderDate = data.createdAt ? new Date(data.createdAt) : nowInColombia();
+    const orderDate = data.createdAt ? moment.tz(data.createdAt, "America/Bogota").toDate() : nowInColombia();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
@@ -303,20 +304,21 @@ export class OrderService implements OrderServiceInterface {
 
         // Add items to existing order
         await tx.orderItem.createMany({
-          data: data.items.map((item, index) => ({
-            orderId,
-            menuItemId: item.menuItemId!,
-            quantity: item.quantity,
-            priceAtOrder:
-              Number(menuItems[index]?.price || 0) +
-              (index === mainItemIndex ? basePrice : 0),
-            notes: item.notes,
-            status: this.determineItemStatus(
-              item.menuItemId!,
-              dailyMenu,
-              index === mainItemIndex,
-            ),
-          })),
+          data: data.items.map((item, index) => {
+            const itemBasePrice = Number(menuItems[index]?.price || item.priceAtOrder || 0);
+            return {
+              orderId,
+              menuItemId: item.menuItemId!,
+              quantity: item.quantity,
+              priceAtOrder: itemBasePrice + (index === mainItemIndex ? basePrice : 0),
+              notes: item.notes,
+              status: this.determineItemStatus(
+                item.menuItemId!,
+                dailyMenu,
+                index === mainItemIndex,
+              ),
+            };
+          }),
         });
 
         // Ensure table is marked as OCCUPIED
@@ -616,7 +618,7 @@ export class OrderService implements OrderServiceInterface {
 
     // Fetch daily menu to get basePrice
     const firstSubOrder = data.orders[0];
-    const orderDate = firstSubOrder.createdAt ? new Date(firstSubOrder.createdAt) : nowInColombia();
+    const orderDate = firstSubOrder.createdAt ? moment.tz(firstSubOrder.createdAt, "America/Bogota").toDate() : nowInColombia();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
