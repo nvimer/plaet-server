@@ -4,6 +4,7 @@ import { logger } from "./logger";
 
 const envSchema = z.object({
   PORT: z.string().default("8080"),
+  API_PORT: z.string().optional(),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -41,7 +42,7 @@ if (!parsedEnv.success) {
 const envData = parsedEnv.success ? parsedEnv.data : process.env;
 
 export const config = {
-  port: parseInt((envData.PORT as string) || "8080", 10),
+  port: parseInt((envData.API_PORT as string) || "8080", 10),
   nodeEnv: (envData.NODE_ENV as "development" | "production" | "test") || "production",
   appUrl: (envData.APP_URL as string) || "https://api.plaet.cloud",
   databaseUrl: (envData.DATABASE_URL as string) || "",
