@@ -182,6 +182,7 @@ export class OrderService implements OrderServiceInterface {
             },
           },
           table: true,
+          payments: true,
           waiter: {
             select: {
               id: true,
