@@ -93,6 +93,7 @@ export const createOrderSchema = z.object({
       .max(100, "WhatsApp Order ID cannot exceed 100 characters")
       .optional(),
     createdAt: z.coerce.date().optional(),
+    cashClosureId: z.string().uuid().optional(),
   }),
 });
 
@@ -176,6 +177,7 @@ export const batchCreateOrderSchema = z.object({
       )
       .min(1, "At least one order must be provided")
       .max(10, "Cannot create more than 10 orders at once"),
+    cashClosureId: z.string().uuid().optional(),
   }),
 });
 

@@ -2,7 +2,7 @@ import { CashClosureRepository } from "./cash-closure.repository";
 import { OpenCashClosureDto } from "./cash-closure.validator";
 import { CustomError } from "../../types/custom-errors";
 import { HttpStatus } from "../../utils/httpStatus.enum";
-import { CashClosureStatus } from "@prisma/client";
+import { CashClosureStatus, PaymentMethod } from "@prisma/client";
 
 export class CashClosureService {
   private repository: CashClosureRepository;
@@ -18,21 +18,39 @@ export class CashClosureService {
   async getSummary(id: string) {
     const closure = await this.repository.findById(id);
     if (!closure) throw new CustomError("Not found", HttpStatus.NOT_FOUND);
-    const now = new Date();
-    const cashSales = await this.repository.sumCashPayments(
-      closure.openingDate,
-      now,
-    );
-    const totalExpenses = await this.repository.sumExpenses(
-      closure.openingDate,
-      now,
-    );
+
+    // If it's already closed, return the snapshot values
+    if (closure.status === CashClosureStatus.CLOSED) {
+      return {
+        openingBalance: Number(closure.openingBalance),
+        cashSales: Number(closure.totalCash || 0),
+        nequiSales: Number(closure.totalNequi || 0),
+        vouchers: Number(closure.totalVouchers || 0),
+        totalExpenses: Number(closure.totalExpenses || 0),
+        expectedBalance: Number(closure.expectedBalance || 0),
+        openingDate: closure.openingDate,
+        closingDate: closure.closingDate,
+      };
+    }
+
+    // If it's open, calculate current totals using explicit links
+    const [cashSales, nequiSales, totalExpenses, totalVouchers] =
+      await Promise.all([
+        this.repository.sumPaymentsByMethod(id, PaymentMethod.CASH),
+        this.repository.sumPaymentsByMethod(id, PaymentMethod.NEQUI),
+        this.repository.sumExpensesByClosure(id),
+        this.repository.sumPaymentsByMethod(id, PaymentMethod.TICKET_BOOK),
+      ]);
+
     const expectedBalance =
       Number(closure.openingBalance) + cashSales - totalExpenses;
+
     return {
       openingBalance: Number(closure.openingBalance),
       cashSales,
+      nequiSales,
       totalExpenses,
+      totalVouchers,
       expectedBalance,
       openingDate: closure.openingDate,
     };
@@ -51,6 +69,10 @@ export class CashClosureService {
       actualBalance,
       expectedBalance: summary.expectedBalance,
       difference: actualBalance - summary.expectedBalance,
+      totalCash: summary.cashSales,
+      totalNequi: (summary as any).nequiSales,
+      totalExpenses: summary.totalExpenses,
+      totalVouchers: (summary as any).totalVouchers,
       closedById,
       closingDate: new Date(),
     });

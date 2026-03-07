@@ -26,6 +26,7 @@ import orderRepository from "./order.repository";
 import itemService from "../menus/items/item.service";
 import dailyMenuRepository from "../daily-menu/daily-menu.repository";
 import { DailyMenuWithRelations } from "../daily-menu/interfaces/daily-menu.repository.interface";
+import { CashClosureRepository } from "../cash-closures/cash-closure.repository";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
@@ -33,6 +34,8 @@ import { dateUtils } from "../../utils/date.utils";
 import moment from "moment-timezone";
 
 export class OrderService implements OrderServiceInterface {
+  private cashClosureRepo = new CashClosureRepository();
+
   constructor(
     private orderRepository: OrderRepositoryInterface,
     private itemService: Pick<
@@ -237,6 +240,16 @@ export class OrderService implements OrderServiceInterface {
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
+    // Step 0: Ensure there is an open cash closure for new orders
+    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+    if (!activeClosure) {
+      throw new CustomError(
+        "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
+        HttpStatus.BAD_REQUEST,
+        "CASH_CLOSURE_REQUIRED",
+      );
+    }
+    
     // Step 1: Validate and fetch all menu items
     // Fetch menu items only for items that have a menuItemId
     const menuItemsPromises = data.items.map((item) =>
@@ -380,7 +393,7 @@ export class OrderService implements OrderServiceInterface {
 
         const order = await this.orderRepository.create(
           waiterId,
-          { ...cleanData, items: itemsWithBasePrice, customerId, restaurantId },
+          { ...cleanData, items: itemsWithBasePrice, customerId, restaurantId, cashClosureId: activeClosure.id },
           tx,
         );
         orderId = order.id;
@@ -646,6 +659,16 @@ export class OrderService implements OrderServiceInterface {
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
+    // Step 0: Ensure there is an open cash closure
+    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+    if (!activeClosure) {
+      throw new CustomError(
+        "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
+        HttpStatus.BAD_REQUEST,
+        "CASH_CLOSURE_REQUIRED",
+      );
+    }
+
     const existingOrder = data.tableId
       ? await client.order.findFirst({
           where: {
@@ -693,6 +716,7 @@ export class OrderService implements OrderServiceInterface {
             items: [],
             notes: "Group Order",
             createdAt: firstSubOrder.createdAt || dateUtils.now(),
+            cashClosureId: activeClosure.id,
           } as any,
           tx,
         );

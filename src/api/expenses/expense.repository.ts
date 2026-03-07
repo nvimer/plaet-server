@@ -2,7 +2,7 @@ import prisma from "../../database/prisma";
 import { CreateExpenseDto, GetExpensesQueryDto } from "./expense.validator";
 
 export class ExpenseRepository {
-  async create(data: CreateExpenseDto & { registeredById: string }) {
+  async create(data: CreateExpenseDto & { registeredById: string; cashClosureId?: string }) {
     return prisma.expense.create({
       data: {
         amount: data.amount,
@@ -12,6 +12,9 @@ export class ExpenseRepository {
         registeredBy: {
           connect: { id: data.registeredById },
         },
+        ...(data.cashClosureId && {
+          cashClosure: { connect: { id: data.cashClosureId } },
+        }),
       },
     });
   }

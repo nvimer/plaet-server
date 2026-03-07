@@ -47,6 +47,10 @@ export class CashClosureRepository {
       actualBalance: number;
       expectedBalance: number;
       difference: number;
+      totalCash: number;
+      totalNequi: number;
+      totalExpenses: number;
+      totalVouchers: number;
       closedById: string;
       closingDate: Date;
     },
@@ -57,6 +61,10 @@ export class CashClosureRepository {
         actualBalance: data.actualBalance,
         expectedBalance: data.expectedBalance,
         difference: data.difference,
+        totalCash: data.totalCash,
+        totalNequi: data.totalNequi,
+        totalExpenses: data.totalExpenses,
+        totalVouchers: data.totalVouchers,
         status: CashClosureStatus.CLOSED,
         closingDate: data.closingDate,
         closedBy: {
@@ -64,6 +72,32 @@ export class CashClosureRepository {
         },
       },
     });
+  }
+
+  async sumPaymentsByMethod(closureId: string, method: PaymentMethod) {
+    const result = await prisma.payment.aggregate({
+      where: {
+        cashClosureId: closureId,
+        method: method,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    return Number(result._sum.amount || 0);
+  }
+
+  async sumExpensesByClosure(closureId: string) {
+    const result = await prisma.expense.aggregate({
+      where: {
+        cashClosureId: closureId,
+        deleted: false,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    return Number(result._sum.amount || 0);
   }
 
   async sumCashPayments(startDate: Date, endDate: Date) {
