@@ -839,8 +839,15 @@ export class OrderService implements OrderServiceInterface {
     });
 
     if (existing) {
-      // Optional: Update customer data if found? 
-      // For now, let's just return the ID
+      // Update customer data if it has changed or was missing
+      await tx.customer.update({
+        where: { id: existing.id },
+        data: {
+          phone2: data.phone2 || existing.phone2,
+          address1: data.address1 || existing.address1,
+          address2: data.address2 || existing.address2,
+        },
+      });
       return existing.id;
     }
 

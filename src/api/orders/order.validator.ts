@@ -77,6 +77,9 @@ export const createOrderSchema = z.object({
     customerId: z.string().uuid("Customer ID must be a valid UUID").optional(),
     customerName: z.string().max(100).optional(),
     customerPhone: z.string().max(20).optional(),
+    customerPhone2: z.string().max(20).optional(),
+    address1: z.string().max(255).optional(),
+    address2: z.string().max(255).optional(),
     type: orderTypeEnum,
     items: z
       .array(orderItemSchema)
@@ -158,6 +161,9 @@ export const batchCreateOrderSchema = z.object({
             .optional(),
           customerName: z.string().max(100).optional(),
           customerPhone: z.string().max(20).optional(),
+          customerPhone2: z.string().max(20).optional(),
+          address1: z.string().max(255).optional(),
+          address2: z.string().max(255).optional(),
           items: z
             .array(orderItemSchema)
             .min(1, "Order must contain at least one item."),
