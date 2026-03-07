@@ -294,28 +294,34 @@ export class OrderService implements OrderServiceInterface {
         orderId = existingOrder.id;
         currentTotal = Number(existingOrder.totalAmount);
 
-        // Find the main item index to add basePrice to its priceAtOrder
-        const itemsWithPrices = data.items.map((item, index) => ({
-          index,
-          price: Number(menuItems[index]?.price || 0),
-        })).sort((a, b) => b.price - a.price);
+        // Find the main protein index to add basePrice only to it
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
+        const proteinItems = data.items
+          .map((item, index) => ({
+            index,
+            price: Number(menuItems[index]?.price || 0),
+            categoryId: menuItems[index]?.categoryId,
+          }))
+          .filter((item) => item.categoryId === proteinCategoryId)
+          .sort((a, b) => b.price - a.price);
         
-        const mainItemIndex = itemsWithPrices[0]?.index;
+        const mainProteinIndex = proteinItems[0]?.index;
 
         // Add items to existing order
         await tx.orderItem.createMany({
           data: data.items.map((item, index) => {
             const itemBasePrice = Number(menuItems[index]?.price || item.priceAtOrder || 0);
+            const isMainProtein = index === mainProteinIndex;
             return {
               orderId,
               menuItemId: item.menuItemId!,
               quantity: item.quantity,
-              priceAtOrder: itemBasePrice + (index === mainItemIndex ? basePrice : 0),
+              priceAtOrder: itemBasePrice + (isMainProtein ? basePrice : 0),
               notes: item.notes,
               status: this.determineItemStatus(
                 item.menuItemId!,
                 dailyMenu,
-                index === mainItemIndex,
+                isMainProtein,
               ),
             };
           }),
@@ -344,25 +350,30 @@ export class OrderService implements OrderServiceInterface {
         // Remove non-prisma fields to avoid validation errors
         const { customerName, customerPhone, customerPhone2, address1, address2, ...cleanData } = data as any;
 
-        // Find main item to add basePrice
-        const itemsWithPrices = data.items.map((item, index) => ({
-          item,
-          price: Number(menuItems[index]?.price || item.priceAtOrder || 0),
-        })).sort((a, b) => b.price - a.price);
+        // Find main protein to add basePrice
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
+        const proteinItems = data.items
+          .map((item, index) => ({
+            item,
+            price: Number(menuItems[index]?.price || item.priceAtOrder || 0),
+            categoryId: menuItems[index]?.categoryId,
+          }))
+          .filter((item) => item.categoryId === proteinCategoryId)
+          .sort((a, b) => b.price - a.price);
         
-        const mainItem = itemsWithPrices[0]?.item;
+        const mainProtein = proteinItems[0]?.item;
 
         const itemsWithBasePrice = data.items.map(item => {
           const mi = menuItems.find(m => m?.id === item.menuItemId);
           const baseItemPrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
-          const isMainItem = item === mainItem;
+          const isMainProtein = item === mainProtein;
           return {
             ...item,
-            priceAtOrder: baseItemPrice + (isMainItem ? basePrice : 0),
+            priceAtOrder: baseItemPrice + (isMainProtein ? basePrice : 0),
             status: this.determineItemStatus(
               item.menuItemId || null,
               dailyMenu,
-              isMainItem
+              isMainProtein
             )
           };
         });
@@ -558,35 +569,48 @@ export class OrderService implements OrderServiceInterface {
   private calculateOrderTotal(
     items: OrderItemInput[],
     menuItems: MenuItem[],
-    basePrice: number = 0,
+    dailyMenu: DailyMenuWithRelations | null,
   ): number {
-    // Find the most expensive item (assumed to be the main protein)
-    const sortedItems = items
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
+    const proteinCategoryId = dailyMenu?.proteinCategoryId;
+
+    // Find items that are actually proteins
+    const proteinItems = items
       .map((item) => {
         const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
         return { ...item, menuItem, price: Number(menuItem?.price || 0) };
       })
+      .filter((item) => item.menuItem && item.menuItem.categoryId === proteinCategoryId)
       .sort((a, b) => b.price - a.price);
 
-    const mainItem = sortedItems[0];
+    const mainProtein = proteinItems[0];
 
-    if (mainItem) {
-      // SetLunch pricing: start with main item price + basePrice
-      let total = mainItem.price + basePrice;
+    if (mainProtein) {
+      // It IS a lunch: start with main protein price + basePrice
+      let total = mainProtein.price + basePrice;
 
-      // Add paid extras (other items with price > 0)
-      const extras = sortedItems.slice(1).filter((item) => item.price > 0);
+      // Add everything else (other proteins as extras, plus drinks, sides, etc)
+      const everythingElse = items.map((item) => {
+        const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
+        return { ...item, price: Number(menuItem?.price || item.priceAtOrder || 0) };
+      });
 
-      extras.forEach((item) => {
-        total += item.price * item.quantity;
+      // Find the index of the item we already used as main protein to not double count
+      const mainProteinOriginalIndex = items.findIndex(i => i.menuItemId === mainProtein.menuItemId);
+
+      everythingElse.forEach((item, index) => {
+        if (index !== mainProteinOriginalIndex) {
+          total += item.price * item.quantity;
+        }
       });
 
       return total;
     } else {
-      // No protein: sum of all individual prices
+      // NOT a lunch: just sum all individual prices
       return items.reduce((sum, item) => {
         const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-        return sum + Number(menuItem?.price || 0) * item.quantity;
+        const price = Number(menuItem?.price || item.priceAtOrder || 0);
+        return sum + price * item.quantity;
       }, 0);
     }
   }
@@ -710,13 +734,21 @@ export class OrderService implements OrderServiceInterface {
 
         tableTotal += serviceAmount + manualItemsAmount;
 
-        // Find main item in this sub-order to add basePrice to its priceAtOrder
-        const subItemsWithPrices = subOrder.items.map((item, idx) => {
-          const mi = item.menuItemId ? menuItems.find(m => m.id === item.menuItemId) : null;
-          return { idx, price: Number(mi?.price || item.priceAtOrder || 0) };
-        }).sort((a, b) => b.price - a.price);
-        
-        const mainSubItemIdx = subItemsWithPrices[0]?.idx;
+        // Find main protein in this sub-order to add basePrice only to it
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
+        const subProteinsWithPrices = subOrder.items
+          .map((item, idx) => {
+            const mi = item.menuItemId ? menuItems.find((m) => m.id === item.menuItemId) : null;
+            return {
+              idx,
+              price: Number(mi?.price || item.priceAtOrder || 0),
+              categoryId: mi?.categoryId,
+            };
+          })
+          .filter((p) => p.categoryId === proteinCategoryId)
+          .sort((a, b) => b.price - a.price);
+
+        const mainProteinIdx = subProteinsWithPrices[0]?.idx;
 
         await tx.orderItem.createMany({
           data: subOrder.items.map((item, index) => {
@@ -724,18 +756,18 @@ export class OrderService implements OrderServiceInterface {
               ? menuItems.find((m) => m.id === item.menuItemId)
               : null;
             const itemPrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
-            const isMainItem = index === mainSubItemIdx;
+            const isMainProtein = index === mainProteinIdx;
             
             return {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
-              priceAtOrder: itemPrice + (isMainItem ? basePrice : 0),
+              priceAtOrder: itemPrice + (isMainProtein ? basePrice : 0),
               notes: item.notes ?? null,
               status: this.determineItemStatus(
                 item.menuItemId ?? null,
                 dailyMenu,
-                isMainItem
+                isMainProtein
               ),
               createdAt: subOrder.createdAt ?? nowInColombia(),
             };
