@@ -3,6 +3,7 @@ import { AuthenticatedUser } from "../../types/express";
 import { CashClosureService } from "./cash-closure.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpStatus } from "../../utils/httpStatus.enum";
+import { CustomError } from "../../types/custom-errors";
 import {
   OpenCashClosureDto,
   CloseCashClosureDto,
@@ -16,8 +17,7 @@ export class CashClosureController {
   }
 
   getCurrent = asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user as AuthenticatedUser;
-    const current = await this.service.getCurrentOpen(user.restaurantId || undefined);
+    const current = await this.service.getCurrentOpen();
     res.status(HttpStatus.OK).json({ success: true, data: current });
   });
 
@@ -30,7 +30,12 @@ export class CashClosureController {
   open = asyncHandler(async (req: Request, res: Response) => {
     const data: OpenCashClosureDto = req.body;
     const user = req.user as AuthenticatedUser;
-    const closure = await this.service.openShift(data, user.id, user.restaurantId || undefined);
+    
+    if (!user.restaurantId) {
+      throw new CustomError("El usuario no tiene un restaurante asociado.", HttpStatus.FORBIDDEN);
+    }
+
+    const closure = await this.service.openShift(data, user.id, user.restaurantId);
     res.status(HttpStatus.CREATED).json({ success: true, data: closure });
   });
 

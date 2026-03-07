@@ -98,4 +98,12 @@ export function getPrismaClient(): any {
   return prisma;
 }
 
+/**
+ * Returns the base Prisma Client without extensions.
+ * Use ONLY for critical security validations or across-tenant queries.
+ */
+export function getBasePrismaClient(): PrismaClient {
+  return prismaClient;
+}
+
 export default prisma;

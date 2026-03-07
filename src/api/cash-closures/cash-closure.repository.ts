@@ -1,13 +1,15 @@
 import { CashClosureStatus, PaymentMethod } from "@prisma/client";
-import prisma from "../../database/prisma";
+import prisma, { getBasePrismaClient } from "../../database/prisma";
 import { OpenCashClosureDto } from "./cash-closure.validator";
 
 export class CashClosureRepository {
-  async findCurrentOpen(restaurantId?: string) {
+  /**
+   * Find current open shift for the active tenant (using automatic filtering)
+   */
+  async findCurrentOpen() {
     return prisma.cashClosure.findFirst({
       where: {
         status: CashClosureStatus.OPEN,
-        ...(restaurantId && { restaurantId }),
       },
       include: {
         openedBy: {
@@ -16,6 +18,19 @@ export class CashClosureRepository {
             lastName: true,
           },
         },
+      },
+    });
+  }
+
+  /**
+   * Absolute security check: finds an open shift for a specific tenant 
+   * bypassing the tenant context filter to ensure no double openings.
+   */
+  async findCurrentOpenForTenant(restaurantId: string) {
+    return getBasePrismaClient().cashClosure.findFirst({
+      where: {
+        restaurantId,
+        status: CashClosureStatus.OPEN,
       },
     });
   }

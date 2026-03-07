@@ -11,8 +11,8 @@ export class CashClosureService {
     this.repository = new CashClosureRepository();
   }
 
-  async getCurrentOpen(restaurantId?: string) {
-    return this.repository.findCurrentOpen(restaurantId);
+  async getCurrentOpen() {
+    return this.repository.findCurrentOpen();
   }
 
   async getSummary(id: string) {
@@ -56,10 +56,14 @@ export class CashClosureService {
     };
   }
 
-  async openShift(data: OpenCashClosureDto, openedById: string, restaurantId?: string) {
-    const existingOpen = await this.repository.findCurrentOpen(restaurantId);
+  async openShift(data: OpenCashClosureDto, openedById: string, restaurantId: string) {
+    const existingOpen = await this.repository.findCurrentOpenForTenant(restaurantId);
     if (existingOpen)
-      throw new CustomError("Already open", HttpStatus.BAD_REQUEST);
+      throw new CustomError(
+        "Ya existe un turno de caja abierto para este restaurante.", 
+        HttpStatus.BAD_REQUEST,
+        "CASH_CLOSURE_ALREADY_OPEN"
+      );
     return this.repository.create({ ...data, openedById });
   }
 
