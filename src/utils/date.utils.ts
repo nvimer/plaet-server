@@ -3,6 +3,13 @@ import moment from "moment-timezone";
 const COLOMBIA_TZ = "America/Bogota";
 
 /**
+ * Returns the current date and time in Colombia.
+ */
+export const nowInColombia = (): Date => {
+  return moment().tz(COLOMBIA_TZ).toDate();
+};
+
+/**
  * Returns the start of the current day in Colombia as a Date object.
  * This is the reliable way to get "today" for database queries.
  */
