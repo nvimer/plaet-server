@@ -7,6 +7,7 @@ import {
 } from "./interfaces/daily-menu.repository.interface";
 import { DailyMenu, MenuItem, MenuCategory } from "@prisma/client";
 import { logger } from "../../config/logger";
+import { nowInColombia } from "../../utils/date.utils";
 
 /**
  * DailyMenu Repository Implementation - Simplified version
@@ -185,7 +186,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
    * Get current daily menu (today) with all relations
    */
   async getCurrent(): Promise<DailyMenuWithRelations | null> {
-    const today = new Date();
+    const today = nowInColombia();
     today.setHours(0, 0, 0, 0);
 
     logger.debug("[DailyMenu] getCurrent called", {

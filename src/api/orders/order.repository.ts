@@ -14,6 +14,7 @@ import {
 import { getPrismaClient } from "../../database/prisma";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
+import { getColombiaDayRange, nowInColombia } from "../../utils/date.utils";
 
 class OrderRepository implements OrderRepositoryInterface {
   /**
@@ -39,15 +40,11 @@ class OrderRepository implements OrderRepositoryInterface {
     if (waiterId) where.waiterId = waiterId;
     if (tableId) where.tableId = tableId;
     if (date) {
-      // Filter by date (start of day to end of day)
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      const { start, end } = getColombiaDayRange(date);
 
       where.createdAt = {
-        gte: startOfDay,
-        lte: endOfDay,
+        gte: start,
+        lte: end,
       };
     }
 
@@ -135,14 +132,14 @@ class OrderRepository implements OrderRepositoryInterface {
         waiterId,
         status: OrderStatus.OPEN,
         totalAmount: 0,
-        createdAt: orderData.createdAt || new Date(), // Support historical date entry
+        createdAt: orderData.createdAt || nowInColombia(), // Support historical date entry or default to now in CO
         items: {
           create: items?.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             priceAtOrder: (item as any).priceAtOrder || 0,
             notes: item.notes,
-            createdAt: orderData.createdAt || new Date(),
+            createdAt: orderData.createdAt || nowInColombia(),
           })),
         },
       },

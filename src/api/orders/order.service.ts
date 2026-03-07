@@ -27,6 +27,7 @@ import itemService from "../menus/items/item.service";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
+import { getColombiaDayRange } from "../../utils/date.utils";
 
 export class OrderService implements OrderServiceInterface {
   constructor(
@@ -132,15 +133,11 @@ export class OrderService implements OrderServiceInterface {
     if (waiterId) where.waiterId = waiterId;
     if (tableId) where.tableId = tableId;
     if (date) {
-      // Filter by date (start of day to end of day)
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      const { start, end } = getColombiaDayRange(date);
 
       where.createdAt = {
-        gte: startOfDay,
-        lte: endOfDay,
+        gte: start,
+        lte: end,
       };
     }
 
