@@ -42,9 +42,7 @@ export class CashClosureRepository {
       data: {
         openingBalance: data.openingBalance,
         restaurantId: data.restaurantId,
-        openedBy: {
-          connect: { id: data.openedById },
-        },
+        openedById: data.openedById,
         status: CashClosureStatus.OPEN,
         openingDate: new Date(),
       },
