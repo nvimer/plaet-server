@@ -183,7 +183,7 @@ export class TokenService implements TokenServiceInterface {
       );
       return false;
     }
-    logger.info(
+    logger.debug(
       `[BLACKLIST] Token ${token.substring(0, 20)}... is blacklisted: ${tokenRecord.blacklisted}`,
     );
     return tokenRecord.blacklisted || false;

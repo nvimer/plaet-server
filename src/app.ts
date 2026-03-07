@@ -22,6 +22,9 @@ const port = config.port;
 
 const app: Application = express();
 
+// Enable trust proxy for Railway/Production
+app.set("trust proxy", 1);
+
 // GLOBAL MIDDLEWARES
 
 // Body parser in JSON petition and URL Encoded

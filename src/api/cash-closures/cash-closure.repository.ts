@@ -5,15 +5,29 @@ import { OpenCashClosureDto } from "./cash-closure.validator";
 
 export class CashClosureRepository {
   /**
-   * Find current open shift for the active tenant.
-   * Always uses prisma with extension - tenant context must be set by middleware.
+   * Find current open shift for a tenant.
+   * If restaurantId is provided, it uses the base client for maximum reliability in production.
+   * If not, it falls back to the tenant context and the extended client.
    */
-  async findCurrentOpen(_restaurantId?: string) {
-    const context = tenantContext.getStore();
-    if (!context?.restaurantId) {
-      throw new Error("Tenant context not set. Ensure auth middleware runs before repository calls.");
+  async findCurrentOpen(restaurantId?: string) {
+    if (restaurantId) {
+      return getBasePrismaClient().cashClosure.findFirst({
+        where: {
+          restaurantId,
+          status: CashClosureStatus.OPEN,
+        },
+        include: {
+          openedBy: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
     }
 
+    const context = tenantContext.getStore();
     return prisma.cashClosure.findFirst({
       where: {
         status: CashClosureStatus.OPEN,
