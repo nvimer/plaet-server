@@ -247,11 +247,13 @@ model Order {
   restaurantId    String?     @map("restaurant_id")
   deleted         Boolean     @default(false)
   deletedAt       DateTime?   @map("deleted_at")
+  cashClosureId   String?     @map("cash_closure_id")
   items           OrderItem[]
   customer        Customer?   @relation(fields: [customerId], references: [id])
   restaurant      Restaurant? @relation(fields: [restaurantId], references: [id])
   table           Table?      @relation(fields: [tableId], references: [id])
   waiter          User        @relation("OrdersTakenByWaiter", fields: [waiterId], references: [id])
+  cashClosure     CashClosure? @relation(fields: [cashClosureId], references: [id])
   payments        Payment[]
 
   @@index([restaurantId])
@@ -342,9 +344,11 @@ model Payment {
   amount                Decimal              @db.Decimal(10, 2)
   transactionRef        String?              @map("transaction_ref")
   dailyTicketBookCodeId String?              @unique @map("daily_ticket_book_code_id")
+  cashClosureId         String?              @map("cash_closure_id")
   createdAt             DateTime             @default(now()) @map("created_at")
   dailyTicketBookCode   DailyTicketBookCode? @relation("CodeUsedInPayment", fields: [dailyTicketBookCodeId], references: [id])
   order                 Order?               @relation(fields: [orderId], references: [id])
+  cashClosure           CashClosure?         @relation(fields: [cashClosureId], references: [id])
   ticketUsages          TicketBookUsage[]    @relation("TicketUsages")
 
   @@map("payments")
@@ -362,8 +366,10 @@ model Expense {
   category       String
   registeredById String      @map("registered_by_id")
   restaurantId   String?     @map("restaurant_id")
+  cashClosureId  String?     @map("cash_closure_id")
   registeredBy   User        @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
   restaurant     Restaurant? @relation(fields: [restaurantId], references: [id])
+  cashClosure    CashClosure? @relation(fields: [cashClosureId], references: [id])
 
   @@index([restaurantId])
   @@map("expenses")
@@ -378,16 +384,23 @@ model CashClosure {
   openingBalance  Decimal           @map("opening_balance") @db.Decimal(10, 2)
   expectedBalance Decimal           @default(0) @map("expected_balance") @db.Decimal(10, 2)
   actualBalance   Decimal?          @map("actual_balance") @db.Decimal(10, 2)
-  difference      Decimal?          @map("difference") @db.Decimal(10, 2)
-  status          CashClosureStatus @default(OPEN)
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  restaurantId    String?           @map("restaurant_id")
-  deleted         Boolean           @default(false)
-  deletedAt       DateTime?         @map("deleted_at")
-  closedBy        User?             @relation("ClosedBy", fields: [closedById], references: [id])
-  openedBy        User              @relation("OpenedBy", fields: [openedById], references: [id])
-  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
+    difference      Decimal?          @map("difference") @db.Decimal(10, 2)
+    totalCash       Decimal?          @default(0) @map("total_cash") @db.Decimal(10, 2)
+    totalNequi      Decimal?          @default(0) @map("total_nequi") @db.Decimal(10, 2)
+    totalExpenses   Decimal?          @default(0) @map("total_expenses") @db.Decimal(10, 2)
+    totalVouchers   Decimal?          @default(0) @map("total_vouchers") @db.Decimal(10, 2)
+    status          CashClosureStatus @default(OPEN)
+    createdAt       DateTime          @default(now()) @map("created_at")
+    updatedAt       DateTime          @updatedAt @map("updated_at")
+    restaurantId    String?           @map("restaurant_id")
+    deleted         Boolean          @default(false)
+    deletedAt       DateTime?         @map("deleted_at")
+    closedBy        User?             @relation("ClosedBy", fields: [closedById], references: [id])
+    openedBy        User              @relation("OpenedBy", fields: [openedById], references: [id])
+    restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
+    payments        Payment[]
+    expenses        Expense[]
+    orders          Order[]
 
   @@index([restaurantId])
   @@map("cash_closures")
