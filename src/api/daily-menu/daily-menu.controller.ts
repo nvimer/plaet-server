@@ -4,6 +4,7 @@ import { HttpStatus } from "../../utils/httpStatus.enum";
 import { DailyMenuServiceInterface } from "./interfaces/daily-menu.service.interface";
 import dailyMenuService from "./daily-menu.service";
 import { UpdateDailyMenuBodyInput } from "./daily-menu.validator";
+import moment from "moment-timezone";
 
 /**
  * DailyMenu Controller - Updated for Item-Based Daily Menu
@@ -41,7 +42,7 @@ class DailyMenuController {
    */
   getMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
-    const createdAt = new Date(date + "T12:00:00.000Z");
+    const createdAt = moment.tz(date, "America/Bogota").startOf("day").toDate();
 
     const menu = await this.service.getMenuByCreatedAt(createdAt);
 
@@ -99,7 +100,7 @@ class DailyMenuController {
    */
   updateMenuByCreatedAt = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params;
-    const createdAt = new Date(date + "T12:00:00.000Z");
+    const createdAt = moment.tz(date, "America/Bogota").startOf("day").toDate();
     const data: UpdateDailyMenuBodyInput = req.body;
 
     const menu = await this.service.updateMenuByCreatedAt(
