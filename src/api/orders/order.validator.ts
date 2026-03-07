@@ -144,7 +144,7 @@ export const orderSearchSchema = z.object({
  */
 export const batchCreateOrderSchema = z.object({
   body: z.object({
-    tableId: z.number().int().positive("Table ID must be positive").optional(),
+    tableId: z.number().int().positive("Table ID must be positive").optional().nullable(),
     orders: z
       .array(
         z.object({
