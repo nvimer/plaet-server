@@ -28,7 +28,7 @@ import dailyMenuRepository from "../daily-menu/daily-menu.repository";
 import { getPrismaClient } from "../../database/prisma";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
-import { getColombiaDayRange } from "../../utils/date.utils";
+import { getColombiaDayRange, nowInColombia } from "../../utils/date.utils";
 
 export class OrderService implements OrderServiceInterface {
   constructor(
