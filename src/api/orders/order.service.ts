@@ -649,6 +649,7 @@ export class OrderService implements OrderServiceInterface {
    */
   async batchCreateOrders(
     waiterId: string,
+    restaurantId: string | null | undefined,
     data: BatchCreateOrderBodyInput,
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }> {
     const client = getPrismaClient();
@@ -660,7 +661,7 @@ export class OrderService implements OrderServiceInterface {
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
     // Step 0: Ensure there is an open cash closure
-    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+    const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
     if (!activeClosure) {
       throw new CustomError(
         "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",

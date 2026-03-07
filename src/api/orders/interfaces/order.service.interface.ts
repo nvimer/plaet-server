@@ -90,6 +90,7 @@ export interface OrderServiceInterface {
    */
   batchCreateOrders(
     waiterId: string,
+    restaurantId: string | null | undefined,
     data: BatchCreateOrderBodyInput,
   ): Promise<{ orders: OrderWithItems[]; tableTotal: number }>;
   /**

@@ -283,9 +283,9 @@ class OrderController {
    */
   batchCreateOrders = asyncHandler(async (req: Request, res: Response) => {
     const data: BatchCreateOrderBodyInput = req.body;
-    const waiterId = (req.user as AuthenticatedUser).id;
+    const user = req.user as AuthenticatedUser;
 
-    const result = await this.orderService.batchCreateOrders(waiterId, data);
+    const result = await this.orderService.batchCreateOrders(user.id, user.restaurantId, data);
 
     res.status(HttpStatus.CREATED).json({
       success: true,

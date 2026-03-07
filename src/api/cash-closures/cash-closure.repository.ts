@@ -4,12 +4,14 @@ import { OpenCashClosureDto } from "./cash-closure.validator";
 
 export class CashClosureRepository {
   /**
-   * Find current open shift for the active tenant (using automatic filtering)
+   * Find current open shift for the active tenant.
+   * Accepts an optional restaurantId for explicit filtering when context is not reliable.
    */
-  async findCurrentOpen() {
+  async findCurrentOpen(restaurantId?: string) {
     return prisma.cashClosure.findFirst({
       where: {
         status: CashClosureStatus.OPEN,
+        ...(restaurantId && { restaurantId }),
       },
       include: {
         openedBy: {
