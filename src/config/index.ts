@@ -4,7 +4,6 @@ import { logger } from "./logger";
 
 const envSchema = z.object({
   PORT: z.string().default("8080"),
-  API_PORT: z.string().optional(),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -26,36 +25,56 @@ const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
   logger.error(
-    "⚠️ Environment variable validation warning:",
+    "❌ Invalid environment variables:",
     parsedEnv.error.flatten().fieldErrors,
   );
 
-  // In production, we log but don't necessarily crash if we have the critical ones
+  // In production, show specific missing variables
   if (process.env.NODE_ENV === "production") {
-    if (!process.env.DATABASE_URL) {
-      logger.error("❌ CRITICAL: DATABASE_URL is missing. The app WILL fail.");
+    logger.error("🔧 Production Environment - Missing Variables:");
+
+    if (!process.env.JWT_SECRET) {
+      logger.error("❌ JWT_SECRET is required in production");
     }
+    if (!process.env.DATABASE_URL) {
+      logger.error("❌ DATABASE_URL is required in production");
+    }
+    if (!process.env.APP_URL) {
+      logger.error("❌ APP_URL is required in production");
+    }
+    if (!process.env.ALLOWED_ORIGINS) {
+      logger.error("❌ ALLOWED_ORIGINS is required in production");
+    }
+
+    // Log valores actuales (sin secretos)
+    logger.info("📋 Current Environment (sensitive):", {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      DATABASE_URL: process.env.DATABASE_URL ? "SET" : "MISSING",
+      APP_URL: process.env.APP_URL || "MISSING",
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "MISSING",
+      JWT_SECRET_SET: process.env.JWT_SECRET ? "YES" : "NO",
+    });
   }
+
+  throw new Error("Invalid environment variables");
 }
 
-// Extract data with fallbacks to process.env if validation failed
-const envData = parsedEnv.success ? parsedEnv.data : process.env;
-
 export const config = {
-  port: parseInt((envData.API_PORT as string) || "8080", 10),
-  nodeEnv: (envData.NODE_ENV as "development" | "production" | "test") || "production",
-  appUrl: (envData.APP_URL as string) || "https://api.plaet.cloud",
-  databaseUrl: (envData.DATABASE_URL as string) || "",
-  testDatabaseUrl: (envData.TEST_DATABASE_URL as string) || "",
-  jwtSecret: (envData.JWT_SECRET as string) || "default_secret_for_emergency_only_change_in_prod",
-  saltRounds: parseInt((envData.SALT_ROUNDS as string) || "10", 10),
-  jwtAccessExpirationMinutes: parseInt((envData.JWT_ACCESS_EXPIRATION_MINUTES as string) || "30", 10),
-  jwtAccessExpirationDays: parseInt((envData.JWT_ACCESS_EXPIRATION_DAYS as string) || "7", 10),
-  allowedOrigins: (envData.ALLOWED_ORIGINS as string) || "https://plaet.cloud,https://www.plaet.cloud",
+  port: parseInt(parsedEnv.data.PORT, 10),
+  nodeEnv: parsedEnv.data.NODE_ENV,
+  appUrl: parsedEnv.data.APP_URL,
+  databaseUrl: parsedEnv.data.DATABASE_URL,
+  testDatabaseUrl: parsedEnv.data.TEST_DATABASE_URL,
+  jwtSecret: parsedEnv.data.JWT_SECRET,
+  saltRounds: parsedEnv.data.SALT_ROUNDS,
+  jwtAccessExpirationMinutes: parsedEnv.data.JWT_ACCESS_EXPIRATION_MINUTES,
+  jwtAccessExpirationDays: parsedEnv.data.JWT_ACCESS_EXPIRATION_DAYS,
+  allowedOrigins: parsedEnv.data.ALLOWED_ORIGINS,
   // Cloudinary
-  cloudinaryCloudName: envData.CLOUDINARY_CLOUD_NAME as string,
-  cloudinaryApiKey: envData.CLOUDINARY_API_KEY as string,
-  cloudinaryApiSecret: envData.CLOUDINARY_API_SECRET as string,
+  cloudinaryCloudName: parsedEnv.data.CLOUDINARY_CLOUD_NAME,
+  cloudinaryApiKey: parsedEnv.data.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: parsedEnv.data.CLOUDINARY_API_SECRET,
 };
 
 export type AppConfig = typeof config;
