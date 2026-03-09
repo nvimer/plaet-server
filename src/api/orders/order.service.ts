@@ -903,9 +903,18 @@ export class OrderService implements OrderServiceInterface {
     status: OrderItemStatus,
   ): Promise<OrderItem> {
     // 1. Ensure order exists
-    await this.findOrderByIdOrFail(orderId);
+    const order = await this.findOrderByIdOrFail(orderId);
 
-    // 2. Update item status
+    // 2. Validate order is fully paid before allowing kitchen workflow
+    if (order.status !== OrderStatus.PAID) {
+      throw new CustomError(
+        "Debes pagar completamente el pedido antes de enviarlo a cocina",
+        HttpStatus.BAD_REQUEST,
+        "ORDER_NOT_FULLY_PAID",
+      );
+    }
+
+    // 3. Update item status
     return await this.orderRepository.updateItemStatus(orderId, itemId, status);
   }
 }
