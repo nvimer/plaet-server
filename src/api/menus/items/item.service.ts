@@ -1,4 +1,9 @@
-import { MenuItem, StockAdjustment, Prisma } from "@prisma/client";
+import {
+  MenuItem,
+  StockAdjustment,
+  Prisma,
+  StockAdjustmentType,
+} from "@prisma/client";
 import { logger } from "../../../config/logger";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
 import {
@@ -25,10 +30,7 @@ import {
 } from "../../../interfaces/pagination.interfaces";
 import { CustomError } from "../../../types/custom-errors";
 import { HttpStatus } from "../../../utils/httpStatus.enum";
-import {
-  InventoryType,
-  StockAdjustmentType,
-} from "../../../types/prisma.types";
+import { InventoryType } from "../../../types/prisma.types";
 import { PrismaTransaction } from "../../../types/prisma-transaction.types";
 import { getPrismaClient } from "../../../database/prisma";
 import { storageService } from "../../../services/storage.service";
@@ -1047,7 +1049,7 @@ export class ItemService implements ItemServiceInterface {
           id: item.id,
           name: item.name,
           category: item.category?.name,
-          price: item.price,
+          price: Number(item.price),
           inventoryType: item.inventoryType,
           isAvailable: item.isAvailable,
           stockQuantity: item.stockQuantity,
@@ -1095,7 +1097,7 @@ export class ItemService implements ItemServiceInterface {
           inventoryType: InventoryType.TRACKED,
           stockQuantity: {
             gt: 0,
-            lte: client.menuItem.fields.lowStockAlert.default,
+            lte: 5,
           },
         },
       }),

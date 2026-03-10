@@ -1,4 +1,4 @@
-import multer from "multer";
+import multer, { FileFilterCallback } from "multer";
 import { storage } from "../services/storage.service";
 import { Request, Response, NextFunction } from "express";
 import { CustomError } from "../types/custom-errors";
@@ -10,7 +10,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb: FileFilterCallback) => {
     // Basic file type validation
     if (!file.mimetype.match(/^image\/(jpeg|png|webp|jpg)$/)) {
       return cb(
@@ -28,22 +28,31 @@ const upload = multer({
  */
 export const uploadSingle = (fieldName: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    upload.single(fieldName)(req, res, (err: any) => {
-      if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading.
+    upload.single(fieldName)(
+      req,
+      res,
+      (err: Error | string | null | undefined) => {
+        if (!err) {
+          return next();
+        }
+        if (err instanceof multer.MulterError) {
+          // A Multer error occurred when uploading.
+          return next(
+            new CustomError(
+              `File upload error: ${err.message}`,
+              HttpStatus.BAD_REQUEST,
+            ),
+          );
+        }
+        // An unknown error occurred when uploading.
         return next(
           new CustomError(
-            `File upload error: ${err.message}`,
+            typeof err === "string" ? err : err.message,
             HttpStatus.BAD_REQUEST,
           ),
         );
-      } else if (err) {
-        // An unknown error occurred when uploading.
-        return next(new CustomError(err.message, HttpStatus.BAD_REQUEST));
-      }
-      // Everything went fine.
-      next();
-    });
+      },
+    );
   };
 };
 
@@ -55,18 +64,28 @@ export const uploadSingle = (fieldName: string) => {
  */
 export const uploadMultiple = (fieldName: string, maxCount: number = 5) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    upload.array(fieldName, maxCount)(req, res, (err: any) => {
-      if (err instanceof multer.MulterError) {
+    upload.array(fieldName, maxCount)(
+      req,
+      res,
+      (err: Error | string | null | undefined) => {
+        if (!err) {
+          return next();
+        }
+        if (err instanceof multer.MulterError) {
+          return next(
+            new CustomError(
+              `Files upload error: ${err.message}`,
+              HttpStatus.BAD_REQUEST,
+            ),
+          );
+        }
         return next(
           new CustomError(
-            `Files upload error: ${err.message}`,
+            typeof err === "string" ? err : err.message,
             HttpStatus.BAD_REQUEST,
           ),
         );
-      } else if (err) {
-        return next(new CustomError(err.message, HttpStatus.BAD_REQUEST));
-      }
-      next();
-    });
+      },
+    );
   };
 };

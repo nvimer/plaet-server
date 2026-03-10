@@ -1,4 +1,4 @@
-import { Customer, Prisma } from "@prisma/client";
+import { Customer, Prisma, TicketBook } from "@prisma/client";
 
 /**
  * Interface for customer repository operations
@@ -27,6 +27,8 @@ export interface ICustomerRepository {
 
   // Business specific methods
   searchByNameOrPhone(query: string): Promise<Customer[]>;
-  findByPhoneWithActiveTickets(phone: string): Promise<any | null>;
+  findByPhoneWithActiveTickets(
+    phone: string,
+  ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null>;
   findActiveCustomers(): Promise<Customer[]>;
 }

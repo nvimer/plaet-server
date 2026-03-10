@@ -1,4 +1,4 @@
-import { TokenType } from "@prisma/client";
+import { PrismaClient, TokenType } from "@prisma/client";
 import { TestTokenRepository } from "./test-token-repository";
 import {
   connectTestDatabase,
@@ -8,7 +8,7 @@ import {
 
 describe("Token Repository Integration Tests", () => {
   let tokenRepository: TestTokenRepository;
-  let testUser: any;
+  let testUser: Awaited<ReturnType<PrismaClient["user"]["create"]>>;
   const testPrisma = getTestDatabaseClient();
 
   beforeAll(async () => {

@@ -1,6 +1,59 @@
 import { PrismaClient } from "@prisma/client";
 import { tenantContext } from "../utils/tenant-context";
 
+type PrismaModelName =
+  | "user"
+  | "User"
+  | "menuCategory"
+  | "MenuCategory"
+  | "menuItem"
+  | "MenuItem"
+  | "table"
+  | "Table"
+  | "order"
+  | "Order"
+  | "expense"
+  | "Expense"
+  | "cashClosure"
+  | "CashClosure"
+  | "dailyMenu"
+  | "DailyMenu"
+  | "customer"
+  | "Customer"
+  | "permission"
+  | "Permission"
+  | "role"
+  | "Role"
+  | "token"
+  | "Token"
+  | "profile"
+  | "Profile"
+  | "restaurant"
+  | "Restaurant"
+  | "rolePermission"
+  | "RolePermission"
+  | "userRole"
+  | "UserRole"
+  | "orderItem"
+  | "OrderItem"
+  | "payment"
+  | "Payment"
+  | "ticketBook"
+  | "TicketBook"
+  | "ticketBookUsage"
+  | "TicketBookUsage"
+  | "stockAdjustment"
+  | "StockAdjustment";
+
+type DynamicPrismaClient = {
+  [K in PrismaModelName]: K extends Capitalize<K>
+    ? never
+    : {
+        update: (args: unknown) => unknown;
+        updateMany: (args: unknown) => unknown;
+      };
+} & PrismaClient;
+
 const MODELS_WITH_TENANT = [
   "User",
   "MenuCategory",
@@ -38,9 +91,9 @@ export const prisma = prismaClient.$extends({
         const restaurantId = context?.restaurantId;
 
         interface ExtendedArgs {
-          where?: Record<string, any>;
-          data?: Record<string, any>;
-          [key: string]: any;
+          where?: Record<string, unknown>;
+          data?: Record<string, unknown>;
+          [key: string]: unknown;
         }
 
         const extendedArgs = args as ExtendedArgs;
@@ -73,6 +126,7 @@ export const prisma = prismaClient.$extends({
 
           if (operation === "delete") {
             const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (prismaClient as any)[modelKey].update({
               where: extendedArgs.where,
               data: { deleted: true, deletedAt: new Date() },
@@ -81,6 +135,7 @@ export const prisma = prismaClient.$extends({
 
           if (operation === "deleteMany") {
             const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (prismaClient as any)[modelKey].updateMany({
               where: extendedArgs.where,
               data: { deleted: true, deletedAt: new Date() },
@@ -94,7 +149,7 @@ export const prisma = prismaClient.$extends({
   },
 });
 
-export function getPrismaClient(): any {
+export function getPrismaClient(): typeof prisma {
   return prisma;
 }
 

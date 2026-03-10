@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  OrderStatus,
-  OrderType,
-  OrderItemStatus,
-} from "../../types/prisma.types";
+import { OrderStatus, OrderType, OrderItemStatus } from "@prisma/client";
 import { idParamsSchema } from "../../utils/params.schema";
 
 /**

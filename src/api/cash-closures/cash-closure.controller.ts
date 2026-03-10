@@ -30,12 +30,19 @@ export class CashClosureController {
   open = asyncHandler(async (req: Request, res: Response) => {
     const data: OpenCashClosureDto = req.body;
     const user = req.user as AuthenticatedUser;
-    
+
     if (!user.restaurantId) {
-      throw new CustomError("El usuario no tiene un restaurante asociado.", HttpStatus.FORBIDDEN);
+      throw new CustomError(
+        "El usuario no tiene un restaurante asociado.",
+        HttpStatus.FORBIDDEN,
+      );
     }
 
-    const closure = await this.service.openShift(data, user.id, user.restaurantId);
+    const closure = await this.service.openShift(
+      data,
+      user.id,
+      user.restaurantId,
+    );
     res.status(HttpStatus.CREATED).json({ success: true, data: closure });
   });
 

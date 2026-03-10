@@ -44,7 +44,7 @@ export class CashClosureRepository {
   }
 
   /**
-   * Absolute security check: finds an open shift for a specific tenant 
+   * Absolute security check: finds an open shift for a specific tenant
    * bypassing the tenant context filter to ensure no double openings.
    */
   async findCurrentOpenForTenant(restaurantId: string) {
@@ -56,7 +56,9 @@ export class CashClosureRepository {
     });
   }
 
-  async create(data: OpenCashClosureDto & { openedById: string; restaurantId: string }) {
+  async create(
+    data: OpenCashClosureDto & { openedById: string; restaurantId: string },
+  ) {
     return prisma.cashClosure.create({
       data: {
         openingBalance: data.openingBalance,

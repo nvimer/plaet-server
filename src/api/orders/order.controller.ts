@@ -16,7 +16,7 @@ import {
   BatchCreateOrderBodyInput,
   UpdateOrderItemStatusBodyInput,
 } from "./order.validator";
-import { OrderStatus, OrderType } from "../../types/prisma.types";
+import { OrderStatus, OrderType } from "@prisma/client";
 
 class OrderController {
   constructor(private orderService: OrderServiceInterface) {}
@@ -285,7 +285,11 @@ class OrderController {
     const data: BatchCreateOrderBodyInput = req.body;
     const user = req.user as AuthenticatedUser;
 
-    const result = await this.orderService.batchCreateOrders(user.id, user.restaurantId, data);
+    const result = await this.orderService.batchCreateOrders(
+      user.id,
+      user.restaurantId,
+      data,
+    );
 
     res.status(HttpStatus.CREATED).json({
       success: true,

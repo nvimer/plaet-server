@@ -1,16 +1,21 @@
-import { Order, OrderItem, Prisma } from "@prisma/client";
+import {
+  Order,
+  OrderItem,
+  Prisma,
+  OrderStatus,
+  OrderItemStatus,
+} from "@prisma/client";
 import { OrderRepositoryInterface } from "./interfaces/order.repository.interface";
-import { CreateOrderBodyInput, OrderSearchParams } from "./order.validator";
+import {
+  CreateOrderBodyInput,
+  OrderSearchParams,
+  OrderItemInput,
+} from "./order.validator";
 import {
   PaginatedResponse,
   PaginationParams,
 } from "../../interfaces/pagination.interfaces";
-import {
-  OrderStatus,
-  OrderWithItems,
-  OrderWithRelations,
-  OrderItemStatus,
-} from "../../types/prisma.types";
+import { OrderWithItems, OrderWithRelations } from "../../types/prisma.types";
 import { getPrismaClient } from "../../database/prisma";
 import { createPaginatedResponse } from "../../utils/pagination.helper";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
@@ -134,13 +139,13 @@ class OrderRepository implements OrderRepositoryInterface {
         totalAmount: 0,
         createdAt: orderData.createdAt || dateUtils.now(), // Support historical date entry or default to now in CO
         items: {
-          create: items?.map((item) => ({
+          create: items?.map((item: OrderItemInput) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
-            priceAtOrder: (item as any).priceAtOrder || 0,
+            priceAtOrder: item.priceAtOrder || 0,
             notes: item.notes,
-            status: (item as any).status || OrderItemStatus.PENDING,
-            cashClosureId: (orderData as any).cashClosureId,
+            status: OrderItemStatus.PENDING,
+            cashClosureId: orderData.cashClosureId,
             createdAt: orderData.createdAt || dateUtils.now(),
           })),
         },

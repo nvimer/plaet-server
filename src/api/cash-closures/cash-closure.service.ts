@@ -4,6 +4,18 @@ import { CustomError } from "../../types/custom-errors";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { CashClosureStatus, PaymentMethod } from "@prisma/client";
 
+export type CashClosureSummary = {
+  openingBalance: number;
+  cashSales: number;
+  nequiSales: number;
+  totalVouchers?: number;
+  vouchers?: number;
+  totalExpenses: number;
+  expectedBalance: number;
+  openingDate?: Date;
+  closingDate?: Date;
+};
+
 export class CashClosureService {
   private repository: CashClosureRepository;
 
@@ -15,7 +27,7 @@ export class CashClosureService {
     return this.repository.findCurrentOpen();
   }
 
-  async getSummary(id: string) {
+  async getSummary(id: string): Promise<CashClosureSummary> {
     const closure = await this.repository.findById(id);
     if (!closure) throw new CustomError("Not found", HttpStatus.NOT_FOUND);
 
@@ -29,7 +41,7 @@ export class CashClosureService {
         totalExpenses: Number(closure.totalExpenses || 0),
         expectedBalance: Number(closure.expectedBalance || 0),
         openingDate: closure.openingDate,
-        closingDate: closure.closingDate,
+        closingDate: closure.closingDate || undefined,
       };
     }
 
@@ -56,13 +68,18 @@ export class CashClosureService {
     };
   }
 
-  async openShift(data: OpenCashClosureDto, openedById: string, restaurantId: string) {
-    const existingOpen = await this.repository.findCurrentOpenForTenant(restaurantId);
+  async openShift(
+    data: OpenCashClosureDto,
+    openedById: string,
+    restaurantId: string,
+  ) {
+    const existingOpen =
+      await this.repository.findCurrentOpenForTenant(restaurantId);
     if (existingOpen)
       throw new CustomError(
-        "Ya existe un turno de caja abierto para este restaurante.", 
+        "Ya existe un turno de caja abierto para este restaurante.",
         HttpStatus.BAD_REQUEST,
-        "CASH_CLOSURE_ALREADY_OPEN"
+        "CASH_CLOSURE_ALREADY_OPEN",
       );
     return this.repository.create({ ...data, openedById, restaurantId });
   }
@@ -74,9 +91,9 @@ export class CashClosureService {
       expectedBalance: summary.expectedBalance,
       difference: actualBalance - summary.expectedBalance,
       totalCash: summary.cashSales,
-      totalNequi: (summary as any).nequiSales,
+      totalNequi: summary.nequiSales,
       totalExpenses: summary.totalExpenses,
-      totalVouchers: (summary as any).totalVouchers,
+      totalVouchers: summary.totalVouchers || summary.vouchers || 0,
       closedById,
       closingDate: new Date(),
     });

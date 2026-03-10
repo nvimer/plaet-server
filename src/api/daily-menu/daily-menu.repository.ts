@@ -8,7 +8,7 @@ import {
 import { DailyMenu, MenuItem, MenuCategory } from "@prisma/client";
 import { logger } from "../../config/logger";
 import { dateUtils } from "../../utils/date.utils";
-import moment from "moment-timezone";
+import { PaginatedResponse } from "../../interfaces/pagination.interfaces";
 
 /**
  * DailyMenu Repository Implementation - Simplified version
@@ -235,19 +235,22 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
    * Update daily menu for a specific createdAt
    */
 
-  async getHistory(page: number, limit: number): Promise<any> {
+  async getHistory(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<DailyMenuWithRelations>> {
     const skip = (page - 1) * limit;
     const [menus, total] = await Promise.all([
       this.prismaClient.dailyMenu.findMany({
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
-      }),
+      }) as Promise<DailyMenu[]>,
       this.prismaClient.dailyMenu.count(),
     ]);
 
     const builtMenus = await Promise.all(
-      menus.map((m: any) => this.buildWithRelations(m)),
+      menus.map((m: DailyMenu) => this.buildWithRelations(m)),
     );
 
     return {
@@ -257,6 +260,8 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPreviousPage: page > 1,
       },
     };
   }

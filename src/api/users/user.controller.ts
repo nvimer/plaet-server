@@ -35,7 +35,10 @@ class UserController {
 
     const params: PaginationParams = { page, limit };
 
-    const users = await userService.findAll(params, user?.restaurantId || undefined);
+    const users = await userService.findAll(
+      params,
+      user?.restaurantId || undefined,
+    );
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Users fetched successfully",
@@ -77,7 +80,10 @@ class UserController {
       search,
     };
 
-    const users = await userService.searchUsers(params, user?.restaurantId || undefined);
+    const users = await userService.searchUsers(
+      params,
+      user?.restaurantId || undefined,
+    );
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Users search completed successfully",

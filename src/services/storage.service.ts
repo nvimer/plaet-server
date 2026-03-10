@@ -2,24 +2,37 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { config } from "../config";
 import { logger } from "../config/logger";
+import { Request } from "express";
 
-// Configure Cloudinary
-if (
-  config.cloudinaryCloudName &&
-  config.cloudinaryApiKey &&
-  config.cloudinaryApiSecret
-) {
-  cloudinary.config({
-    cloud_name: config.cloudinaryCloudName,
-    api_key: config.cloudinaryApiKey,
-    api_secret: config.cloudinaryApiSecret,
-  });
-  logger.info("✅ Cloudinary configured successfully");
-} else {
-  logger.warn(
-    "⚠️ Cloudinary credentials missing. File uploads will fail or be disabled.",
-  );
+interface CloudinaryStorageParams {
+  folder: string;
+  allowed_formats: string[];
+  transformation: Array<{
+    width?: number;
+    height?: number;
+    crop?: string;
+  }>;
+  params?: {
+    folder: string;
+    allowed_formats: string[];
+    transformation: Array<{
+      width?: number;
+      height?: number;
+      crop?: string;
+    }>;
+  };
 }
+
+const storageConfig: CloudinaryStorageParams = {
+  folder: "plaet/uploads",
+  allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  transformation: [{ width: 1000, height: 1000, crop: "limit" }],
+  params: {
+    folder: "plaet/uploads",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 1000, height: 1000, crop: "limit" }],
+  },
+};
 
 /**
  * Multer storage engine for Cloudinary
@@ -27,15 +40,7 @@ if (
  */
 export const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: (req: any, file: any) => {
-      // Dynamic folder based on route or type?
-      // Simple default: 'plaet/uploads'
-      return "plaet/uploads";
-    },
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-    transformation: [{ width: 1000, height: 1000, crop: "limit" }], // Basic optimization
-  } as any, // Type casting needed due to library type definitions
+  ...storageConfig,
 });
 
 /**

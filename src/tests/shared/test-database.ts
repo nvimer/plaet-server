@@ -111,13 +111,13 @@ const createSoftDeleteHandlers = (modelName: SoftDeleteModelName) => ({
 });
 
 // Singleton test database client
-let testDbClient: any = null;
+let testDbClient: PrismaClient | null = null;
 
 /**
  * Gets or creates the test database client singleton
  * @returns PrismaClient instance configured for testing
  */
-export function getTestDatabaseClient(): any {
+export function getTestDatabaseClient(): PrismaClient {
   if (!testDbClient) {
     testDbClient = new PrismaClient({
       datasources: {

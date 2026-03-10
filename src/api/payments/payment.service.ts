@@ -78,7 +78,7 @@ export class PaymentService {
           throw new CustomError("Customer not found", HttpStatus.NOT_FOUND);
 
         const activeTicket = customer.ticketBooks.find(
-          (tb: any) => tb.consumedPortions < tb.totalPortions,
+          (tb: TicketBook) => tb.consumedPortions < tb.totalPortions,
         );
         if (!activeTicket)
           throw new CustomError(

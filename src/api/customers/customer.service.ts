@@ -1,4 +1,4 @@
-import { Customer, Prisma } from "@prisma/client";
+import { Customer, Prisma, TicketBook } from "@prisma/client";
 import { CustomerRepository } from "./customer.repository";
 import {
   ICustomerService,
@@ -47,7 +47,9 @@ export class CustomerService implements ICustomerService {
     return customer;
   }
 
-  async findByPhoneWithActiveTickets(phone: string): Promise<any | null> {
+  async findByPhoneWithActiveTickets(
+    phone: string,
+  ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null> {
     return await this.customerRepository.findByPhoneWithActiveTickets(phone);
   }
 
@@ -137,9 +139,12 @@ export class CustomerService implements ICustomerService {
       updateData.firstName = data.firstName.trim();
     if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
     if (data.phone !== undefined) updateData.phone = data.phone.trim();
-    if (data.phone2 !== undefined) updateData.phone2 = data.phone2?.trim() || null;
-    if (data.address1 !== undefined) updateData.address1 = data.address1?.trim() || null;
-    if (data.address2 !== undefined) updateData.address2 = data.address2?.trim() || null;
+    if (data.phone2 !== undefined)
+      updateData.phone2 = data.phone2?.trim() || null;
+    if (data.address1 !== undefined)
+      updateData.address1 = data.address1?.trim() || null;
+    if (data.address2 !== undefined)
+      updateData.address2 = data.address2?.trim() || null;
     if (data.email !== undefined) updateData.email = data.email?.trim() || null;
     return await this.customerRepository.update(id, updateData);
   }

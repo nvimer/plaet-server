@@ -1,3 +1,4 @@
+import { PrismaClient } from "@prisma/client";
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import app from "../../../../app";
@@ -9,8 +10,8 @@ import {
 import { config } from "../../../../config";
 
 describe("Customers Integration Tests", () => {
-  let testDb: any;
-  let testUser: any;
+  let testDb: PrismaClient;
+  let testUser: Awaited<ReturnType<typeof testDb.user.findFirst>>;
   let authToken: string;
 
   beforeAll(async () => {
@@ -115,7 +116,7 @@ describe("Customers Integration Tests", () => {
   });
 
   describe("GET /api/v1/customers/:id", () => {
-    let createdCustomer: any;
+    let createdCustomer: Awaited<ReturnType<typeof testDb.customer.create>>;
 
     beforeEach(async () => {
       const uniqueSuffix =

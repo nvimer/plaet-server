@@ -1,4 +1,4 @@
-import { Order, OrderItem } from "@prisma/client";
+import { Order, OrderItem, OrderItemStatus } from "@prisma/client";
 import {
   PaginatedResponse,
   PaginationParams,
@@ -6,7 +6,6 @@ import {
 import {
   OrderWithItems,
   OrderWithRelations,
-  OrderItemStatus,
 } from "../../../types/prisma.types";
 import {
   CreateOrderBodyInput,

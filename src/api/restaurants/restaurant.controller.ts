@@ -8,6 +8,7 @@ import {
   DEFAULT_PAGE,
   DEFAULT_LIMIT,
 } from "../../interfaces/pagination.interfaces";
+import { RestaurantSearchParams } from "./restaurant.validator";
 
 /**
  * Restaurant Controller
@@ -40,7 +41,7 @@ export class RestaurantController {
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
     const search = req.query.search as string;
-    const status = req.query.status as any;
+    const status = req.query.status as RestaurantSearchParams["status"];
 
     const result = await this.restaurantService.searchRestaurants({
       page,

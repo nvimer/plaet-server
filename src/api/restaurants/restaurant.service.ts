@@ -13,6 +13,7 @@ import {
 } from "../../interfaces/pagination.interfaces";
 import { CustomError } from "../../types/custom-errors";
 import { HttpStatus } from "../../utils/httpStatus.enum";
+import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import hasherUtils from "../../utils/hasher.utils";
 import restaurantRepository from "./restaurant.repository";
 
@@ -75,7 +76,7 @@ export class RestaurantService implements RestaurantServiceInterface {
     }
 
     // 3. Create everything in a transaction
-    return prisma.$transaction(async (tx: any) => {
+    return prisma.$transaction(async (tx: PrismaTransaction) => {
       // a. Create Restaurant (using repository logic for slug)
       const restaurant = await this.restaurantRepository.create(restaurantData);
 

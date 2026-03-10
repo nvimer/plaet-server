@@ -73,8 +73,7 @@ class DailyMenuController {
   getHistory = asyncHandler(async (req: Request, res: Response) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.service as any).getHistory(page, limit);
+    const result = await this.service.getHistory(page, limit);
     res.status(HttpStatus.OK).json({
       success: true,
       data: result.data,
@@ -84,8 +83,7 @@ class DailyMenuController {
 
   updateTodayMenu = asyncHandler(async (req: Request, res: Response) => {
     const data: UpdateDailyMenuBodyInput = req.body;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const menu = await this.service.updateTodayMenu(data as any);
+    const menu = await this.service.updateTodayMenu(data);
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -103,11 +101,7 @@ class DailyMenuController {
     const createdAt = moment.tz(date, "America/Bogota").startOf("day").toDate();
     const data: UpdateDailyMenuBodyInput = req.body;
 
-    const menu = await this.service.updateMenuByCreatedAt(
-      createdAt,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data as any,
-    );
+    const menu = await this.service.updateMenuByCreatedAt(createdAt, data);
 
     res.status(HttpStatus.OK).json({
       success: true,

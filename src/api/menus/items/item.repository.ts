@@ -1,4 +1,9 @@
-import { MenuItem, Prisma, StockAdjustment } from "@prisma/client";
+import {
+  MenuItem,
+  Prisma,
+  StockAdjustment,
+  StockAdjustmentType,
+} from "@prisma/client";
 import { ItemRepositoryInterface } from "./interfaces/item.repository.interface";
 import {
   CreateItemInput,
@@ -12,10 +17,7 @@ import {
   PaginatedResponse,
 } from "../../../interfaces/pagination.interfaces";
 import { createPaginatedResponse } from "../../../utils/pagination.helper";
-import {
-  InventoryType,
-  StockAdjustmentType,
-} from "../../../types/prisma.types";
+import { InventoryType } from "../../../types/prisma.types";
 import { PrismaTransaction } from "../../../types/prisma-transaction.types";
 
 class ItemRepository implements ItemRepositoryInterface {
@@ -438,11 +440,11 @@ class ItemRepository implements ItemRepositoryInterface {
       movementsByDay[dayName] = { entradas: 0, salidas: 0 };
     }
 
-    const entryTypes = [
+    const entryTypes: StockAdjustmentType[] = [
       StockAdjustmentType.MANUAL_ADD,
       StockAdjustmentType.DAILY_RESET,
     ];
-    const exitTypes = [
+    const exitTypes: StockAdjustmentType[] = [
       StockAdjustmentType.MANUAL_REMOVE,
       StockAdjustmentType.ORDER_DEDUCT,
     ];
@@ -455,9 +457,11 @@ class ItemRepository implements ItemRepositoryInterface {
         movementsByDay[dayName] = { entradas: 0, salidas: 0 };
       }
 
-      if (entryTypes.includes(adj.adjustmentType as any)) {
+      if (entryTypes.includes(adj.adjustmentType as StockAdjustmentType)) {
         movementsByDay[dayName].entradas += adj.quantity;
-      } else if (exitTypes.includes(adj.adjustmentType as any)) {
+      } else if (
+        exitTypes.includes(adj.adjustmentType as StockAdjustmentType)
+      ) {
         movementsByDay[dayName].salidas += adj.quantity;
       } else if (adj.adjustmentType === "ORDER_CANCELLED") {
         movementsByDay[dayName].entradas += adj.quantity;

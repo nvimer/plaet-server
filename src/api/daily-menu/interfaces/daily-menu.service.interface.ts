@@ -90,6 +90,9 @@ export interface UpdateDailyMenuInput {
  * DailyMenu Service Interface
  * Contract for business logic layer
  */
+import { PaginatedResponse } from "../../../interfaces/pagination.interfaces";
+import { DailyMenuWithRelations } from "./daily-menu.repository.interface";
+
 export interface DailyMenuServiceInterface {
   /**
    * Get today's daily menu with full item details
@@ -103,6 +106,17 @@ export interface DailyMenuServiceInterface {
    * @returns Menu for the specified date or null
    */
   getMenuByCreatedAt(createdAt: Date): Promise<DailyMenuResponse | null>;
+
+  /**
+   * Get history of daily menus with pagination
+   * @param page - Page number
+   * @param limit - Items per page
+   * @returns Paginated list of daily menus
+   */
+  getHistory(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<DailyMenuResponse>>;
 
   /**
    * Update or create daily menu for today

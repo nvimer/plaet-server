@@ -1,4 +1,4 @@
-import { Customer } from "@prisma/client";
+import { Customer, TicketBook } from "@prisma/client";
 
 export interface CreateCustomerData {
   firstName: string;
@@ -49,7 +49,9 @@ export interface ICustomerService {
   createCustomer(data: CreateCustomerData): Promise<Customer>;
   getCustomerById(id: string): Promise<Customer | null>;
   getCustomerByPhone(phone: string): Promise<Customer | null>;
-  findByPhoneWithActiveTickets(phone: string): Promise<any | null>;
+  findByPhoneWithActiveTickets(
+    phone: string,
+  ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null>;
 
   // Search and listing
   searchCustomers(

@@ -20,7 +20,7 @@ export const dateUtils = {
   /**
    * Normalizes any date to the start of its day in Colombia
    */
-  startOfDay: (date: string | Date | number): Date => 
+  startOfDay: (date: string | Date | number): Date =>
     moment.tz(date, COLOMBIA_TZ).startOf("day").toDate(),
 
   /**
@@ -37,6 +37,6 @@ export const dateUtils = {
   /**
    * Formats to YYYY-MM-DD specifically for DB keys or logs
    */
-  toKey: (date: Date | string): string => 
-    moment.tz(date, COLOMBIA_TZ).format("YYYY-MM-DD")
+  toKey: (date: Date | string): string =>
+    moment.tz(date, COLOMBIA_TZ).format("YYYY-MM-DD"),
 };

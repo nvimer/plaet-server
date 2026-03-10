@@ -4,6 +4,7 @@
  */
 
 import { DailyMenu, MenuCategory, MenuItem } from "@prisma/client";
+import { PaginatedResponse } from "../../../interfaces/pagination.interfaces";
 
 /**
  * DailyMenu with all item relations populated
@@ -118,6 +119,14 @@ export interface DailyMenuRepositoryInterface {
     createdAt: Date,
     data: UpdateDailyMenuData,
   ): Promise<DailyMenuWithRelations>;
+
+  /**
+   * Get history of daily menus with pagination
+   */
+  getHistory(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<DailyMenuWithRelations>>;
 
   /**
    * Fetch menu items by their IDs

@@ -1,4 +1,4 @@
-import { Customer, Prisma } from "@prisma/client";
+import { Customer, Prisma, TicketBook } from "@prisma/client";
 import { getPrismaClient } from "../../database/prisma";
 import { ICustomerRepository } from "./interfaces/customer.repository.interface";
 
@@ -97,7 +97,9 @@ export class CustomerRepository implements ICustomerRepository {
     });
   }
 
-  async findByPhoneWithActiveTickets(phone: string): Promise<any | null> {
+  async findByPhoneWithActiveTickets(
+    phone: string,
+  ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null> {
     return await this.prisma.customer.findFirst({
       where: {
         deleted: false,
