@@ -38,9 +38,10 @@ app.use(cookieParser());
 const whitelist = [
   `http://localhost:${port}`,
   "http://localhost:5173",
-  "https://www.plaet.cloud",
-  "https://plaet.cloud",
-  ...config.allowedOrigins.split(",").map((origin) => origin.trim()),
+  ...config.allowedOrigins
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0),
 ];
 
 const corsOptions: CorsOptions = {
