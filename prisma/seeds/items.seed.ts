@@ -158,7 +158,14 @@ const sazonarteItems = [
     name: "Sierra Frita",
     price: 7000,
     description:
-      "Rodaja de pescado Sierra fresco, marinado en limón y ajo, frito hasta quedar crocante por fuera y tierno por dentro.",
+      "Rodaja de pescado Sierra fresco, marinado en limón y ajo, frita hasta quedar crocante por fuera y tierno por dentro.",
+  },
+  {
+    categoryName: "Proteínas",
+    name: "Res a la Plancha",
+    price: 7000,
+    description:
+      "Corte magro de res premium, sazonado con sal marina y pimienta negra, asado a la plancha en su propio jugo para una textura tierna y un sabor auténtico.",
   },
 
   // Bebidas

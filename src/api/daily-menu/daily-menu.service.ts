@@ -48,7 +48,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
     return {
       id: menu.id,
       isActive: menu.isActive ?? true,
-      basePrice: Number(menu.basePrice ?? 4000), // Base margin (e.g., $4,000)
+      basePrice: Number(menu.basePrice ?? 3000), // Base margin (e.g., $3,000)
       packagingFee: Number(menu.packagingFee ?? 1000), // Packaging cost
       createdAt: menu.createdAt,
       updatedAt: menu.updatedAt || new Date(),
