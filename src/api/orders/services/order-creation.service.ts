@@ -362,13 +362,31 @@ export class OrderCreationService {
           waiterId,
           {
             ...cleanData,
-            items: itemsWithBasePrice,
+            status: data.status || OrderStatus.OPEN,
+            items: itemsWithBasePrice.map(item => ({
+              ...item,
+              status: data.itemStatus || item.status
+            })),
             customerId: customerId ?? undefined,
             cashClosureId: closureId,
           },
           tx,
         );
         orderId = order.id;
+
+        // If order is created as PAID (Fast Historical Entry), create a matching payment record
+        if (data.status === OrderStatus.PAID) {
+          const totalAmount = itemsWithBasePrice.reduce((sum, item) => sum + (item.priceAtOrder || 0) * item.quantity, 0);
+          await tx.payment.create({
+            data: {
+              orderId,
+              amount: totalAmount,
+              method: "CASH",
+              cashClosureId: closureId || null,
+              createdAt: orderDate,
+            }
+          });
+        }
 
         if (data.type === "DINE_IN" && data.tableId) {
           await tx.table.update({
@@ -509,6 +527,7 @@ export class OrderCreationService {
             notes: "Group Order",
             createdAt: firstSubOrder.createdAt || dateUtils.now(),
             cashClosureId: closureId,
+            status: firstSubOrder.status || OrderStatus.OPEN,
           } as CreateOrderBodyInput,
           tx,
         );
@@ -550,7 +569,21 @@ export class OrderCreationService {
             0,
           );
 
-        tableTotal += serviceAmount + manualItemsAmount;
+        const subOrderTotal = serviceAmount + manualItemsAmount;
+        tableTotal += subOrderTotal;
+
+        // If subOrder is marked as PAID, create a corresponding payment
+        if (subOrder.status === OrderStatus.PAID) {
+          await tx.payment.create({
+            data: {
+              orderId: masterOrderId,
+              amount: subOrderTotal,
+              method: "CASH",
+              cashClosureId: closureId || null,
+              createdAt: subOrder.createdAt || dateUtils.now(),
+            }
+          });
+        }
 
         const proteinCategoryId = dailyMenu?.proteinCategoryId;
         const subProteinsWithPrices = subOrder.items
@@ -585,7 +618,7 @@ export class OrderCreationService {
               quantity: item.quantity,
               priceAtOrder: itemPrice + (isMainProtein ? basePrice : 0),
               notes: item.notes ?? null,
-              status: this.determineItemStatus(
+              status: subOrder.itemStatus || this.determineItemStatus(
                 item.menuItemId ?? null,
                 dailyMenu,
                 isMainProtein,

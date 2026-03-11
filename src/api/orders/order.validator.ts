@@ -90,6 +90,8 @@ export const createOrderSchema = z.object({
       .optional(),
     createdAt: z.coerce.date().optional(),
     cashClosureId: z.string().uuid().optional(),
+    status: orderStatusEnum.optional(),
+    itemStatus: orderItemStatusEnum.optional(),
   }),
 });
 
@@ -169,6 +171,8 @@ export const batchCreateOrderSchema = z.object({
             .max(1000, "Notes cannot exceed 1000 characters")
             .optional(),
           createdAt: z.coerce.date().optional(),
+          status: orderStatusEnum.optional(),
+          itemStatus: orderItemStatusEnum.optional(),
         }),
       )
       .min(1, "At least one order must be provided")
