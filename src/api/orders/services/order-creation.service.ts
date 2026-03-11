@@ -198,13 +198,22 @@ export class OrderCreationService {
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
-    const activeClosure = await this.cashClosureRepo.findCurrentOpen();
-    if (!activeClosure) {
-      throw new CustomError(
-        "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
-        HttpStatus.BAD_REQUEST,
-        "CASH_CLOSURE_REQUIRED",
-      );
+    const isHistorical = data.createdAt && dateUtils.startOfDay(data.createdAt).getTime() < dateUtils.today().getTime();
+    let closureId: string | undefined;
+
+    if (isHistorical) {
+      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(new Date(data.createdAt!), restaurantId || undefined);
+      closureId = historicalClosure?.id;
+    } else {
+      const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
+      if (!activeClosure) {
+        throw new CustomError(
+          "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
+          HttpStatus.BAD_REQUEST,
+          "CASH_CLOSURE_REQUIRED",
+        );
+      }
+      closureId = activeClosure.id;
     }
 
     const menuItemsPromises = data.items.map((item) =>
@@ -355,7 +364,7 @@ export class OrderCreationService {
             ...cleanData,
             items: itemsWithBasePrice,
             customerId: customerId ?? undefined,
-            cashClosureId: activeClosure.id,
+            cashClosureId: closureId,
           },
           tx,
         );
@@ -435,15 +444,22 @@ export class OrderCreationService {
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
     const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 0;
 
-    const activeClosure = await this.cashClosureRepo.findCurrentOpen(
-      restaurantId || undefined,
-    );
-    if (!activeClosure) {
-      throw new CustomError(
-        "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
-        HttpStatus.BAD_REQUEST,
-        "CASH_CLOSURE_REQUIRED",
-      );
+    const isHistorical = firstSubOrder.createdAt && dateUtils.startOfDay(firstSubOrder.createdAt).getTime() < dateUtils.today().getTime();
+    let closureId: string | undefined;
+
+    if (isHistorical) {
+      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(new Date(firstSubOrder.createdAt!), restaurantId || undefined);
+      closureId = historicalClosure?.id;
+    } else {
+      const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
+      if (!activeClosure) {
+        throw new CustomError(
+          "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
+          HttpStatus.BAD_REQUEST,
+          "CASH_CLOSURE_REQUIRED",
+        );
+      }
+      closureId = activeClosure.id;
     }
 
     const existingOrder = data.tableId
@@ -492,7 +508,7 @@ export class OrderCreationService {
             items: [],
             notes: "Group Order",
             createdAt: firstSubOrder.createdAt || dateUtils.now(),
-            cashClosureId: activeClosure.id,
+            cashClosureId: closureId,
           } as CreateOrderBodyInput,
           tx,
         );

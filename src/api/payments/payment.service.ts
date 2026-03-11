@@ -13,6 +13,7 @@ import { IPaymentRepository } from "./interfaces/payment.repository.interface";
 import { CustomerRepository } from "../customers/customer.repository";
 import { ICustomerRepository } from "../customers/interfaces/customer.repository.interface";
 import { CashClosureRepository } from "../cash-closures/cash-closure.repository";
+import { dateUtils } from "../../utils/date.utils";
 
 export class PaymentService {
   private prisma = getPrismaClient();
@@ -41,14 +42,26 @@ export class PaymentService {
       if (!order)
         throw new CustomError("Order not found", HttpStatus.NOT_FOUND);
 
-      // 0. Ensure there is an open cash closure
-      const activeClosure = await this.cashClosureRepo.findCurrentOpen();
-      if (!activeClosure) {
-        throw new CustomError(
-          "No hay un turno de caja abierto. Por favor abre caja antes de registrar pagos.",
-          HttpStatus.BAD_REQUEST,
-          "CASH_CLOSURE_REQUIRED",
-        );
+      // 0. Ensure there is a valid cash closure
+      let closureId: string | undefined;
+      const orderDate = new Date(order.createdAt);
+      const isHistorical = dateUtils.startOfDay(orderDate).getTime() < dateUtils.today().getTime();
+
+      if (isHistorical) {
+        // For historical orders, try to find a closure on that day, but don't block if not found
+        const historicalClosure = await this.cashClosureRepo.findActiveOnDate(orderDate);
+        closureId = historicalClosure?.id;
+      } else {
+        // For real-time payments, strictly require an OPEN closure
+        const activeClosure = await this.cashClosureRepo.findCurrentOpen();
+        if (!activeClosure) {
+          throw new CustomError(
+            "No hay un turno de caja abierto. Por favor abre caja antes de registrar pagos.",
+            HttpStatus.BAD_REQUEST,
+            "CASH_CLOSURE_REQUIRED",
+          );
+        }
+        closureId = activeClosure.id;
       }
 
       // 1. Create the payment record first to get the ID
@@ -58,7 +71,7 @@ export class PaymentService {
           method: data.method,
           amount: data.amount,
           transactionRef: data.transactionRef,
-          cashClosureId: activeClosure.id,
+          cashClosureId: closureId,
         },
         tx,
       );

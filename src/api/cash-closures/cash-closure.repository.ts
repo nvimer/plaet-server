@@ -56,6 +56,34 @@ export class CashClosureRepository {
     });
   }
 
+  /**
+   * Finds a cash closure that was active on a specific date.
+   * Useful for historical order association.
+   */
+  async findActiveOnDate(date: Date, restaurantId?: string) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const where: any = {
+      openingDate: {
+        gte: start,
+        lte: end,
+      },
+    };
+
+    if (restaurantId) {
+      where.restaurantId = restaurantId;
+    }
+
+    // Try to find an open one first (if looking for today), otherwise any closure on that day
+    return prisma.cashClosure.findFirst({
+      where,
+      orderBy: { openingDate: "desc" },
+    });
+  }
+
   async create(
     data: OpenCashClosureDto & { openedById: string; restaurantId: string },
   ) {
