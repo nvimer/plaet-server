@@ -78,20 +78,8 @@ export class OrderCreationService {
     menuItems: MenuItem[],
     dailyMenu: DailyMenuWithRelations | null,
   ): number {
-    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 3000;
-    let proteinCategoryId = dailyMenu?.proteinCategoryId;
-
-    // Fallback: If no daily menu, try to identify protein category from menu items
-    if (!proteinCategoryId && menuItems.length > 0) {
-      const proteinItem = menuItems.find(
-        (mi) => mi.name.toLowerCase().includes("res") || 
-                mi.name.toLowerCase().includes("pollo") || 
-                mi.name.toLowerCase().includes("chuleta")
-      );
-      if (proteinItem) {
-        proteinCategoryId = proteinItem.categoryId;
-      }
-    }
+    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
+    const proteinCategoryId = dailyMenu?.proteinCategoryId;
 
     const proteinItems = items
       .map((item) => {
@@ -100,7 +88,7 @@ export class OrderCreationService {
       })
       .filter(
         (item) =>
-          item.menuItem && item.menuItem.categoryId === proteinCategoryId,
+          proteinCategoryId && item.menuItem && item.menuItem.categoryId === proteinCategoryId,
       )
       .sort((a, b) => b.price - a.price);
 
@@ -208,7 +196,7 @@ export class OrderCreationService {
       ? dateUtils.startOfDay(data.createdAt)
       : dateUtils.now();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
-    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 3000;
+    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
 
     const isHistorical = data.createdAt && dateUtils.startOfDay(data.createdAt).getTime() < dateUtils.today().getTime();
     let closureId: string | undefined;
@@ -281,15 +269,7 @@ export class OrderCreationService {
         orderId = existingOrder.id;
         currentTotal = Number(existingOrder.totalAmount);
 
-        let proteinCategoryId = dailyMenu?.proteinCategoryId;
-        if (!proteinCategoryId) {
-          const proteinItem = menuItems.find(
-            (mi) => mi && (mi.name.toLowerCase().includes("res") || 
-                    mi.name.toLowerCase().includes("pollo") || 
-                    mi.name.toLowerCase().includes("chuleta"))
-          );
-          if (proteinItem) proteinCategoryId = proteinItem.categoryId;
-        }
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
 
         const proteinItems = data.items
           .map((item, index) => ({
@@ -350,15 +330,7 @@ export class OrderCreationService {
           ...cleanData
         } = data as OrderCreateData;
 
-        let proteinCategoryId = dailyMenu?.proteinCategoryId;
-        if (!proteinCategoryId) {
-          const proteinItem = menuItems.find(
-            (mi) => mi && (mi.name.toLowerCase().includes("res") || 
-                    mi.name.toLowerCase().includes("pollo") || 
-                    mi.name.toLowerCase().includes("chuleta"))
-          );
-          if (proteinItem) proteinCategoryId = proteinItem.categoryId;
-        }
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
 
         const proteinItems = data.items
           .map((item, index) => ({
@@ -490,7 +462,7 @@ export class OrderCreationService {
       ? dateUtils.startOfDay(firstSubOrder.createdAt)
       : dateUtils.today();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
-    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) : 3000;
+    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
 
     const isHistorical = firstSubOrder.createdAt && dateUtils.startOfDay(firstSubOrder.createdAt).getTime() < dateUtils.today().getTime();
     let closureId: string | undefined;
@@ -615,15 +587,7 @@ export class OrderCreationService {
           });
         }
 
-        let proteinCategoryId = dailyMenu?.proteinCategoryId;
-        if (!proteinCategoryId) {
-          const proteinItem = menuItems.find(
-            (mi) => mi.name.toLowerCase().includes("res") || 
-                    mi.name.toLowerCase().includes("pollo") || 
-                    mi.name.toLowerCase().includes("chuleta")
-          );
-          if (proteinItem) proteinCategoryId = proteinItem.categoryId;
-        }
+        const proteinCategoryId = dailyMenu?.proteinCategoryId;
 
         const subProteinsWithPrices = subOrder.items
           .map((item, idx) => {
