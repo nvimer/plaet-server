@@ -17,6 +17,7 @@ import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import hasherUtils from "../../utils/hasher.utils";
 import restaurantRepository from "./restaurant.repository";
 import { EmailService } from "../../config/email";
+import { logger } from "../../config/logger";
 
 /**
  * Restaurant Service
@@ -121,11 +122,13 @@ export class RestaurantService implements RestaurantServiceInterface {
       return restaurant;
     });
 
-    // 5. Send invitation email (after transaction success)
-    await EmailService.sendRestaurantInvitationEmail(adminUser.email, {
+    // 5. Send invitation email (Fire and forget to not block the response)
+    EmailService.sendRestaurantInvitationEmail(adminUser.email, {
       name: adminUser.firstName,
       restaurantName: restaurant.name,
       tempPassword: tempPassword,
+    }).catch(err => {
+      logger.error(`[RESTAURANT] Failed to send background invitation email to ${adminUser.email}:`, err);
     });
 
     return restaurant;
