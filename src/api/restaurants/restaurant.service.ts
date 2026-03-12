@@ -16,6 +16,7 @@ import { HttpStatus } from "../../utils/httpStatus.enum";
 import { PrismaTransaction } from "../../types/prisma-transaction.types";
 import hasherUtils from "../../utils/hasher.utils";
 import restaurantRepository from "./restaurant.repository";
+import { EmailService } from "../../config/email";
 
 /**
  * Restaurant Service
@@ -75,8 +76,11 @@ export class RestaurantService implements RestaurantServiceInterface {
       );
     }
 
-    // 3. Create everything in a transaction
-    return prisma.$transaction(async (tx: PrismaTransaction) => {
+    // 3. Generate temp password if not provided
+    const tempPassword = adminUser.password || hasherUtils.generateTempPassword();
+
+    // 4. Create everything in a transaction
+    const restaurant = await prisma.$transaction(async (tx: PrismaTransaction) => {
       // a. Create Restaurant (using repository logic for slug)
       const restaurant = await this.restaurantRepository.create(restaurantData);
 
@@ -94,7 +98,7 @@ export class RestaurantService implements RestaurantServiceInterface {
       }
 
       // c. Create Admin User
-      const hashedPassword = hasherUtils.hash(adminUser.password);
+      const hashedPassword = hasherUtils.hash(tempPassword);
       const user = await tx.user.create({
         data: {
           firstName: adminUser.firstName,
@@ -116,6 +120,15 @@ export class RestaurantService implements RestaurantServiceInterface {
 
       return restaurant;
     });
+
+    // 5. Send invitation email (after transaction success)
+    await EmailService.sendRestaurantInvitationEmail(adminUser.email, {
+      name: adminUser.firstName,
+      restaurantName: restaurant.name,
+      tempPassword: tempPassword,
+    });
+
+    return restaurant;
   }
 
   async updateRestaurant(

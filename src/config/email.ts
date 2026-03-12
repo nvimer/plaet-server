@@ -131,4 +131,76 @@ export class EmailService {
       throw error;
     }
   }
+
+  /**
+   * Send welcome invitation email to a new restaurant admin
+   *
+   * @param to - Recipient email
+   * @param data - Invitation data (name, restaurantName, tempPassword)
+   */
+  static async sendRestaurantInvitationEmail(
+    to: string,
+    data: {
+      name: string;
+      restaurantName: string;
+      tempPassword: string;
+    },
+  ): Promise<void> {
+    const loginUrl = `${config.clientUrl}/login`;
+    const subject = `Bienvenido a Plaet - Credenciales para ${data.restaurantName}`;
+    
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">¡Bienvenido a Plaet!</h1>
+        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+          Hola <strong>${data.name}</strong>, se ha creado una cuenta administrativa para <strong>${data.restaurantName}</strong>.
+        </p>
+        
+        <div style="background-color: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+          <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px;">Tus credenciales de acceso son:</p>
+          <p style="margin: 0 0 5px 0; font-family: monospace; font-size: 16px;"><strong>Email:</strong> ${to}</p>
+          <p style="margin: 0; font-family: monospace; font-size: 16px;"><strong>Contraseña Temporal:</strong> ${data.tempPassword}</p>
+        </div>
+
+        <a href="${loginUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Acceder al Panel</a>
+        
+        <p style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 24px;">Importante:</p>
+        <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión desde tu perfil.</p>
+      </div>
+    `;
+
+    const text = `
+      Bienvenido a Plaet
+
+      Hola ${data.name}, se ha creado una cuenta administrativa para ${data.restaurantName}.
+
+      Tus credenciales de acceso son:
+      Email: ${to}
+      Contraseña Temporal: ${data.tempPassword}
+
+      Accede aquí: ${loginUrl}
+
+      Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
+    `;
+
+    if (config.nodeEnv === "development" && !config.smtp.user) {
+      logger.info("[EMAIL] Restaurant Invitation email (development mode):");
+      logger.info(`To: ${to}, Temp Pass: ${data.tempPassword}`);
+      return;
+    }
+
+    try {
+      await transporter.sendMail({
+        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
+        to,
+        subject,
+        html,
+        text,
+      });
+      logger.info(`[EMAIL] Invitation email sent to ${to}`);
+    } catch (error) {
+      logger.error("[EMAIL] Failed to send invitation email:", error);
+      // We don't throw here to not break the restaurant creation transaction
+    }
+  }
 }

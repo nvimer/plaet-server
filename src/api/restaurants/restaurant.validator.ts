@@ -32,7 +32,8 @@ export const createRestaurantSchema = z.object({
         .optional(),
       password: z
         .string()
-        .min(8, "Password must be at least 8 characters long"),
+        .min(8, "Password must be at least 8 characters long")
+        .optional(),
     }),
   }),
 });
