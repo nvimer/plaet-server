@@ -31,6 +31,14 @@ const envSchema = z.object({
 
 const parsedEnv = envSchema.safeParse(process.env);
 
+/**
+ * Clean environment values (remove literal quotes and whitespace)
+ */
+const cleanEnvValue = (value: string | undefined): string | undefined => {
+  if (!value) return value;
+  return value.trim().replace(/^["']|["']$/g, "");
+};
+
 if (!parsedEnv.success) {
   logger.error(
     "❌ Invalid environment variables:",
@@ -74,7 +82,7 @@ export const config = {
   appUrl: parsedEnv.data.APP_URL,
   databaseUrl: parsedEnv.data.DATABASE_URL,
   testDatabaseUrl: parsedEnv.data.TEST_DATABASE_URL,
-  jwtSecret: parsedEnv.data.JWT_SECRET,
+  jwtSecret: cleanEnvValue(parsedEnv.data.JWT_SECRET)!,
   saltRounds: parsedEnv.data.SALT_ROUNDS,
   jwtAccessExpirationMinutes: parsedEnv.data.JWT_ACCESS_EXPIRATION_MINUTES,
   jwtAccessExpirationDays: parsedEnv.data.JWT_ACCESS_EXPIRATION_DAYS,
@@ -85,14 +93,14 @@ export const config = {
   cloudinaryApiSecret: parsedEnv.data.CLOUDINARY_API_SECRET,
   // SMTP
   smtp: {
-    host: parsedEnv.data.SMTP_HOST,
+    host: cleanEnvValue(parsedEnv.data.SMTP_HOST),
     port: parsedEnv.data.SMTP_PORT,
-    user: parsedEnv.data.SMTP_USER,
-    pass: parsedEnv.data.SMTP_PASS,
-    secure: parsedEnv.data.SMTP_SECURE === "true",
-    from: parsedEnv.data.FROM_EMAIL,
+    user: cleanEnvValue(parsedEnv.data.SMTP_USER),
+    pass: cleanEnvValue(parsedEnv.data.SMTP_PASS),
+    secure: cleanEnvValue(parsedEnv.data.SMTP_SECURE) === "true",
+    from: cleanEnvValue(parsedEnv.data.FROM_EMAIL),
   },
-  clientUrl: parsedEnv.data.CLIENT_URL || parsedEnv.data.APP_URL,
+  clientUrl: cleanEnvValue(parsedEnv.data.CLIENT_URL) || cleanEnvValue(parsedEnv.data.APP_URL),
 };
 
 export type AppConfig = typeof config;
