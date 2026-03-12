@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import type { Options } from "nodemailer/lib/smtp-transport";
 import { logger } from "./logger";
 import { config } from "./index";
 
@@ -7,7 +8,7 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-const transporter = nodemailer.createTransport({
+const smtpOptions: Options = {
   host: config.smtp.host || "smtp.example.com",
   port: config.smtp.port || 587,
   secure: config.smtp.secure,
@@ -16,10 +17,14 @@ const transporter = nodemailer.createTransport({
     pass: config.smtp.pass || "",
   },
   // Force IPv4 to avoid ENETUNREACH errors on environments with broken IPv6
+  // @ts-expect-error: family is a valid socket option in nodemailer but not explicitly in Options type for some versions
+  family: 4,
   connectionTimeout: 10000, // 10 seconds
   greetingTimeout: 10000,
   socketTimeout: 15000,
-} as any); // Cast to any to allow nodemailer-specific family/proxy options if needed
+};
+
+const transporter = nodemailer.createTransport(smtpOptions);
 
 // Verify connection configuration on startup
 if (config.smtp.user && config.smtp.host) {
