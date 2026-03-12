@@ -10,10 +10,9 @@ import { seedItems } from "./seeds/items.seed";
 const prisma = new PrismaClient();
 
 async function main() {
-  logger.info("🚀 Starting database seeding...\n");
+  logger.info("🚀 Starting database seeding (Infrastructure only)...\n");
 
   try {
-    await seedRestaurants();
     await seedPermissions();
     logger.info("");
 
@@ -23,13 +22,7 @@ async function main() {
     await seedUsers();
     logger.info("");
 
-    await seedCategories();
-    logger.info("");
-
-    await seedItems();
-    logger.info("");
-
-    logger.info("🎉 Database seeding completed successfully!");
+    logger.info("🎉 Database infrastructure seeding completed successfully!");
   } catch (error) {
     logger.error("❌ Error during seeding:", error);
     throw error;

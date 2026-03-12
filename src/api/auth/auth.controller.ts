@@ -53,7 +53,7 @@ class AuthController {
     try {
       const verificationToken =
         await this.tokenService.generateEmailVerificationToken(newUser.id);
-      const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+      const clientUrl = config.clientUrl || "http://localhost:5173";
       const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
       await EmailService.sendVerificationEmail(
@@ -198,7 +198,7 @@ class AuthController {
         );
 
         // Build reset URL
-        const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+        const clientUrl = config.clientUrl || "http://localhost:5173";
         const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
 
         // Send email
@@ -329,7 +329,7 @@ class AuthController {
           await this.tokenService.generateEmailVerificationToken(user.id);
 
         // Build verification URL
-        const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+        const clientUrl = config.clientUrl || "http://localhost:5173";
         const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
         // Send email

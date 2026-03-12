@@ -39,7 +39,18 @@ export class AuthService implements AuthServiceInterface {
    * the provided password matches the stored hashed password.
    */
   async login(data: LoginInput): Promise<User> {
-    const user = await this.userService.findByEmail(data.email);
+    let user: User;
+    
+    try {
+      user = await this.userService.findByEmail(data.email);
+    } catch (error) {
+      // Return generic error even if email is not found
+      throw new CustomError(
+        "Email o contraseña incorrectos",
+        HttpStatus.BAD_REQUEST,
+        "INVALID_CREDENTIALS",
+      );
+    }
 
     // Check if account is locked
     const now = new Date();
@@ -49,7 +60,7 @@ export class AuthService implements AuthServiceInterface {
         (lockedUntil.getTime() - now.getTime()) / (1000 * 60),
       );
       throw new CustomError(
-        `Account is locked. Try again in ${minutesLeft} minutes.`,
+        `La cuenta está bloqueada. Intenta de nuevo en ${minutesLeft} minutos.`,
         HttpStatus.LOCKED,
         "ACCOUNT_LOCKED",
       );
@@ -65,9 +76,9 @@ export class AuthService implements AuthServiceInterface {
       await this.handleFailedLogin(user.id);
 
       throw new CustomError(
-        "Invalid credentials",
+        "Email o contraseña incorrectos",
         HttpStatus.BAD_REQUEST,
-        "BAD_REQUEST",
+        "INVALID_CREDENTIALS",
       );
     }
 

@@ -1,25 +1,19 @@
 import nodemailer from "nodemailer";
 import { logger } from "./logger";
+import { config } from "./index";
 
 /**
  * Email Service Configuration
- *
- * For production, configure with actual SMTP credentials:
- * - SMTP_HOST
- * - SMTP_PORT
- * - SMTP_USER
- * - SMTP_PASS
- *
- * For development, emails are logged to console.
+ * Uses centralized config from src/config/index.ts
  */
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.example.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
+  host: config.smtp.host || "smtp.example.com",
+  port: config.smtp.port || 587,
+  secure: config.smtp.secure,
   auth: {
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
+    user: config.smtp.user || "",
+    pass: config.smtp.pass || "",
   },
 });
 
@@ -39,42 +33,39 @@ export class EmailService {
     resetToken: string,
     resetUrl: string,
   ): Promise<void> {
-    const subject = "Password Reset Request";
+    const subject = "Recuperación de Contraseña - Plaet";
     const html = `
-      <h1>Password Reset</h1>
-      <p>You requested a password reset for your account.</p>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
-      <p>Or copy and paste this URL:</p>
-      <p>${resetUrl}</p>
-      <p>This link will expire in 1 hour.</p>
-      <p>If you didn't request this, please ignore this email.</p>
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
+        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">Recuperar Contraseña</h1>
+        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Has solicitado restablecer la contraseña de tu cuenta en Plaet.</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Restablecer Contraseña</a>
+        <p style="color: #9ca3af; font-size: 14px; margin-top: 32px;">Si no solicitaste este cambio, puedes ignorar este correo con seguridad.</p>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Este enlace expirará en 1 hora.</p>
+      </div>
     `;
 
     const text = `
-      Password Reset
+      Recuperar Contraseña
 
-      You requested a password reset for your account.
+      Has solicitado restablecer la contraseña de tu cuenta en Plaet.
 
-      Reset your password by clicking this link:
+      Restablece tu contraseña haciendo clic en este enlace:
       ${resetUrl}
 
-      This link will expire in 1 hour.
-
-      If you didn't request this, please ignore this email.
+      Si no solicitaste este cambio, puedes ignorar este correo.
+      Este enlace expirará en 1 hora.
     `;
 
-    if (process.env.NODE_ENV === "development") {
+    if (config.nodeEnv === "development" && !config.smtp.user) {
       logger.info("[EMAIL] Password reset email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Reset URL: ${resetUrl}`);
-      logger.info(`Token: ${resetToken}`);
       return;
     }
 
     try {
       await transporter.sendMail({
-        from: process.env.FROM_EMAIL || "noreply@example.com",
+        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
         to,
         subject,
         html,
@@ -99,39 +90,36 @@ export class EmailService {
     verificationToken: string,
     verificationUrl: string,
   ): Promise<void> {
-    const subject = "Verify Your Email Address";
+    const subject = "Verifica tu Correo Electrónico - Plaet";
     const html = `
-      <h1>Email Verification</h1>
-      <p>Thank you for registering! Please verify your email address.</p>
-      <p>Click the link below to verify your email:</p>
-      <a href="${verificationUrl}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Verify Email</a>
-      <p>Or copy and paste this URL:</p>
-      <p>${verificationUrl}</p>
-      <p>This link will expire in 24 hours.</p>
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
+        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">¡Bienvenido a Plaet!</h1>
+        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Por favor, verifica tu dirección de correo electrónico para activar tu cuenta.</p>
+        <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Verificar Correo</a>
+        <p style="color: #9ca3af; font-size: 14px; margin-top: 32px;">Si no creaste una cuenta, puedes ignorar este correo.</p>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Este enlace expirará en 24 horas.</p>
+      </div>
     `;
 
     const text = `
-      Email Verification
+      Verifica tu Correo Electrónico
 
-      Thank you for registering! Please verify your email address.
-
-      Verify your email by clicking this link:
+      ¡Gracias por registrarte en Plaet! Por favor verifica tu correo electrónico haciendo clic en este enlace:
       ${verificationUrl}
 
-      This link will expire in 24 hours.
+      Este enlace expirará en 24 horas.
     `;
 
-    if (process.env.NODE_ENV === "development") {
+    if (config.nodeEnv === "development" && !config.smtp.user) {
       logger.info("[EMAIL] Verification email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Verification URL: ${verificationUrl}`);
-      logger.info(`Token: ${verificationToken}`);
       return;
     }
 
     try {
       await transporter.sendMail({
-        from: process.env.FROM_EMAIL || "noreply@example.com",
+        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
         to,
         subject,
         html,

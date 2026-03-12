@@ -17,42 +17,6 @@ export const usersData = [
       address: "System HQ",
     },
   },
-  {
-    firstName: "Admin",
-    lastName: "Sazonarte",
-    email: "admin@sazonarte.com",
-    phone: "3111234567",
-    password: "admin123",
-    roles: [RoleName.ADMIN],
-    restaurantSlug: "sazonarte",
-    profile: {
-      address: "Calle 123 #45-67, Ipiales",
-    },
-  },
-  {
-    firstName: "Nicolas",
-    lastName: "Pantoja",
-    email: "mesero@sazonarte.com",
-    phone: "3117890123",
-    password: "mesero123",
-    roles: [RoleName.WAITER],
-    restaurantSlug: "sazonarte",
-    profile: {
-      address: "Carrera Falsa 2 #09-87, Pasto",
-    },
-  },
-  {
-    firstName: "Test",
-    lastName: "Admin",
-    email: "admin@test.com",
-    phone: "3119999999",
-    password: "testadmin123",
-    roles: [RoleName.ADMIN],
-    restaurantSlug: "test-restaurant",
-    profile: {
-      address: "Test Address 123",
-    },
-  },
 ];
 
 export async function seedUsers() {
