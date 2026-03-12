@@ -17,6 +17,17 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Verify connection configuration on startup
+if (config.smtp.user && config.smtp.host) {
+  transporter.verify((error) => {
+    if (error) {
+      logger.error("[EMAIL] SMTP Connection Error:", error);
+    } else {
+      logger.info("[EMAIL] SMTP Server is ready to take our messages");
+    }
+  });
+}
+
 /**
  * Email service for sending transactional emails
  */
@@ -64,8 +75,9 @@ export class EmailService {
     }
 
     try {
+      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
       await transporter.sendMail({
-        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
+        from,
         to,
         subject,
         html,
@@ -118,8 +130,9 @@ export class EmailService {
     }
 
     try {
+      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
       await transporter.sendMail({
-        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
+        from,
         to,
         subject,
         html,
@@ -190,17 +203,21 @@ export class EmailService {
     }
 
     try {
+      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
       await transporter.sendMail({
-        from: config.smtp.from || "Plaet <no-reply@plaet.app>",
+        from,
         to,
         subject,
         html,
         text,
       });
-      logger.info(`[EMAIL] Invitation email sent to ${to}`);
+      logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
-      logger.error("[EMAIL] Failed to send invitation email:", error);
-      // We don't throw here to not break the restaurant creation transaction
+      logger.error(`[EMAIL] Failed to send invitation email to ${to}:`, error);
+      // Detailed logging for debugging (safe because it only shows error message/stack)
+      if (error instanceof Error) {
+        logger.error(`[EMAIL] SMTP Error Message: ${error.message}`);
+      }
     }
   }
 }
