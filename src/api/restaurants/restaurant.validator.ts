@@ -14,8 +14,8 @@ export const createRestaurantSchema = z.object({
     address: z.string().max(255).optional(),
     phone: z.string().max(20).optional(),
     nit: z.string().max(20).optional(),
-    currency: z.string().default("COP"),
-    timezone: z.string().default("America/Bogota"),
+    currency: z.string().optional().default("COP"),
+    timezone: z.string().optional().default("America/Bogota"),
     adminUser: z.object({
       firstName: z
         .string()
