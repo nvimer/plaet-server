@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import type { Options } from "nodemailer/lib/smtp-transport";
+import dns from "node:dns";
 import { logger } from "./logger";
 import { config } from "./index";
 
@@ -16,13 +17,16 @@ const smtpOptions: Options = {
     user: config.smtp.user || "",
     pass: config.smtp.pass || "",
   },
-  // Force IPv4 to avoid ENETUNREACH errors on environments with broken IPv6
-  // @ts-expect-error: family is a valid socket option in nodemailer but not explicitly in Options type for some versions
-  family: 4,
+  // Custom DNS lookup to strictly force IPv4 and avoid ENETUNREACH on IPv6
+  lookup: (hostname: string, _options: unknown, callback: (err: Error | null, address: string, family: number) => void) => {
+    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+      callback(err, address, family);
+    });
+  },
   connectionTimeout: 10000, // 10 seconds
   greetingTimeout: 10000,
   socketTimeout: 15000,
-};
+} as Options;
 
 const transporter = nodemailer.createTransport(smtpOptions);
 
