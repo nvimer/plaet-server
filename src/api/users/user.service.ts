@@ -37,29 +37,6 @@ export class UserServices implements UserServiceInterface {
    * Error Codes:
    * - EMAIL_CONFLICT: Email already exists in the system
    */
-  private async findByEmailOrFail(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmail(email);
-    if (user)
-      throw new CustomError(
-        `Email ${email} has already been taken. Please use another email.`,
-        HttpStatus.CONFLICT,
-        "EMAIL_CONFLICT",
-      );
-    return true;
-  }
-
-  /**
-   * Validates that a user exists by ID and returns the user if found.
-   * This method is used across multiple operations to ensure
-   * the user exists before performing any modifications.
-   *
-   * @param id - User ID to validate
-   * @returns Promise<User> - User object if found
-   * @throws CustomError - If user is not found
-   *
-   * Error Codes:
-   * - ID_NOT_FOUND: User with the specified ID doesn't exist
-   */
   private async findByIdOrFail(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
 
