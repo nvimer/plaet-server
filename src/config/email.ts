@@ -9,6 +9,14 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
+// DIAGNOSTIC LOG (Point 1 & 2):
+logger.info("[EMAIL] Attempting SMTP connection with:", {
+  host: config.smtp.host,
+  port: config.smtp.port,
+  secure: config.smtp.secure,
+  user: config.smtp.user ? "DEFINED" : "MISSING",
+});
+
 const smtpOptions: Options = {
   host: config.smtp.host || "smtp.example.com",
   port: config.smtp.port || 587,
@@ -17,12 +25,14 @@ const smtpOptions: Options = {
     user: config.smtp.user || "",
     pass: config.smtp.pass || "",
   },
-  // Custom DNS lookup to strictly force IPv4 and avoid ENETUNREACH on IPv6
+  /* 
+  // Temporarily commented to check if forced IPv4 is the problem (Point 4)
   lookup: (hostname: string, _options: unknown, callback: (err: Error | null, address: string, family: number) => void) => {
     dns.lookup(hostname, { family: 4 }, (err, address, family) => {
       callback(err, address, family);
     });
   },
+  */
   connectionTimeout: 10000, // 10 seconds
   greetingTimeout: 10000,
   socketTimeout: 15000,
