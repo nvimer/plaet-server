@@ -20,25 +20,15 @@ if (!config.smtp?.host) {
   logger.warn("[EMAIL] SMTP host is not configured - emails will be disabled");
 }
 
+// Force IPv4 first for DNS resolution to avoid ENETUNREACH errors on Railway/IPv6 environments
+dns.setDefaultResultOrder("ipv4first");
+
 const smtpPort = Number(config.smtp?.port) || 587;
 
 const smtpOptions: Options = {
   host: config.smtp?.host || "smtp.example.com",
   port: smtpPort,
   secure: smtpPort === 465,
-  lookup: (
-    hostname: string,
-    _options: unknown,
-    callback: (
-      err: NodeJS.ErrnoException | null,
-      address: string,
-      family: number,
-    ) => void,
-  ) => {
-    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-      callback(err, address ?? "", family);
-    });
-  },
   auth: {
     user: config.smtp?.user || "",
     pass: config.smtp?.pass || "",
