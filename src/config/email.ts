@@ -9,11 +9,16 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-logger.info("[EMAIL] SMTP config:", {
+logger.info("[EMAIL] SMTP config from env:", {
   host: config.smtp?.host,
   port: config.smtp?.port,
   user: config.smtp?.user ? "defined" : "undefined",
+  secure: config.smtp?.secure,
 });
+
+if (!config.smtp?.host) {
+  logger.warn("[EMAIL] SMTP host is not configured - emails will be disabled");
+}
 
 const smtpPort = Number(config.smtp?.port) || 587;
 
