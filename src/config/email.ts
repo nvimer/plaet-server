@@ -87,7 +87,7 @@ export class EmailService {
     resetUrl: string,
   ): Promise<void> {
     const subject = "Recuperación de tu cuenta en Plaet";
-    
+
     const content = `
       <p style="margin-bottom: 20px;">Hola,</p>
       <p style="margin-bottom: 24px;">Hemos recibido una solicitud para cambiar la contraseña de tu cuenta en <strong>Plaet</strong>. Si fuiste tú, no hay problema, puedes crear una nueva contraseña usando el botón de abajo.</p>
@@ -133,7 +133,7 @@ export class EmailService {
     verificationUrl: string,
   ): Promise<void> {
     const subject = "¡Bienvenido a Plaet! Confirma tu correo";
-    
+
     const content = `
       <p style="margin-bottom: 20px;">¡Hola! Qué gusto tenerte por aquí.</p>
       <p style="margin-bottom: 24px;">Estamos emocionados de que empieces a gestionar tu restaurante con <strong>Plaet</strong>. Para poder utilizar tu cuenta y mantener todo seguro, solo necesitamos confirmar que este correo es tuyo.</p>
@@ -225,6 +225,70 @@ export class EmailService {
       logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
       logger.error(`[EMAIL] Failed to send invitation email to ${to}:`, error);
+      if (error instanceof Error) {
+        logger.error(`[EMAIL] Resend Error Message: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Send invitation email to a new user created by restaurant admin
+   */
+  static async sendUserInvitationEmail(
+    to: string,
+    data: {
+      name: string;
+      restaurantName: string;
+      password: string;
+    },
+  ): Promise<void> {
+    const loginUrl = `${config.clientUrl}/login`;
+    const subject = `Tu cuenta en Plaet para ${data.restaurantName} está lista`;
+
+    const content = `
+      <p style="margin-bottom: 20px;">Hola <strong>${data.name}</strong>,</p>
+      <p style="margin-bottom: 24px;">Se ha creado una nueva cuenta en Plaet para el restaurante <strong>${data.restaurantName}</strong>.</p>
+      
+      <p style="margin-bottom: 12px; font-size: 15px;">Estas son tus credenciales de acceso:</p>
+      
+      <div style="background-color: #ffffff; border: 1px dashed #d1d5db; padding: 20px; border-radius: 12px; margin-bottom: 32px;">
+        <p style="margin: 0 0 12px 0; color: #4b5563; font-size: 14px;">Usuario / Email:</p>
+        <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; font-weight: 600;">${to}</p>
+        
+        <p style="margin: 0 0 12px 0; color: #4b5563; font-size: 14px;">Contraseña:</p>
+        <div style="background-color: #f3f4f6; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 18px; color: #111827; font-weight: 700; letter-spacing: 2px; text-align: center;">
+          ${data.password}
+        </div>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${loginUrl}" style="display: inline-block; padding: 14px 28px; background-color: #111827; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;">Ir al panel de Plaet</a>
+      </div>
+      
+      <div style="padding: 16px; background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 0 12px 12px 0; margin-top: 32px;">
+        <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>🔒 Por tu seguridad:</strong> Te recomendamos encarecidamente que cambies esta contraseña por una propia tan pronto inicies sesión por primera vez.</p>
+      </div>
+    `;
+
+    const html = getEmailLayout("Bienvenido a Plaet", content);
+
+    const text = `Hola ${data.name},\n\nTu cuenta para ${data.restaurantName} está lista.\n\nTus credenciales de acceso:\nEmail: ${to}\nContraseña: ${data.password}\n\nIngresa aquí: ${loginUrl}\n\nPor seguridad, recuerda cambiar tu contraseña al iniciar sesión por primera vez.\n\nEl equipo de Plaet`;
+
+    if (config.nodeEnv === "development" && !config.resendApiKey) {
+      logger.info("[EMAIL] User Invitation email (development mode):");
+      logger.info(`To: ${to}, Password: ${data.password}`);
+      return;
+    }
+
+    try {
+      const from = config.fromEmail || "Plaet <no-reply@plaet.cloud>";
+      await sendMailHandler({ from, to, subject, html, text });
+      logger.info(`[EMAIL] User invitation email sent successfully to ${to}`);
+    } catch (error) {
+      logger.error(
+        `[EMAIL] Failed to send user invitation email to ${to}:`,
+        error,
+      );
       if (error instanceof Error) {
         logger.error(`[EMAIL] Resend Error Message: ${error.message}`);
       }

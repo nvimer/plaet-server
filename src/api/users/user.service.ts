@@ -15,6 +15,8 @@ import {
   PaginatedResponse,
 } from "../../interfaces/pagination.interfaces";
 import { logger } from "../../config/logger";
+import { EmailService } from "../../config/email";
+import restaurantRepository from "../restaurants/restaurant.repository";
 
 /**
  * User Service
@@ -208,6 +210,31 @@ export class UserServices implements UserServiceInterface {
     };
 
     const newUser = await this.userRepository.create(createData);
+
+    // Get restaurant name if restaurantId is provided
+    let restaurantName = "Plaet";
+    if (restaurantId) {
+      try {
+        const restaurant = await restaurantRepository.findById(restaurantId);
+        if (restaurant) {
+          restaurantName = restaurant.name;
+        }
+      } catch {
+        logger.warn(`[USER] Restaurant not found for id: ${restaurantId}`);
+      }
+    }
+
+    // Send invitation email (fire and forget)
+    EmailService.sendUserInvitationEmail(data.email, {
+      name: `${data.firstName} ${data.lastName}`,
+      restaurantName,
+      password: data.password,
+    }).catch((err) => {
+      logger.error(
+        `[USER] Failed to send invitation email to ${data.email}:`,
+        err,
+      );
+    });
 
     const { password: _password, ...dataWithoutPassword } = newUser;
 
