@@ -76,6 +76,11 @@ Always run commands from their respective directories (`/client` or `/server`), 
 *   **Client:** Use `@/utils/logger.ts`.
 *   **Server:** Use centralized Winston `logger`.
 
+### Email Service (Server)
+*   **Provider:** We use **Resend** via HTTPS API.
+*   **Library:** `resend` (Do NOT use `nodemailer` or `smtp` implementations).
+*   **Template:** Use the `getEmailLayout` helper in `src/config/email.ts` for consistent, humanized styling.
+
 ### Access Control (RBAC)
 *   **Client:** Use `usePermissions()` hook. Use declarative UI: `<Guard permission="name">...</Guard>`.
 *   **Server:** Use `permissionMiddleware("module:action")`.
