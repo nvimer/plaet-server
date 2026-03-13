@@ -1,6 +1,3 @@
-import nodemailer from "nodemailer";
-import dns from "node:dns";
-import type { Options } from "nodemailer/lib/smtp-transport";
 import { Resend } from "resend";
 import { logger } from "./logger";
 import { config } from "./index";
@@ -10,57 +7,16 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-// Initialize Resend client if API key is provided
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 
 if (resend) {
-  logger.info("[EMAIL] Initialized Resend via API (bypassing SMTP restrictions)");
+  logger.info("[EMAIL] Initialized Resend via API");
 } else {
-  logger.info(`[EMAIL] SMTP config from env: ${JSON.stringify({
-    host: config.smtp?.host,
-    port: config.smtp?.port,
-    user: config.smtp?.user ? "defined" : "undefined",
-    secure: config.smtp?.secure,
-  })}`);
-
-  if (!config.smtp?.host) {
-    logger.warn("[EMAIL] No Resend API Key and SMTP host is not configured - emails will be disabled");
-  }
-}
-
-// Force IPv4 first for DNS resolution to avoid ENETUNREACH errors on Railway/IPv6 environments
-dns.setDefaultResultOrder("ipv4first");
-
-const smtpPort = Number(config.smtp?.port) || 587;
-
-const smtpOptions: Options = {
-  host: config.smtp?.host || "smtp.example.com",
-  port: smtpPort,
-  secure: smtpPort === 465,
-  auth: {
-    user: config.smtp?.user || "",
-    pass: config.smtp?.pass || "",
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
-} as Options;
-
-const transporter = nodemailer.createTransport(smtpOptions);
-
-// Verify connection configuration on startup only if not using Resend
-if (!resend && config.smtp?.user && config.smtp?.host) {
-  transporter.verify((error) => {
-    if (error) {
-      logger.error("[EMAIL] SMTP Connection Error:", error);
-    } else {
-      logger.info("[EMAIL] SMTP Server is ready to take our messages");
-    }
-  });
+  logger.warn("[EMAIL] No Resend API Key configured - emails will be disabled");
 }
 
 /**
- * Internal helper to send email utilizing either Resend or Nodemailer
+ * Internal helper to send email utilizing Resend
  */
 async function sendMailHandler(options: {
   from: string;
@@ -69,25 +25,23 @@ async function sendMailHandler(options: {
   html: string;
   text: string;
 }) {
-  if (resend) {
-    const { error } = await resend.emails.send({
-      from: options.from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    });
-    if (error) {
-      throw new Error(`Resend Error: ${error.message}`);
+  if (!resend) {
+    if (config.nodeEnv === "development") {
+      return; // Handled in individual methods
     }
-  } else {
-    await transporter.sendMail({
-      from: options.from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    });
+    throw new Error("Resend API key is missing. Cannot send email.");
+  }
+
+  const { error } = await resend.emails.send({
+    from: options.from,
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+    text: options.text,
+  });
+
+  if (error) {
+    throw new Error(`Resend Error: ${error.message}`);
   }
 }
 
@@ -97,9 +51,6 @@ async function sendMailHandler(options: {
 export class EmailService {
   /**
    * Send password reset email
-   *
-   * @param to - Recipient email address
-   * @param resetUrl - Full reset URL
    */
   static async sendPasswordResetEmail(
     to: string,
@@ -117,18 +68,10 @@ export class EmailService {
     `;
 
     const text = `
-      Recuperar Contraseña
-
-      Has solicitado restablecer la contraseña de tu cuenta en Plaet.
-
-      Restablece tu contraseña haciendo clic en este enlace:
-      ${resetUrl}
-
-      Si no solicitaste este cambio, puedes ignorar este correo.
-      Este enlace expirará en 1 hora.
+      Recuperar Contraseña\n\nHas solicitado restablecer la contraseña de tu cuenta en Plaet.\n\nRestablece tu contraseña haciendo clic en este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este correo.\nEste enlace expirará en 1 hora.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
+    if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Password reset email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Reset URL: ${resetUrl}`);
@@ -136,7 +79,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Password reset email sent to ${to}`);
     } catch (error) {
@@ -147,9 +90,6 @@ export class EmailService {
 
   /**
    * Send email verification email
-   *
-   * @param to - Recipient email address
-   * @param verificationUrl - Full verification URL
    */
   static async sendVerificationEmail(
     to: string,
@@ -167,15 +107,10 @@ export class EmailService {
     `;
 
     const text = `
-      Verifica tu Correo Electrónico
-
-      ¡Gracias por registrarte en Plaet! Por favor verifica tu correo electrónico haciendo clic en este enlace:
-      ${verificationUrl}
-
-      Este enlace expirará en 24 horas.
+      Verifica tu Correo Electrónico\n\n¡Gracias por registrarte en Plaet! Por favor verifica tu correo electrónico haciendo clic en este enlace:\n${verificationUrl}\n\nEste enlace expirará en 24 horas.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
+    if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Verification email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Verification URL: ${verificationUrl}`);
@@ -183,7 +118,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Verification email sent to ${to}`);
     } catch (error) {
@@ -194,9 +129,6 @@ export class EmailService {
 
   /**
    * Send welcome invitation email to a new restaurant admin
-   *
-   * @param to - Recipient email
-   * @param data - Invitation data (name, restaurantName, tempPassword)
    */
   static async sendRestaurantInvitationEmail(
     to: string,
@@ -230,34 +162,23 @@ export class EmailService {
     `;
 
     const text = `
-      Bienvenido a Plaet
-
-      Hola ${data.name}, se ha creado una cuenta administrativa para ${data.restaurantName}.
-
-      Tus credenciales de acceso son:
-      Email: ${to}
-      Contraseña Temporal: ${data.tempPassword}
-
-      Accede aquí: ${loginUrl}
-
-      Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
+      Bienvenido a Plaet\n\nHola ${data.name}, se ha creado una cuenta administrativa para ${data.restaurantName}.\n\nTus credenciales de acceso son:\nEmail: ${to}\nContraseña Temporal: ${data.tempPassword}\n\nAccede aquí: ${loginUrl}\n\nPor seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
+    if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Restaurant Invitation email (development mode):");
       logger.info(`To: ${to}, Temp Pass: ${data.tempPassword}`);
       return;
     }
 
     try {
-      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
       logger.error(`[EMAIL] Failed to send invitation email to ${to}:`, error);
-      // Detailed logging for debugging (safe because it only shows error message/stack)
       if (error instanceof Error) {
-        logger.error(`[EMAIL] SMTP Error Message: ${error.message}`);
+        logger.error(`[EMAIL] Resend Error Message: ${error.message}`);
       }
     }
   }

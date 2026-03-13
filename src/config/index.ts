@@ -19,13 +19,8 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
-  // Email Configuration (SMTP)
+  // Email Configuration (Resend)
   RESEND_API_KEY: z.string().optional(),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_SECURE: z.string().optional().default("false"),
   FROM_EMAIL: z.string().optional(),
   CLIENT_URL: z.string().optional(),
 });
@@ -92,16 +87,9 @@ export const config = {
   cloudinaryCloudName: parsedEnv.data.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: parsedEnv.data.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: parsedEnv.data.CLOUDINARY_API_SECRET,
-  // SMTP / Resend
+  // Email / Resend
   resendApiKey: cleanEnvValue(parsedEnv.data.RESEND_API_KEY),
-  smtp: {
-    host: cleanEnvValue(parsedEnv.data.SMTP_HOST),
-    port: parsedEnv.data.SMTP_PORT,
-    user: cleanEnvValue(parsedEnv.data.SMTP_USER),
-    pass: cleanEnvValue(parsedEnv.data.SMTP_PASS),
-    secure: cleanEnvValue(parsedEnv.data.SMTP_SECURE) === "true",
-    from: cleanEnvValue(parsedEnv.data.FROM_EMAIL),
-  },
+  fromEmail: cleanEnvValue(parsedEnv.data.FROM_EMAIL),
   clientUrl:
     cleanEnvValue(parsedEnv.data.CLIENT_URL) ||
     cleanEnvValue(parsedEnv.data.APP_URL),

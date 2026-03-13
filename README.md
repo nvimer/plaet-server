@@ -241,13 +241,9 @@ JWT_ACCESS_EXPIRATION_DAYS=7
 # Password Hashing
 SALT_ROUNDS=10
 
-# Email Configuration (SMTP)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-FROM_EMAIL=noreply@yourapp.com
+# Email Configuration (Resend)
+RESEND_API_KEY=re_your_api_key_here
+FROM_EMAIL=no-reply@plaet.cloud
 
 # CORS
 ALLOWED_ORIGINS=https://your-domain.railway.app,https://your-frontend.app
