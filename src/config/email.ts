@@ -10,14 +10,17 @@ import { config } from "./index";
  */
 
 logger.info("[EMAIL] SMTP config:", {
-  host: config.smtp.host,
-  port: config.smtp.port,
+  host: config.smtp?.host,
+  port: config.smtp?.port,
+  user: config.smtp?.user ? "defined" : "undefined",
 });
 
+const smtpPort = Number(config.smtp?.port) || 587;
+
 const smtpOptions: Options = {
-  host: config.smtp.host || "smtp.example.com",
-  port: config.smtp.port || 587,
-  secure: Number(config.smtp.port) === 465 ? true : false,
+  host: config.smtp?.host || "smtp.example.com",
+  port: smtpPort,
+  secure: smtpPort === 465,
   lookup: (
     hostname: string,
     _options: unknown,
@@ -32,8 +35,8 @@ const smtpOptions: Options = {
     });
   },
   auth: {
-    user: config.smtp.user || "",
-    pass: config.smtp.pass || "",
+    user: config.smtp?.user || "",
+    pass: config.smtp?.pass || "",
   },
   connectionTimeout: 15000,
   greetingTimeout: 15000,
@@ -43,7 +46,7 @@ const smtpOptions: Options = {
 const transporter = nodemailer.createTransport(smtpOptions);
 
 // Verify connection configuration on startup
-if (config.smtp.user && config.smtp.host) {
+if (config.smtp?.user && config.smtp?.host) {
   transporter.verify((error) => {
     if (error) {
       logger.error("[EMAIL] SMTP Connection Error:", error);
@@ -90,7 +93,7 @@ export class EmailService {
       Este enlace expirará en 1 hora.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user) {
       logger.info("[EMAIL] Password reset email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Reset URL: ${resetUrl}`);
@@ -98,7 +101,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
       await transporter.sendMail({
         from,
         to,
@@ -143,7 +146,7 @@ export class EmailService {
       Este enlace expirará en 24 horas.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user) {
       logger.info("[EMAIL] Verification email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Verification URL: ${verificationUrl}`);
@@ -151,7 +154,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
       await transporter.sendMail({
         from,
         to,
@@ -217,14 +220,14 @@ export class EmailService {
       Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user) {
       logger.info("[EMAIL] Restaurant Invitation email (development mode):");
       logger.info(`To: ${to}, Temp Pass: ${data.tempPassword}`);
       return;
     }
 
     try {
-      const from = config.smtp.from || config.smtp.user || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
       await transporter.sendMail({
         from,
         to,
