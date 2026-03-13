@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import dns from "node:dns";
 import type { Options } from "nodemailer/lib/smtp-transport";
+import { Resend } from "resend";
 import { logger } from "./logger";
 import { config } from "./index";
 
@@ -9,15 +10,22 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-logger.info(`[EMAIL] SMTP config from env: ${JSON.stringify({
-  host: config.smtp?.host,
-  port: config.smtp?.port,
-  user: config.smtp?.user ? "defined" : "undefined",
-  secure: config.smtp?.secure,
-})}`);
+// Initialize Resend client if API key is provided
+const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 
-if (!config.smtp?.host) {
-  logger.warn("[EMAIL] SMTP host is not configured - emails will be disabled");
+if (resend) {
+  logger.info("[EMAIL] Initialized Resend via API (bypassing SMTP restrictions)");
+} else {
+  logger.info(`[EMAIL] SMTP config from env: ${JSON.stringify({
+    host: config.smtp?.host,
+    port: config.smtp?.port,
+    user: config.smtp?.user ? "defined" : "undefined",
+    secure: config.smtp?.secure,
+  })}`);
+
+  if (!config.smtp?.host) {
+    logger.warn("[EMAIL] No Resend API Key and SMTP host is not configured - emails will be disabled");
+  }
 }
 
 // Force IPv4 first for DNS resolution to avoid ENETUNREACH errors on Railway/IPv6 environments
@@ -40,8 +48,8 @@ const smtpOptions: Options = {
 
 const transporter = nodemailer.createTransport(smtpOptions);
 
-// Verify connection configuration on startup
-if (config.smtp?.user && config.smtp?.host) {
+// Verify connection configuration on startup only if not using Resend
+if (!resend && config.smtp?.user && config.smtp?.host) {
   transporter.verify((error) => {
     if (error) {
       logger.error("[EMAIL] SMTP Connection Error:", error);
@@ -49,6 +57,38 @@ if (config.smtp?.user && config.smtp?.host) {
       logger.info("[EMAIL] SMTP Server is ready to take our messages");
     }
   });
+}
+
+/**
+ * Internal helper to send email utilizing either Resend or Nodemailer
+ */
+async function sendMailHandler(options: {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}) {
+  if (resend) {
+    const { error } = await resend.emails.send({
+      from: options.from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    });
+    if (error) {
+      throw new Error(`Resend Error: ${error.message}`);
+    }
+  } else {
+    await transporter.sendMail({
+      from: options.from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    });
+  }
 }
 
 /**
@@ -88,7 +128,7 @@ export class EmailService {
       Este enlace expirará en 1 hora.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
       logger.info("[EMAIL] Password reset email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Reset URL: ${resetUrl}`);
@@ -97,13 +137,7 @@ export class EmailService {
 
     try {
       const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
-      await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-        text,
-      });
+      await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Password reset email sent to ${to}`);
     } catch (error) {
       logger.error("[EMAIL] Failed to send password reset email:", error);
@@ -141,7 +175,7 @@ export class EmailService {
       Este enlace expirará en 24 horas.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
       logger.info("[EMAIL] Verification email (development mode):");
       logger.info(`To: ${to}`);
       logger.info(`Verification URL: ${verificationUrl}`);
@@ -150,13 +184,7 @@ export class EmailService {
 
     try {
       const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
-      await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-        text,
-      });
+      await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Verification email sent to ${to}`);
     } catch (error) {
       logger.error("[EMAIL] Failed to send verification email:", error);
@@ -215,7 +243,7 @@ export class EmailService {
       Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
     `;
 
-    if (config.nodeEnv === "development" && !config.smtp?.user) {
+    if (config.nodeEnv === "development" && !config.smtp?.user && !config.resendApiKey) {
       logger.info("[EMAIL] Restaurant Invitation email (development mode):");
       logger.info(`To: ${to}, Temp Pass: ${data.tempPassword}`);
       return;
@@ -223,13 +251,7 @@ export class EmailService {
 
     try {
       const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.app";
-      await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-        text,
-      });
+      await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
       logger.error(`[EMAIL] Failed to send invitation email to ${to}:`, error);
