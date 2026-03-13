@@ -136,7 +136,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp?.from || (resend ? "onboarding@resend.dev" : config.smtp?.user) || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Password reset email sent to ${to}`);
     } catch (error) {
@@ -183,7 +183,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp?.from || (resend ? "onboarding@resend.dev" : config.smtp?.user) || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Verification email sent to ${to}`);
     } catch (error) {
@@ -250,7 +250,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.smtp?.from || (resend ? "onboarding@resend.dev" : config.smtp?.user) || "no-reply@plaet.app";
+      const from = config.smtp?.from || config.smtp?.user || "no-reply@plaet.cloud";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
