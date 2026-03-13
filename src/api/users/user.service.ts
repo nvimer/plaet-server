@@ -136,6 +136,32 @@ export class UserServices implements UserServiceInterface {
   }
 
   /**
+   * Validates that an email is not already taken by another user.
+   * This method is used during registration to ensure email uniqueness.
+   *
+   * @param email - Email to validate
+   * @param excludeUserId - Optional user ID to exclude from check (for updates)
+   * @returns Promise<boolean> - True if email is available
+   * @throws CustomError - If email is already taken
+   *
+   * Error Codes:
+   * - EMAIL_CONFLICT: Email already exists in the system
+   */
+  private async findByEmailOrFail(
+    email: string,
+    excludeUserId?: string,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findByEmail(email);
+    if (user && user.id !== excludeUserId)
+      throw new CustomError(
+        `Email ${email} has already been taken. Please use another email.`,
+        HttpStatus.CONFLICT,
+        "EMAIL_CONFLICT",
+      );
+    return true;
+  }
+
+  /**
    * Searches users with filtering and pagination.
    * Supports searching by firstName, lastName, or email.
    *
@@ -228,7 +254,7 @@ export class UserServices implements UserServiceInterface {
   async updateUser(id: string, data: UpdateUserInput): Promise<User> {
     await this.findByIdOrFail(id);
 
-    if (data.email) await this.findByEmailOrFail(data.email);
+    if (data.email) await this.findByEmailOrFail(data.email, id);
 
     if (data.roleIds && data.roleIds.length > 0) {
       await this.validateRoleIds(data.roleIds);
