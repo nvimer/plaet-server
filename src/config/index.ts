@@ -2,14 +2,6 @@ import "dotenv/config";
 import { z } from "zod";
 import { logger } from "./logger";
 
-// Debug all env vars
-logger.info("=== ENVIRONMENT DEBUG ===");
-logger.info("NODE_ENV:", process.env.NODE_ENV);
-logger.info("SMTP_HOST:", process.env.SMTP_HOST);
-logger.info("SMTP_PORT:", process.env.SMTP_PORT);
-logger.info("SMTP_USER:", process.env.SMTP_USER);
-logger.info("All env keys:", Object.keys(process.env).filter(k => k.includes("SMTP")));
-
 const envSchema = z.object({
   PORT: z.string().default("8080"),
   NODE_ENV: z
