@@ -46,6 +46,36 @@ async function sendMailHandler(options: {
 }
 
 /**
+ * Common layout for all emails to maintain a consistent, human and modern brand
+ */
+function getEmailLayout(title: string, content: string): string {
+  const currentYear = new Date().getFullYear();
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+      <!-- Header / Logo -->
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="color: #111827; font-size: 32px; font-weight: 900; letter-spacing: -1px; margin: 0;">Plaet<span style="color: #10b981;">.</span></h1>
+      </div>
+      
+      <!-- Main Content Card -->
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+        <h2 style="color: #111827; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 24px;">${title}</h2>
+        
+        <div style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+          ${content}
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #f3f4f6;">
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">¿Necesitas ayuda? Responde a este correo y te ayudaremos enseguida.</p>
+        <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${currentYear} Plaet. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Email service for sending transactional emails
  */
 export class EmailService {
@@ -56,20 +86,27 @@ export class EmailService {
     to: string,
     resetUrl: string,
   ): Promise<void> {
-    const subject = "Recuperación de Contraseña - Plaet";
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
-        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">Recuperar Contraseña</h1>
-        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Has solicitado restablecer la contraseña de tu cuenta en Plaet.</p>
-        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Restablecer Contraseña</a>
-        <p style="color: #9ca3af; font-size: 14px; margin-top: 32px;">Si no solicitaste este cambio, puedes ignorar este correo con seguridad.</p>
-        <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Este enlace expirará en 1 hora.</p>
+    const subject = "Recuperación de tu cuenta en Plaet";
+    
+    const content = `
+      <p style="margin-bottom: 20px;">Hola,</p>
+      <p style="margin-bottom: 24px;">Hemos recibido una solicitud para cambiar la contraseña de tu cuenta en <strong>Plaet</strong>. Si fuiste tú, no hay problema, puedes crear una nueva contraseña usando el botón de abajo.</p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${resetUrl}" style="display: inline-block; padding: 14px 28px; background-color: #111827; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;">Crear nueva contraseña</a>
+      </div>
+      
+      <p style="margin-bottom: 12px; font-size: 14px;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+      <p style="margin-bottom: 24px; font-size: 13px; color: #6b7280; word-break: break-all;"><a href="${resetUrl}" style="color: #10b981; text-decoration: none;">${resetUrl}</a></p>
+      
+      <div style="padding: 16px; background-color: #eff6ff; border-radius: 12px; margin-top: 32px;">
+        <p style="margin: 0; font-size: 14px; color: #1e40af;"><strong>¿No solicitaste este cambio?</strong> Puedes ignorar este correo tranquilamente. Tu contraseña actual seguirá funcionando y tu cuenta está segura.</p>
       </div>
     `;
 
-    const text = `
-      Recuperar Contraseña\n\nHas solicitado restablecer la contraseña de tu cuenta en Plaet.\n\nRestablece tu contraseña haciendo clic en este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este correo.\nEste enlace expirará en 1 hora.
-    `;
+    const html = getEmailLayout("Recuperar Contraseña", content);
+
+    const text = `Hola,\n\nHemos recibido una solicitud para cambiar tu contraseña en Plaet.\n\nPara crear una nueva, entra al siguiente enlace:\n${resetUrl}\n\nSi no fuiste tú, puedes ignorar este mensaje.\n\nEl equipo de Plaet`;
 
     if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Password reset email (development mode):");
@@ -79,7 +116,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.fromEmail || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "Plaet <no-reply@plaet.cloud>";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Password reset email sent to ${to}`);
     } catch (error) {
@@ -95,20 +132,26 @@ export class EmailService {
     to: string,
     verificationUrl: string,
   ): Promise<void> {
-    const subject = "Verifica tu Correo Electrónico - Plaet";
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
-        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">¡Bienvenido a Plaet!</h1>
-        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Por favor, verifica tu dirección de correo electrónico para activar tu cuenta.</p>
-        <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Verificar Correo</a>
-        <p style="color: #9ca3af; font-size: 14px; margin-top: 32px;">Si no creaste una cuenta, puedes ignorar este correo.</p>
-        <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Este enlace expirará en 24 horas.</p>
+    const subject = "¡Bienvenido a Plaet! Confirma tu correo";
+    
+    const content = `
+      <p style="margin-bottom: 20px;">¡Hola! Qué gusto tenerte por aquí.</p>
+      <p style="margin-bottom: 24px;">Estamos emocionados de que empieces a gestionar tu restaurante con <strong>Plaet</strong>. Para poder utilizar tu cuenta y mantener todo seguro, solo necesitamos confirmar que este correo es tuyo.</p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${verificationUrl}" style="display: inline-block; padding: 14px 28px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">Confirmar mi correo</a>
       </div>
+      
+      <p style="margin-bottom: 12px; font-size: 14px;">Si el botón no funciona, también puedes usar este enlace:</p>
+      <p style="margin-bottom: 24px; font-size: 13px; color: #6b7280; word-break: break-all;"><a href="${verificationUrl}" style="color: #10b981; text-decoration: none;">${verificationUrl}</a></p>
+      
+      <p style="margin-top: 32px; font-size: 15px; color: #374151;">¡Nos vemos adentro!</p>
+      <p style="margin-top: 4px; font-size: 15px; font-weight: 600; color: #111827;">El equipo de Plaet</p>
     `;
 
-    const text = `
-      Verifica tu Correo Electrónico\n\n¡Gracias por registrarte en Plaet! Por favor verifica tu correo electrónico haciendo clic en este enlace:\n${verificationUrl}\n\nEste enlace expirará en 24 horas.
-    `;
+    const html = getEmailLayout("Confirma tu dirección de correo", content);
+
+    const text = `¡Hola!\n\nGracias por unirte a Plaet. Para activar tu cuenta necesitamos confirmar tu correo.\n\nPor favor entra a este enlace:\n${verificationUrl}\n\n¡Nos vemos adentro!\nEl equipo de Plaet`;
 
     if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Verification email (development mode):");
@@ -118,7 +161,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.fromEmail || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "Plaet <no-reply@plaet.cloud>";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Verification email sent to ${to}`);
     } catch (error) {
@@ -139,31 +182,36 @@ export class EmailService {
     },
   ): Promise<void> {
     const loginUrl = `${config.clientUrl}/login`;
-    const subject = `Bienvenido a Plaet - Credenciales para ${data.restaurantName}`;
+    const subject = `Tu cuenta en Plaet para ${data.restaurantName} está lista`;
 
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">¡Bienvenido a Plaet!</h1>
-        <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-          Hola <strong>${data.name}</strong>, se ha creado una cuenta administrativa para <strong>${data.restaurantName}</strong>.
-        </p>
+    const content = `
+      <p style="margin-bottom: 20px;">Hola <strong>${data.name}</strong>,</p>
+      <p style="margin-bottom: 24px;">Se ha creado una nueva cuenta administrativa en Plaet para el restaurante <strong>${data.restaurantName}</strong>. ¡Ya puedes empezar a gestionar tus órdenes y equipo!</p>
+      
+      <p style="margin-bottom: 12px; font-size: 15px;">Hemos generado estas credenciales temporales para que puedas acceder:</p>
+      
+      <div style="background-color: #ffffff; border: 1px dashed #d1d5db; padding: 20px; border-radius: 12px; margin-bottom: 32px;">
+        <p style="margin: 0 0 12px 0; color: #4b5563; font-size: 14px;">Usuario / Email:</p>
+        <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; font-weight: 600;">${to}</p>
         
-        <div style="background-color: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-          <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px;">Tus credenciales de acceso son:</p>
-          <p style="margin: 0 0 5px 0; font-family: monospace; font-size: 16px;"><strong>Email:</strong> ${to}</p>
-          <p style="margin: 0; font-family: monospace; font-size: 16px;"><strong>Contraseña Temporal:</strong> ${data.tempPassword}</p>
+        <p style="margin: 0 0 12px 0; color: #4b5563; font-size: 14px;">Contraseña temporal:</p>
+        <div style="background-color: #f3f4f6; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 18px; color: #111827; font-weight: 700; letter-spacing: 2px; text-align: center;">
+          ${data.tempPassword}
         </div>
+      </div>
 
-        <a href="${loginUrl}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">Acceder al Panel</a>
-        
-        <p style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 24px;">Importante:</p>
-        <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Por seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión desde tu perfil.</p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${loginUrl}" style="display: inline-block; padding: 14px 28px; background-color: #111827; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;">Ir al panel de Plaet</a>
+      </div>
+      
+      <div style="padding: 16px; background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 0 12px 12px 0; margin-top: 32px;">
+        <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>🔒 Por tu seguridad:</strong> Te recomendamos encarecidamente que cambies esta contraseña temporal por una propia tan pronto inicies sesión por primera vez.</p>
       </div>
     `;
 
-    const text = `
-      Bienvenido a Plaet\n\nHola ${data.name}, se ha creado una cuenta administrativa para ${data.restaurantName}.\n\nTus credenciales de acceso son:\nEmail: ${to}\nContraseña Temporal: ${data.tempPassword}\n\nAccede aquí: ${loginUrl}\n\nPor seguridad, te recomendamos cambiar esta contraseña inmediatamente después de tu primer inicio de sesión.
-    `;
+    const html = getEmailLayout("Bienvenido a Plaet", content);
+
+    const text = `Hola ${data.name},\n\nTu cuenta para gestionar ${data.restaurantName} está lista.\n\nTus credenciales de acceso:\nEmail: ${to}\nContraseña temporal: ${data.tempPassword}\n\nIngresa aquí: ${loginUrl}\n\nPor seguridad, recuerda cambiar tu contraseña al iniciar sesión por primera vez.\n\nEl equipo de Plaet`;
 
     if (config.nodeEnv === "development" && !config.resendApiKey) {
       logger.info("[EMAIL] Restaurant Invitation email (development mode):");
@@ -172,7 +220,7 @@ export class EmailService {
     }
 
     try {
-      const from = config.fromEmail || "no-reply@plaet.cloud";
+      const from = config.fromEmail || "Plaet <no-reply@plaet.cloud>";
       await sendMailHandler({ from, to, subject, html, text });
       logger.info(`[EMAIL] Invitation email sent successfully to ${to}`);
     } catch (error) {
