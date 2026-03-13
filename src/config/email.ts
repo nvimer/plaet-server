@@ -16,8 +16,10 @@ const smtpOptions: Options = {
   port: config.smtp.port || 587,
   secure: false,
   requireTLS: true,
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, callback);
+  lookup: (hostname: string, _options: unknown, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+      callback(err, address ?? "", family);
+    });
   },
   auth: {
     user: config.smtp.user || "",
