@@ -192,16 +192,17 @@ class BasicUserRepository implements UserRepositoryInterface {
    * - Returns user with role information included
    */
   async create(data: RegisterInput & { restaurantId?: string }): Promise<User> {
-    const { roleIds, restaurantId, ...userData } = data;
+    const { roleIds, restaurantId, password, ...rest } = data;
 
     const client = getPrismaClient();
     return await client.user.create({
       data: {
-        ...userData,
-        restaurantId,
+        ...rest,
+        password: password!,
+        ...(restaurantId && { restaurantId }),
         roles: {
           create:
-            roleIds.map((roleId) => ({
+            roleIds?.map((roleId) => ({
               role: { connect: { id: roleId } },
             })) || [],
         },

@@ -18,7 +18,11 @@ export const registerSchema = z.object({
       .string()
       .regex(/^\d{10}$/, "Phone number must be a 10 digits")
       .optional(),
-    password: z.string().min(8, "Password must be at least 8 characters long"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long")
+      .optional()
+      .or(z.literal("")),
     roleIds: z.array(
       z
         .number()

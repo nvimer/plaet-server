@@ -201,12 +201,14 @@ export class UserServices implements UserServiceInterface {
   async register(data: RegisterInput, restaurantId?: string): Promise<User> {
     await this.findByEmailOrFail(data.email);
 
-    const hashedPass = hasherUtils.hash(data.password);
+    // Generate temp password if not provided
+    const password = data.password || hasherUtils.generateTempPassword();
+    const hashedPass = hasherUtils.hash(password);
 
     const createData = {
       ...data,
       password: hashedPass,
-      ...(restaurantId && { restaurantId }),
+      restaurantId: restaurantId || undefined,
     };
 
     const newUser = await this.userRepository.create(createData);
@@ -228,7 +230,7 @@ export class UserServices implements UserServiceInterface {
     EmailService.sendUserInvitationEmail(data.email, {
       name: `${data.firstName} ${data.lastName}`,
       restaurantName,
-      password: data.password,
+      password,
     }).catch((err) => {
       logger.error(
         `[USER] Failed to send invitation email to ${data.email}:`,
