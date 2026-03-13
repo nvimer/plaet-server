@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import dns from "node:dns";
 import type { Options } from "nodemailer/lib/smtp-transport";
 import { logger } from "./logger";
 import { config } from "./index";
@@ -8,23 +9,23 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-logger.info("[EMAIL] SMTP config:", {
-  host: config.smtp.host,
-  port: config.smtp.port,
-});
+logger.info("[EMAIL] SMTP config:", { host: config.smtp.host, port: config.smtp.port });
 
 const smtpOptions: Options = {
   host: config.smtp.host || "smtp.example.com",
   port: config.smtp.port || 587,
   secure: false,
   requireTLS: true,
+  lookup: (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
+  },
   auth: {
     user: config.smtp.user || "",
     pass: config.smtp.pass || "",
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 } as Options;
 
 const transporter = nodemailer.createTransport(smtpOptions);
