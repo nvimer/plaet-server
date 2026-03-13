@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { startTableCleanupJob } from "./jobs/table-cleanup.job";
 import { startOrderAutoCancelJob } from "./jobs/order-auto-cancel.job";
 import app from "./app";
