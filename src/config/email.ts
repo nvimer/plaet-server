@@ -9,14 +9,24 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-logger.info("[EMAIL] SMTP config:", { host: config.smtp.host, port: config.smtp.port });
+logger.info("[EMAIL] SMTP config:", {
+  host: config.smtp.host,
+  port: config.smtp.port,
+});
 
 const smtpOptions: Options = {
   host: config.smtp.host || "smtp.example.com",
   port: config.smtp.port || 587,
-  secure: false,
-  requireTLS: true,
-  lookup: (hostname: string, _options: unknown, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+  secure: Number(config.smtp.port) === 465 ? true : false,
+  lookup: (
+    hostname: string,
+    _options: unknown,
+    callback: (
+      err: NodeJS.ErrnoException | null,
+      address: string,
+      family: number,
+    ) => void,
+  ) => {
     dns.lookup(hostname, { family: 4 }, (err, address, family) => {
       callback(err, address ?? "", family);
     });
