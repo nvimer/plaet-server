@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 import type { Options } from "nodemailer/lib/smtp-transport";
-import dns from "node:dns";
 import { logger } from "./logger";
 import { config } from "./index";
 
@@ -9,31 +8,21 @@ import { config } from "./index";
  * Uses centralized config from src/config/index.ts
  */
 
-// DIAGNOSTIC LOG (Point 1 & 2):
-logger.info("[EMAIL] Attempting SMTP connection with:", {
+logger.info("[EMAIL] SMTP config:", {
   host: config.smtp.host,
   port: config.smtp.port,
-  secure: config.smtp.secure,
-  user: config.smtp.user ? "DEFINED" : "MISSING",
 });
 
 const smtpOptions: Options = {
   host: config.smtp.host || "smtp.example.com",
   port: config.smtp.port || 587,
-  secure: config.smtp.secure,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: config.smtp.user || "",
     pass: config.smtp.pass || "",
   },
-  /* 
-  // Temporarily commented to check if forced IPv4 is the problem (Point 4)
-  lookup: (hostname: string, _options: unknown, callback: (err: Error | null, address: string, family: number) => void) => {
-    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-      callback(err, address, family);
-    });
-  },
-  */
-  connectionTimeout: 10000, // 10 seconds
+  connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
 } as Options;
@@ -59,12 +48,10 @@ export class EmailService {
    * Send password reset email
    *
    * @param to - Recipient email address
-   * @param resetToken - Password reset token
    * @param resetUrl - Full reset URL
    */
   static async sendPasswordResetEmail(
     to: string,
-    resetToken: string,
     resetUrl: string,
   ): Promise<void> {
     const subject = "Recuperación de Contraseña - Plaet";
@@ -117,12 +104,10 @@ export class EmailService {
    * Send email verification email
    *
    * @param to - Recipient email address
-   * @param verificationToken - Email verification token
    * @param verificationUrl - Full verification URL
    */
   static async sendVerificationEmail(
     to: string,
-    verificationToken: string,
     verificationUrl: string,
   ): Promise<void> {
     const subject = "Verifica tu Correo Electrónico - Plaet";
@@ -184,7 +169,7 @@ export class EmailService {
   ): Promise<void> {
     const loginUrl = `${config.clientUrl}/login`;
     const subject = `Bienvenido a Plaet - Credenciales para ${data.restaurantName}`;
-    
+
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
         <h1 style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 16px;">¡Bienvenido a Plaet!</h1>

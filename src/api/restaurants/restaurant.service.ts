@@ -78,57 +78,64 @@ export class RestaurantService implements RestaurantServiceInterface {
     }
 
     // 3. Generate temp password if not provided
-    const tempPassword = adminUser.password || hasherUtils.generateTempPassword();
+    const tempPassword =
+      adminUser.password || hasherUtils.generateTempPassword();
 
     // 4. Create everything in a transaction
-    const restaurant = await prisma.$transaction(async (tx: PrismaTransaction) => {
-      // a. Create Restaurant (using repository logic for slug)
-      const restaurant = await this.restaurantRepository.create(restaurantData);
+    const restaurant = await prisma.$transaction(
+      async (tx: PrismaTransaction) => {
+        // a. Create Restaurant (using repository logic for slug)
+        const restaurant =
+          await this.restaurantRepository.create(restaurantData);
 
-      // b. Find ADMIN role
-      const adminRole = await tx.role.findUnique({
-        where: { name: RoleName.ADMIN },
-      });
+        // b. Find ADMIN role
+        const adminRole = await tx.role.findUnique({
+          where: { name: RoleName.ADMIN },
+        });
 
-      if (!adminRole) {
-        throw new CustomError(
-          "ADMIN role not found in system",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          "ROLE_NOT_FOUND",
-        );
-      }
+        if (!adminRole) {
+          throw new CustomError(
+            "ADMIN role not found in system",
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "ROLE_NOT_FOUND",
+          );
+        }
 
-      // c. Create Admin User
-      const hashedPassword = hasherUtils.hash(tempPassword);
-      const user = await tx.user.create({
-        data: {
-          firstName: adminUser.firstName,
-          lastName: adminUser.lastName,
-          email: adminUser.email,
-          phone: adminUser.phone,
-          password: hashedPassword,
-          restaurantId: restaurant.id, // Assign to new restaurant
-        },
-      });
+        // c. Create Admin User
+        const hashedPassword = hasherUtils.hash(tempPassword);
+        const user = await tx.user.create({
+          data: {
+            firstName: adminUser.firstName,
+            lastName: adminUser.lastName,
+            email: adminUser.email,
+            phone: adminUser.phone,
+            password: hashedPassword,
+            restaurantId: restaurant.id, // Assign to new restaurant
+          },
+        });
 
-      // d. Assign Role
-      await tx.userRole.create({
-        data: {
-          userId: user.id,
-          roleId: adminRole.id,
-        },
-      });
+        // d. Assign Role
+        await tx.userRole.create({
+          data: {
+            userId: user.id,
+            roleId: adminRole.id,
+          },
+        });
 
-      return restaurant;
-    });
+        return restaurant;
+      },
+    );
 
     // 5. Send invitation email (Fire and forget to not block the response)
     EmailService.sendRestaurantInvitationEmail(adminUser.email, {
       name: adminUser.firstName,
       restaurantName: restaurant.name,
       tempPassword: tempPassword,
-    }).catch(err => {
-      logger.error(`[RESTAURANT] Failed to send background invitation email to ${adminUser.email}:`, err);
+    }).catch((err) => {
+      logger.error(
+        `[RESTAURANT] Failed to send background invitation email to ${adminUser.email}:`,
+        err,
+      );
     });
 
     return restaurant;

@@ -100,7 +100,9 @@ export const config = {
     secure: cleanEnvValue(parsedEnv.data.SMTP_SECURE) === "true",
     from: cleanEnvValue(parsedEnv.data.FROM_EMAIL),
   },
-  clientUrl: cleanEnvValue(parsedEnv.data.CLIENT_URL) || cleanEnvValue(parsedEnv.data.APP_URL),
+  clientUrl:
+    cleanEnvValue(parsedEnv.data.CLIENT_URL) ||
+    cleanEnvValue(parsedEnv.data.APP_URL),
 };
 
 export type AppConfig = typeof config;

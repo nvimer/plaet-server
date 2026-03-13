@@ -56,11 +56,7 @@ class AuthController {
       const clientUrl = config.clientUrl || "http://localhost:5173";
       const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
-      await EmailService.sendVerificationEmail(
-        newUser.email,
-        verificationToken,
-        verificationUrl,
-      );
+      await EmailService.sendVerificationEmail(newUser.email, verificationUrl);
 
       logger.info(`[REGISTER] Verification email sent to ${newUser.email}`);
     } catch (error) {
@@ -202,11 +198,7 @@ class AuthController {
         const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
 
         // Send email
-        await EmailService.sendPasswordResetEmail(
-          user.email,
-          resetToken,
-          resetUrl,
-        );
+        await EmailService.sendPasswordResetEmail(user.email, resetUrl);
 
         logger.info(`[PASSWORD_RESET] Email sent to ${user.email}`);
       }
@@ -333,11 +325,7 @@ class AuthController {
         const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
         // Send email
-        await EmailService.sendVerificationEmail(
-          user.email,
-          verificationToken,
-          verificationUrl,
-        );
+        await EmailService.sendVerificationEmail(user.email, verificationUrl);
 
         logger.info(
           `[EMAIL_VERIFY] Resent verification email to ${user.email}`,

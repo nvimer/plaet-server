@@ -1,8 +1,4 @@
-import {
-  Order,
-  MenuItem,
-  OrderItemStatus,
-} from "@prisma/client";
+import { Order, MenuItem, OrderItemStatus } from "@prisma/client";
 import { CustomError } from "../../../types/custom-errors";
 import {
   InventoryType,
@@ -78,7 +74,7 @@ export class OrderCreationService {
     menuItems: MenuItem[],
     dailyMenu: DailyMenuWithRelations | null,
   ): number {
-    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) || 3000 : 0;
     const proteinCategoryId = dailyMenu?.proteinCategoryId;
 
     const proteinItems = items
@@ -88,7 +84,9 @@ export class OrderCreationService {
       })
       .filter(
         (item) =>
-          proteinCategoryId && item.menuItem && item.menuItem.categoryId === proteinCategoryId,
+          proteinCategoryId &&
+          item.menuItem &&
+          item.menuItem.categoryId === proteinCategoryId,
       )
       .sort((a, b) => b.price - a.price);
 
@@ -196,16 +194,24 @@ export class OrderCreationService {
       ? dateUtils.startOfDay(data.createdAt)
       : dateUtils.now();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
-    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) || 3000 : 0;
 
-    const isHistorical = data.createdAt && dateUtils.startOfDay(data.createdAt).getTime() < dateUtils.today().getTime();
+    const isHistorical =
+      data.createdAt &&
+      dateUtils.startOfDay(data.createdAt).getTime() <
+        dateUtils.today().getTime();
     let closureId: string | undefined;
 
     if (isHistorical) {
-      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(new Date(data.createdAt!), restaurantId || undefined);
+      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(
+        new Date(data.createdAt!),
+        restaurantId || undefined,
+      );
       closureId = historicalClosure?.id;
     } else {
-      const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
+      const activeClosure = await this.cashClosureRepo.findCurrentOpen(
+        restaurantId || undefined,
+      );
       if (!activeClosure) {
         throw new CustomError(
           "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
@@ -277,7 +283,10 @@ export class OrderCreationService {
             price: Number(menuItems[index]?.price || 0),
             categoryId: menuItems[index]?.categoryId,
           }))
-          .filter((item) => proteinCategoryId && item.categoryId === proteinCategoryId)
+          .filter(
+            (item) =>
+              proteinCategoryId && item.categoryId === proteinCategoryId,
+          )
           .sort((a, b) => b.price - a.price);
 
         const mainProteinIndex = proteinItems[0]?.index;
@@ -338,7 +347,10 @@ export class OrderCreationService {
             price: Number(menuItems[index]?.price || item.priceAtOrder || 0),
             categoryId: menuItems[index]?.categoryId,
           }))
-          .filter((item) => proteinCategoryId && item.categoryId === proteinCategoryId)
+          .filter(
+            (item) =>
+              proteinCategoryId && item.categoryId === proteinCategoryId,
+          )
           .sort((a, b) => b.price - a.price);
 
         const mainProtein = proteinItems[0]?.item;
@@ -365,9 +377,9 @@ export class OrderCreationService {
           {
             ...cleanData,
             status: data.status || OrderStatus.OPEN,
-            items: itemsWithBasePrice.map(item => ({
+            items: itemsWithBasePrice.map((item) => ({
               ...item,
-              status: data.itemStatus || item.status
+              status: data.itemStatus || item.status,
             })),
             customerId: customerId ?? undefined,
             cashClosureId: closureId,
@@ -378,7 +390,10 @@ export class OrderCreationService {
 
         // If order is created as PAID (Fast Historical Entry), create a matching payment record
         if (data.status === OrderStatus.PAID) {
-          const totalAmount = itemsWithBasePrice.reduce((sum, item) => sum + (item.priceAtOrder || 0) * item.quantity, 0);
+          const totalAmount = itemsWithBasePrice.reduce(
+            (sum, item) => sum + (item.priceAtOrder || 0) * item.quantity,
+            0,
+          );
           await tx.payment.create({
             data: {
               orderId,
@@ -386,7 +401,7 @@ export class OrderCreationService {
               method: "CASH",
               cashClosureId: closureId || null,
               createdAt: orderDate,
-            }
+            },
           });
         }
 
@@ -462,16 +477,24 @@ export class OrderCreationService {
       ? dateUtils.startOfDay(firstSubOrder.createdAt)
       : dateUtils.today();
     const dailyMenu = await dailyMenuRepository.findByCreatedAt(orderDate);
-    const basePrice = dailyMenu ? (Number(dailyMenu.basePrice) || 3000) : 0;
+    const basePrice = dailyMenu ? Number(dailyMenu.basePrice) || 3000 : 0;
 
-    const isHistorical = firstSubOrder.createdAt && dateUtils.startOfDay(firstSubOrder.createdAt).getTime() < dateUtils.today().getTime();
+    const isHistorical =
+      firstSubOrder.createdAt &&
+      dateUtils.startOfDay(firstSubOrder.createdAt).getTime() <
+        dateUtils.today().getTime();
     let closureId: string | undefined;
 
     if (isHistorical) {
-      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(new Date(firstSubOrder.createdAt!), restaurantId || undefined);
+      const historicalClosure = await this.cashClosureRepo.findActiveOnDate(
+        new Date(firstSubOrder.createdAt!),
+        restaurantId || undefined,
+      );
       closureId = historicalClosure?.id;
     } else {
-      const activeClosure = await this.cashClosureRepo.findCurrentOpen(restaurantId || undefined);
+      const activeClosure = await this.cashClosureRepo.findCurrentOpen(
+        restaurantId || undefined,
+      );
       if (!activeClosure) {
         throw new CustomError(
           "No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.",
@@ -583,7 +606,7 @@ export class OrderCreationService {
               method: "CASH",
               cashClosureId: closureId || null,
               createdAt: subOrder.createdAt || dateUtils.now(),
-            }
+            },
           });
         }
 
@@ -600,7 +623,9 @@ export class OrderCreationService {
               categoryId: mi?.categoryId,
             };
           })
-          .filter((p) => proteinCategoryId && p.categoryId === proteinCategoryId)
+          .filter(
+            (p) => proteinCategoryId && p.categoryId === proteinCategoryId,
+          )
           .sort((a, b) => b.price - a.price);
 
         const mainProteinIdx = subProteinsWithPrices[0]?.idx;
@@ -621,11 +646,13 @@ export class OrderCreationService {
               quantity: item.quantity,
               priceAtOrder: itemPrice + (isMainProtein ? basePrice : 0),
               notes: item.notes ?? null,
-              status: subOrder.itemStatus || this.determineItemStatus(
-                item.menuItemId ?? null,
-                dailyMenu,
-                isMainProtein,
-              ),
+              status:
+                subOrder.itemStatus ||
+                this.determineItemStatus(
+                  item.menuItemId ?? null,
+                  dailyMenu,
+                  isMainProtein,
+                ),
               createdAt: subOrder.createdAt ?? dateUtils.now(),
             };
           }),

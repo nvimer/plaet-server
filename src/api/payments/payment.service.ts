@@ -45,11 +45,13 @@ export class PaymentService {
       // 0. Ensure there is a valid cash closure
       let closureId: string | undefined;
       const orderDate = new Date(order.createdAt);
-      const isHistorical = dateUtils.startOfDay(orderDate).getTime() < dateUtils.today().getTime();
+      const isHistorical =
+        dateUtils.startOfDay(orderDate).getTime() < dateUtils.today().getTime();
 
       if (isHistorical) {
         // For historical orders, try to find a closure on that day, but don't block if not found
-        const historicalClosure = await this.cashClosureRepo.findActiveOnDate(orderDate);
+        const historicalClosure =
+          await this.cashClosureRepo.findActiveOnDate(orderDate);
         closureId = historicalClosure?.id;
       } else {
         // For real-time payments, strictly require an OPEN closure

@@ -4,10 +4,7 @@ import {
   PaginatedResponse,
 } from "../../interfaces/pagination.interfaces";
 import { CustomError } from "../../types/custom-errors";
-import {
-  OrderWithItems,
-  OrderWithRelations,
-} from "../../types/prisma.types";
+import { OrderWithItems, OrderWithRelations } from "../../types/prisma.types";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { ItemServiceInterface } from "../menus/items/interfaces/item.service.interface";
 import { OrderRepositoryInterface } from "./interfaces/order.repository.interface";

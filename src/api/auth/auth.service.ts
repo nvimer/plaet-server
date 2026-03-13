@@ -40,7 +40,7 @@ export class AuthService implements AuthServiceInterface {
    */
   async login(data: LoginInput): Promise<User> {
     let user: User;
-    
+
     try {
       user = await this.userService.findByEmail(data.email);
     } catch (error) {
