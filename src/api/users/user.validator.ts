@@ -22,6 +22,7 @@ export const updateUserSchema = z.object({
         .string()
         .min(8, "Password must be at least 8 characters long"),
       roleIds: z.array(z.number()).optional(),
+      mustChangePassword: z.boolean().optional(),
     })
     .partial(),
 });

@@ -131,6 +131,7 @@ class AuthController {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          mustChangePassword: user.mustChangePassword,
         },
       },
     });

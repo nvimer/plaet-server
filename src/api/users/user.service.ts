@@ -310,6 +310,7 @@ export class UserServices implements UserServiceInterface {
 
     const updatedUser = await this.userRepository.update(id, {
       password: hashedPassword,
+      mustChangePassword: false,
     });
 
     logger.info(`[USER] Password updated for user ${id}`);

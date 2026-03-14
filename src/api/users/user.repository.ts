@@ -199,6 +199,7 @@ class BasicUserRepository implements UserRepositoryInterface {
       data: {
         ...rest,
         password: password!,
+        mustChangePassword: true,
         ...(restaurantId && { restaurantId }),
         roles: {
           create:

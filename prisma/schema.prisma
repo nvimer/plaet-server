@@ -105,6 +105,7 @@ model User {
   lastFailedLogin     DateTime?     @map("last_failed_login")
   lockedUntil         DateTime?     @map("locked_until")
   passwordChangedAt   DateTime?     @default(now()) @map("password_changed_at")
+  mustChangePassword  Boolean       @default(true) @map("must_change_password")
   restaurantId        String?       @map("restaurant_id")
   token               Token[]
   closedCashClosures  CashClosure[] @relation("ClosedBy")
