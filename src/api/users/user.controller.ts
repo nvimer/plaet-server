@@ -5,6 +5,7 @@ import { HttpStatus } from "../../utils/httpStatus.enum";
 import { UpdateUserInput, UserSearchParams } from "./user.validator";
 import { RegisterInput } from "../auth/auth.validator";
 import { AuthenticatedUser } from "../../types/express";
+import { logger } from "../../config/logger";
 import {
   PaginationParams,
   DEFAULT_PAGE,
@@ -176,6 +177,8 @@ class UserController {
     const data: RegisterInput = req.body;
     const user = req.user as AuthenticatedUser;
     const restaurantId = user?.restaurantId;
+
+    logger.info(`[USER] Creating user with restaurantId: ${restaurantId}, user: ${user?.id}`);
 
     const newUser = await userService.register(data, restaurantId || undefined);
     res.status(HttpStatus.CREATED).json({

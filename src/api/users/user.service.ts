@@ -199,6 +199,8 @@ export class UserServices implements UserServiceInterface {
    * - EMAIL_CONFLICT: Email already exists in the system
    */
   async register(data: RegisterInput, restaurantId?: string): Promise<User> {
+    logger.info(`[USER SERVICE] register called with restaurantId: ${restaurantId}`);
+    
     await this.findByEmailOrFail(data.email);
 
     // Generate temp password if not provided
