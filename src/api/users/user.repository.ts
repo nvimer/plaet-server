@@ -149,8 +149,8 @@ class BasicUserRepository implements UserRepositoryInterface {
    */
   async findByEmail(email: string): Promise<User | null> {
     const client = getPrismaClient();
-    return client.user.findUnique({
-      where: { email },
+    return client.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
       include: { roles: { include: { role: true } } },
     });
   }

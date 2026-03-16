@@ -13,7 +13,7 @@ export const registerSchema = z.object({
       .string()
       .min(2, "Last name must be at least 2 characters long")
       .max(50, "Last name cannot be exceed 50 characters"),
-    email: z.string().email("Invalid email address"),
+    email: z.string().email("Invalid email address").toLowerCase(),
     phone: z
       .string()
       .regex(/^\d{10}$/, "Phone number must be a 10 digits")
@@ -38,7 +38,7 @@ export const registerSchema = z.object({
  */
 export const loginSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
+    email: z.string().email("Invalid email address").toLowerCase(),
     password: z.string().min(8, "Password must be at least 3 characters long"),
   }),
 });
@@ -51,7 +51,7 @@ export type LoginInput = z.infer<typeof loginSchema>["body"];
  */
 export const forgotPasswordSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
+    email: z.string().email("Invalid email address").toLowerCase(),
   }),
 });
 
@@ -105,7 +105,7 @@ export const verifyEmailSchema = z.object({
  */
 export const resendVerificationSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
+    email: z.string().email("Invalid email address").toLowerCase(),
   }),
 });
 
