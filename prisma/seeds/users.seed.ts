@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 
 export const usersData = [
   {
-    firstName: "Super",
-    lastName: "Admin",
-    email: "superadmin@plaet.com",
+    firstName: "Plaet",
+    lastName: "Management",
+    email: "plaet.management@gmail.com",
     phone: "3220000000",
-    password: "superadmin123",
+    password: "PlaetAdmin2026*",
     roles: [RoleName.SUPERADMIN],
     restaurantSlug: null,
     profile: {

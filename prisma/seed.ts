@@ -2,30 +2,36 @@ import { PrismaClient } from "@prisma/client";
 import { logger } from "../src/config/logger";
 import { seedPermissions } from "./seeds/permissions.seed";
 import { seedRoles } from "./seeds/roles.seed";
-import { seedRestaurants } from "./seeds/restaurants.seed";
 import { seedUsers } from "./seeds/users.seed";
 import { seedCategories } from "./seeds/categories.seed";
-import { seedItems } from "./seeds/items.seed";
 
 const prisma = new PrismaClient();
 
+/**
+ * Main seed function for infrastructure and indispensable data.
+ * This script prepares the database for a clean start.
+ */
 async function main() {
-  logger.info("🚀 Starting database seeding (Infrastructure only)...\n");
+  logger.info("🚀 Starting indispensable database seeding...\n");
 
   try {
+    // 1. Core Security & RBAC
     await seedPermissions();
     logger.info("");
 
     await seedRoles();
     logger.info("");
 
+    // 2. Initial Access
     await seedUsers();
     logger.info("");
 
+    // 3. Operational Defaults (Optional but useful for consistent data structure)
+    // Note: Categories are applied to existing restaurants in seedCategories
     await seedCategories();
     logger.info("");
 
-    logger.info("🎉 Database infrastructure seeding completed successfully!");
+    logger.info("🎉 Indispensable database seeding completed successfully!");
   } catch (error) {
     logger.error("❌ Error during seeding:", error);
     throw error;
