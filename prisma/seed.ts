@@ -22,6 +22,9 @@ async function main() {
     await seedUsers();
     logger.info("");
 
+    await seedCategories();
+    logger.info("");
+
     logger.info("🎉 Database infrastructure seeding completed successfully!");
   } catch (error) {
     logger.error("❌ Error during seeding:", error);
