@@ -7,6 +7,7 @@ import {
 import userService from "../api/users/user.service";
 import { PayloadInput } from "../api/auth/tokens/token.validation";
 import { config } from "../config";
+import { logger } from "../config/logger";
 
 import { TokenType } from "@prisma/client";
 

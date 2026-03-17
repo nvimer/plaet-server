@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { tenantContext } from "../utils/tenant-context";
+import { logger } from "../config/logger";
 
 type PrismaModelName =
   | "user"

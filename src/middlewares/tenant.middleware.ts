@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { tenantContext } from "../utils/tenant-context";
 import { AuthenticatedUser } from "../types/express";
+import { logger } from "../config/logger";
 
 /**
  * Middleware to extract restaurantId from authenticated user and set it in the context.

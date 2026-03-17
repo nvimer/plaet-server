@@ -1,5 +1,6 @@
 import { User, Prisma } from "@prisma/client";
 import { getPrismaClient } from "../../database/prisma";
+import { logger } from "../../config/logger";
 import { UserRepositoryInterface } from "./interfaces/user.repository.interface";
 import { UpdateUserInput, UserSearchParams } from "./user.validator";
 import { RegisterInput } from "../auth/auth.validator";
