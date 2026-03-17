@@ -9,7 +9,7 @@ export const usersData = [
     firstName: "Plaet",
     lastName: "Management",
     email: "plaet.management@gmail.com",
-    phone: "3220000000",
+    phone: null,
     password: "PlaetAdmin2026*",
     roles: [RoleName.SUPERADMIN],
     restaurantSlug: null,
@@ -32,7 +32,10 @@ export async function seedUsers() {
     const hashedPassword = hasherUtils.hash(userData.password);
     const user = await prisma.user.upsert({
       where: { email: userData.email },
-      update: {},
+      update: {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+      },
       create: {
         restaurantId: restaurant?.id || null,
         firstName: userData.firstName,
