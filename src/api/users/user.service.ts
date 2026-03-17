@@ -198,8 +198,8 @@ export class UserServices implements UserServiceInterface {
    * Error Codes:
    * - EMAIL_CONFLICT: Email already exists in the system
    */
-  async register(data: RegisterInput, restaurantId?: string): Promise<User> {
-    logger.info(`[USER SERVICE] register called with restaurantId: ${restaurantId}`);
+  async register(data: RegisterInput, restaurantId?: string | null): Promise<User> {
+    logger.info(`[USER SERVICE] register called - Email: ${data.email}, restaurantId from arg: ${restaurantId}`);
     
     await this.findByEmailOrFail(data.email);
 
@@ -213,6 +213,7 @@ export class UserServices implements UserServiceInterface {
       restaurantId: restaurantId || undefined,
     };
 
+    logger.info(`[USER SERVICE] calling userRepository.create with restaurantId: ${createData.restaurantId}`);
     const newUser = await this.userRepository.create(createData);
 
     // Get restaurant name if restaurantId is provided

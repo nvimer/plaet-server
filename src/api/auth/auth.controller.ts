@@ -46,8 +46,12 @@ class AuthController {
    */
   register = asyncHandler(async (req: Request, res: Response) => {
     const data: RegisterInput = req.body;
+    const authUser = req.user as AuthenticatedUser | undefined;
+    const restaurantId = authUser?.restaurantId;
 
-    const newUser = await userService.register(data);
+    logger.info(`[AUTH CONTROLLER] register request - authUser ID: ${authUser?.id}, Email: ${authUser?.email}, restaurantId: ${restaurantId}`);
+
+    const newUser = await userService.register(data, restaurantId);
 
     // Send verification email
     try {

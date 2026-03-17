@@ -243,6 +243,7 @@ const router = Router();
  */
 router.post(
   "/register",
+  authJwtOptional,
   authRateLimit,
   validate(registerSchema),
   authController.register,

@@ -193,6 +193,8 @@ class BasicUserRepository implements UserRepositoryInterface {
    */
   async create(data: RegisterInput & { restaurantId?: string }): Promise<User> {
     const { roleIds, restaurantId, password, ...rest } = data;
+    
+    logger.info(`[USER REPOSITORY] create - received restaurantId: ${restaurantId}`);
 
     const client = getPrismaClient();
     return await client.user.create({

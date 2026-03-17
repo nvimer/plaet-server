@@ -34,6 +34,8 @@ const jwtVerify: VerifyCallback = async (payload: PayloadInput, done) => {
 
     const user = await userService.findUserWithRolesAndPermissions(payload.sub);
     if (user) {
+      const authUser = user as any;
+      logger.info(`[JWT VERIFY] User ${authUser.email} authenticated - restaurantId: ${authUser.restaurantId}`);
       done(null, user);
     } else {
       done(null, false);

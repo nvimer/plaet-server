@@ -14,10 +14,12 @@ export const tenantMiddleware = (
   const restaurantId = user?.restaurantId;
 
   if (restaurantId) {
+    logger.info(`[TENANT MIDDLEWARE] Setting context for restaurantId: ${restaurantId}`);
     tenantContext.run({ restaurantId }, () => {
       next();
     });
   } else {
+    logger.debug(`[TENANT MIDDLEWARE] No restaurantId found for user: ${user?.email}`);
     next();
   }
 };
