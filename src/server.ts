@@ -30,7 +30,7 @@ process.on("unhandledRejection", (reason, promise) => {
 
 process.on("uncaughtException", (error) => {
   logger.error("Uncaught Exception:", error);
-  process.exit(1); // Uncaught exceptions suelen requerir un reinicio del proceso
+  process.exit(1); // Uncaught exceptions usually require a process restart
 });
 
 startServer();
