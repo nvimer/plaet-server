@@ -98,6 +98,11 @@ export const prisma = prismaClient.$extends({
 
         const extendedArgs = args as ExtendedArgs;
 
+        // DEBUG: Log model and operation
+        if (MODELS_WITH_TENANT.includes(model)) {
+          logger.debug(`[PRISMA EXTENSION] Model: ${model}, Op: ${operation}, restaurantId in context: ${restaurantId}`);
+        }
+
         // 1. Inyectar restaurantId en filtros (READ/UPDATE/DELETE)
         if (MODELS_WITH_TENANT.includes(model)) {
           if (restaurantId && operation !== "create") {
