@@ -17,7 +17,9 @@ export const registerSchema = z.object({
     phone: z
       .string()
       .regex(/^\d{10}$/, "Phone number must be a 10 digits")
-      .optional(),
+      .optional()
+      .or(z.literal(""))
+      .nullable(),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters long")
