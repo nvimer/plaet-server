@@ -78,22 +78,12 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   async create(data: CreateItemInput & { restaurantId?: string }): Promise<MenuItem> {
-    const { restaurantId: providedId, ...rest } = data;
+    const { restaurantId, ...rest } = data;
     
-    // Resolve restaurantId from data or context
-    const contextId = (await import("../../../utils/tenant-context")).tenantContext.getStore()?.restaurantId;
-    const restaurantId = providedId || contextId;
-
-    if (restaurantId) {
-      // @ts-ignore
-      const logger = (await import("../../../config/logger")).logger;
-      logger.info(`[ITEM REPOSITORY] Creating item: ${data.name} for restaurant: ${restaurantId}`);
-    }
-
     return await prisma.menuItem.create({ 
       data: {
         ...rest,
-        restaurantId: restaurantId || null
+        ...(restaurantId && { restaurantId })
       } 
     });
   }

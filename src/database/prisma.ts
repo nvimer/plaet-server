@@ -107,7 +107,14 @@ export const prisma = prismaClient.$extends({
         // 1. Inyectar restaurantId en filtros (READ/UPDATE/DELETE)
         if (MODELS_WITH_TENANT.includes(model)) {
           if (restaurantId && operation !== "create") {
-            extendedArgs.where = { ...extendedArgs.where, restaurantId };
+            // Allow global records (null) OR specific tenant records
+            extendedArgs.where = { 
+              ...extendedArgs.where, 
+              OR: [
+                { restaurantId },
+                { restaurantId: null }
+              ]
+            };
           }
         }
 

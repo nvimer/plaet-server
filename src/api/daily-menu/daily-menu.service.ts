@@ -31,6 +31,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
       name: item.name,
       price: Number(item.price),
       categoryId: item.categoryId,
+      imageUrl: item.imageUrl,
     };
   }
 
