@@ -183,6 +183,15 @@ class ItemController {
     const authUser = req.user as AuthenticatedUser;
     const restaurantId = authUser?.restaurantId;
     
+    if (!restaurantId) {
+      logger.error(`[ITEM CONTROLLER] Missing restaurantId for user: ${authUser?.email}`);
+      res.status(HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: "Your user account is not associated with a restaurant. Cannot create items.",
+      });
+      return;
+    }
+
     logger.info(`[ITEM CONTROLLER] Creating item: ${data.name} for restaurantId: ${restaurantId}`);
 
     if (req.file) {
