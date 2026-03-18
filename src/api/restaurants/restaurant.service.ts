@@ -18,6 +18,7 @@ import hasherUtils from "../../utils/hasher.utils";
 import restaurantRepository from "./restaurant.repository";
 import { EmailService } from "../../config/email";
 import { logger } from "../../config/logger";
+import { DEFAULT_CATEGORIES } from "../menus/categories/category.constants";
 
 /**
  * Restaurant Service
@@ -121,6 +122,18 @@ export class RestaurantService implements RestaurantServiceInterface {
             roleId: adminRole.id,
           },
         });
+
+        // e. Create Default Categories
+        await Promise.all(
+          DEFAULT_CATEGORIES.map((category) =>
+            tx.menuCategory.create({
+              data: {
+                ...category,
+                restaurantId: restaurant.id,
+              },
+            }),
+          ),
+        );
 
         return restaurant;
       },
