@@ -78,25 +78,22 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   async create(data: CreateItemInput & { restaurantId?: string }): Promise<MenuItem> {
-    const { restaurantId: providedRestaurantId, ...rest } = data;
+    const { restaurantId: providedId, ...rest } = data;
     
-    // Defensive restaurantId resolution
-    const contextRestaurantId = (await import("../../../utils/tenant-context")).tenantContext.getStore()?.restaurantId;
-    const finalRestaurantId = providedRestaurantId || contextRestaurantId;
+    // Resolve restaurantId from data or context
+    const contextId = (await import("../../../utils/tenant-context")).tenantContext.getStore()?.restaurantId;
+    const restaurantId = providedId || contextId;
 
-    // @ts-ignore
-    const logger = (await import("../../../config/logger")).logger;
-    logger.info(`[ITEM REPOSITORY] Creating item: ${data.name} - Provided RID: ${providedRestaurantId}, Context RID: ${contextRestaurantId}, Final RID: ${finalRestaurantId}`);
-
-    if (!finalRestaurantId) {
-      logger.warn(`[ITEM REPOSITORY] Creating item ${data.name} without a restaurantId! This will cause visibility issues.`);
+    if (restaurantId) {
+      // @ts-ignore
+      const logger = (await import("../../../config/logger")).logger;
+      logger.info(`[ITEM REPOSITORY] Creating item: ${data.name} for restaurant: ${restaurantId}`);
     }
 
-    const client = getPrismaClient();
-    return await client.menuItem.create({ 
+    return await prisma.menuItem.create({ 
       data: {
         ...rest,
-        restaurantId: finalRestaurantId || null
+        restaurantId: restaurantId || null
       } 
     });
   }

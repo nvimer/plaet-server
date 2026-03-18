@@ -121,7 +121,7 @@ export class ItemService implements ItemServiceInterface {
    * ensures proper data structure and category association.
    */
   async createItem(data: CreateItemInput, restaurantId?: string): Promise<MenuItem> {
-    logger.info(`[ITEM SERVICE] Creating item: ${data.name} with restaurantId: ${restaurantId}`);
+    logger.info(`[ITEM SERVICE] Creating item: ${data.name} for restaurantId: ${restaurantId}`);
     return await this.itemRepository.create({ ...data, restaurantId });
   }
 
