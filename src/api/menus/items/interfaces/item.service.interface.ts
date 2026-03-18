@@ -25,7 +25,7 @@ export interface ItemServiceInterface {
   ): Promise<PaginatedResponse<MenuItem>>;
   findMenuItemById(id: number): Promise<MenuItem>;
   findMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
-  createItem(data: CreateItemInput): Promise<MenuItem>;
+  createItem(data: CreateItemInput, restaurantId?: string): Promise<MenuItem>;
 
   searchMenuItems(
     params: PaginationParams & MenuItemSearchParams,

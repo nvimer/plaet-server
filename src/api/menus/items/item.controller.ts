@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthenticatedUser } from "../../../types/express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import { ItemServiceInterface } from "./interfaces/item.service.interface";
+import { logger } from "../../../config/logger";
 import {
   AddStockBodyInput,
   BulkInventoryTypeInput,
@@ -189,7 +190,7 @@ class ItemController {
       data.imagePublicId = req.file.filename;
     }
 
-    const item = await this.itemService.createItem(data, restaurantId);
+    const item = await this.itemService.createItem(data, restaurantId ?? undefined);
 
     res.status(HttpStatus.CREATED).json({
       success: true,

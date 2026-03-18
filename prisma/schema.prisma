@@ -44,6 +44,8 @@ model Token {
   createdAt   DateTime  @default(now())
   userId      String
   user        User      @relation(fields: [userId], references: [id])
+
+  @@map("tokens")
 }
 
 model Role {
@@ -201,7 +203,7 @@ model MenuItem {
   inventoryType       String            @default("UNLIMITED") @map("inventory_type")
   stockQuantity       Int?              @map("stock_quantity")
   lowStockAlert       Int?              @default(5) @map("low_stock_alert")
-  autoMarkUnavailable Boolean           @default(true) @map("auto_mark_unavailable)")
+  autoMarkUnavailable Boolean           @default(true) @map("auto_mark_unavailable")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
   deleted             Boolean           @default(false)
@@ -234,26 +236,26 @@ model StockAdjustment {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  tableId         Int?        @map("table_id")
-  waiterId        String      @map("waiter_id")
-  customerId      String?     @map("customerId")
-  status          OrderStatus @default(OPEN)
-  type            OrderType   @default(DINE_IN)
-  totalAmount     Decimal     @default(0.00) @map("total_amount") @db.Decimal(10, 2)
+  id              String       @id @default(uuid())
+  tableId         Int?         @map("table_id")
+  waiterId        String       @map("waiter_id")
+  customerId      String?      @map("customerId")
+  status          OrderStatus  @default(OPEN)
+  type            OrderType    @default(DINE_IN)
+  totalAmount     Decimal      @default(0.00) @map("total_amount") @db.Decimal(10, 2)
   notes           String?
-  whatsappOrderId String?     @unique @map("whatsapp_order_id")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  restaurantId    String?     @map("restaurant_id")
-  deleted         Boolean     @default(false)
-  deletedAt       DateTime?   @map("deleted_at")
-  cashClosureId   String?     @map("cash_closure_id")
+  whatsappOrderId String?      @unique @map("whatsapp_order_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  restaurantId    String?      @map("restaurant_id")
+  deleted         Boolean      @default(false)
+  deletedAt       DateTime?    @map("deleted_at")
+  cashClosureId   String?      @map("cash_closure_id")
   items           OrderItem[]
-  customer        Customer?   @relation(fields: [customerId], references: [id])
-  restaurant      Restaurant? @relation(fields: [restaurantId], references: [id])
-  table           Table?      @relation(fields: [tableId], references: [id])
-  waiter          User        @relation("OrdersTakenByWaiter", fields: [waiterId], references: [id])
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  restaurant      Restaurant?  @relation(fields: [restaurantId], references: [id])
+  table           Table?       @relation(fields: [tableId], references: [id])
+  waiter          User         @relation("OrdersTakenByWaiter", fields: [waiterId], references: [id])
   cashClosure     CashClosure? @relation(fields: [cashClosureId], references: [id])
   payments        Payment[]
 
@@ -356,20 +358,20 @@ model Payment {
 }
 
 model Expense {
-  id             String      @id @default(uuid())
+  id             String       @id @default(uuid())
   date           DateTime
-  amount         Decimal     @db.Decimal(10, 2)
+  amount         Decimal      @db.Decimal(10, 2)
   description    String?
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  deleted        Boolean     @default(false)
-  deletedAt      DateTime?   @map("deleted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deleted        Boolean      @default(false)
+  deletedAt      DateTime?    @map("deleted_at")
   category       String
-  registeredById String      @map("registered_by_id")
-  restaurantId   String?     @map("restaurant_id")
-  cashClosureId  String?     @map("cash_closure_id")
-  registeredBy   User        @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
-  restaurant     Restaurant? @relation(fields: [restaurantId], references: [id])
+  registeredById String       @map("registered_by_id")
+  restaurantId   String?      @map("restaurant_id")
+  cashClosureId  String?      @map("cash_closure_id")
+  registeredBy   User         @relation("ExpensesRecordedBy", fields: [registeredById], references: [id])
+  restaurant     Restaurant?  @relation(fields: [restaurantId], references: [id])
   cashClosure    CashClosure? @relation(fields: [cashClosureId], references: [id])
 
   @@index([restaurantId])
@@ -385,23 +387,23 @@ model CashClosure {
   openingBalance  Decimal           @map("opening_balance") @db.Decimal(10, 2)
   expectedBalance Decimal           @default(0) @map("expected_balance") @db.Decimal(10, 2)
   actualBalance   Decimal?          @map("actual_balance") @db.Decimal(10, 2)
-    difference      Decimal?          @map("difference") @db.Decimal(10, 2)
-    totalCash       Decimal?          @default(0) @map("total_cash") @db.Decimal(10, 2)
-    totalNequi      Decimal?          @default(0) @map("total_nequi") @db.Decimal(10, 2)
-    totalExpenses   Decimal?          @default(0) @map("total_expenses") @db.Decimal(10, 2)
-    totalVouchers   Decimal?          @default(0) @map("total_vouchers") @db.Decimal(10, 2)
-    status          CashClosureStatus @default(OPEN)
-    createdAt       DateTime          @default(now()) @map("created_at")
-    updatedAt       DateTime          @updatedAt @map("updated_at")
-    restaurantId    String?           @map("restaurant_id")
-    deleted         Boolean          @default(false)
-    deletedAt       DateTime?         @map("deleted_at")
-    closedBy        User?             @relation("ClosedBy", fields: [closedById], references: [id])
-    openedBy        User              @relation("OpenedBy", fields: [openedById], references: [id])
-    restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
-    payments        Payment[]
-    expenses        Expense[]
-    orders          Order[]
+  difference      Decimal?          @map("difference") @db.Decimal(10, 2)
+  totalCash       Decimal?          @default(0) @map("total_cash") @db.Decimal(10, 2)
+  totalNequi      Decimal?          @default(0) @map("total_nequi") @db.Decimal(10, 2)
+  totalExpenses   Decimal?          @default(0) @map("total_expenses") @db.Decimal(10, 2)
+  totalVouchers   Decimal?          @default(0) @map("total_vouchers") @db.Decimal(10, 2)
+  status          CashClosureStatus @default(OPEN)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  restaurantId    String?           @map("restaurant_id")
+  deleted         Boolean           @default(false)
+  deletedAt       DateTime?         @map("deleted_at")
+  closedBy        User?             @relation("ClosedBy", fields: [closedById], references: [id])
+  openedBy        User              @relation("OpenedBy", fields: [openedById], references: [id])
+  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
+  payments        Payment[]
+  expenses        Expense[]
+  orders          Order[]
 
   @@index([restaurantId])
   @@map("cash_closures")

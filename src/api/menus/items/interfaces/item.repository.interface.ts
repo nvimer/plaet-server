@@ -25,7 +25,7 @@ export interface ItemRepositoryInterface {
     tx: import("../../../../types/prisma-transaction.types").PrismaTransaction,
     itemId: number,
   ): Promise<MenuItem | null>;
-  create(data: CreateItemInput): Promise<MenuItem>;
+  create(data: CreateItemInput & { restaurantId?: string }): Promise<MenuItem>;
 
   search(
     params: PaginationParams & MenuItemSearchParams,
