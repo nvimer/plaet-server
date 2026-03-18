@@ -432,22 +432,17 @@ export class OrderCreationService {
         }
       }
 
-      // Recalculate total for orderRepository.updateTotal
-      // We use the items already calculated above
-      const updatedItems = await tx.orderItem.findMany({
-        where: { orderId }
+      // FINAL TOTAL SYNC: Sum all items actually saved in the DB for this order
+      const allSavedItems = await tx.orderItem.findMany({
+        where: { orderId },
       });
-      
-      const newItemsTotal = updatedItems.reduce(
-        (sum, item) => sum + Number(item.priceAtOrder) * item.quantity, 
-        0
+
+      const finalOrderTotal = allSavedItems.reduce(
+        (sum, item) => sum + Number(item.priceAtOrder) * item.quantity,
+        0,
       );
 
-      await this.orderRepository.updateTotal(
-        orderId,
-        (existingOrder ? currentTotal : 0) + newItemsTotal,
-        tx,
-      );
+      await this.orderRepository.updateTotal(orderId, finalOrderTotal, tx);
 
       // STOCK DEDUCTION: Skip for historical orders
       if (!isHistorical) {
@@ -624,7 +619,6 @@ export class OrderCreationService {
           );
 
         const subOrderTotal = serviceAmount + manualItemsAmount;
-        tableTotal += subOrderTotal;
 
         // If subOrder is marked as PAID, create a corresponding payment
         if (subOrder.status === OrderStatus.PAID) {
@@ -713,7 +707,17 @@ export class OrderCreationService {
         }
       }
 
-      await this.orderRepository.updateTotal(masterOrderId, tableTotal, tx);
+      // FINAL TOTAL SYNC: Sum all items actually saved in the DB for this order
+      const allSavedItems = await tx.orderItem.findMany({
+        where: { orderId: masterOrderId },
+      });
+
+      const finalTableTotal = allSavedItems.reduce(
+        (sum, item) => sum + Number(item.priceAtOrder) * item.quantity,
+        0,
+      );
+
+      await this.orderRepository.updateTotal(masterOrderId, finalTableTotal, tx);
 
       if (data.tableId) {
         await tx.table.update({
@@ -727,7 +731,7 @@ export class OrderCreationService {
         include: { items: { include: { menuItem: true } } },
       });
 
-      return { orders: [completeOrder as OrderWithItems], tableTotal };
+      return { orders: [completeOrder as OrderWithItems], tableTotal: finalTableTotal };
     });
   }
 }
