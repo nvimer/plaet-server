@@ -3,6 +3,7 @@ import { logger } from "../src/config/logger";
 import { seedPermissions } from "./seeds/permissions.seed";
 import { seedRoles } from "./seeds/roles.seed";
 import { seedUsers } from "./seeds/users.seed";
+import { seedRestaurants } from "./seeds/restaurants.seed";
 import { seedCategories } from "./seeds/categories.seed";
 
 const prisma = new PrismaClient();
@@ -22,12 +23,15 @@ async function main() {
     await seedRoles();
     logger.info("");
 
-    // 2. Initial Access
+    // 2. Initial Access & Context
+    await seedRestaurants();
+    logger.info("");
+
     await seedUsers();
     logger.info("");
 
-    // 3. Operational Defaults (Optional but useful for consistent data structure)
-    // Note: Categories are applied to existing restaurants in seedCategories
+    // 3. Operational Defaults
+    // Categories are applied to existing restaurants in seedCategories
     await seedCategories();
     logger.info("");
 

@@ -11,8 +11,8 @@ export const usersData = [
     email: "plaet.management@gmail.com",
     phone: null,
     password: "PlaetAdmin2026*",
-    roles: [RoleName.SUPERADMIN],
-    restaurantSlug: null,
+    roles: [RoleName.SUPERADMIN, RoleName.ADMIN],
+    restaurantSlug: "plaet-main",
     profile: {
       address: "System HQ",
     },
