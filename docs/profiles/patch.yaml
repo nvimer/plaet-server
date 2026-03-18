@@ -120,7 +120,7 @@ paths:
                     code: "VALIDATION_ERROR"
                     errors:
                       - field: "phone"
-                        message: "Phone number must be a 10 digits"
+                        message: "Phone number must be 10 digits"
 
                 invalidName:
                   summary: Nombre muy corto

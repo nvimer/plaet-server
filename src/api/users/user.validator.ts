@@ -17,7 +17,7 @@ export const updateUserSchema = z.object({
         .min(2, "Last name must be at least 2 characters long")
         .max(50, "Last name cannot exceed 50 characters"),
       email: z.string().email("Invalid email address"),
-      phone: z.string().regex(/^\d{10}$/, "Phone number must be a 10 digits").optional().or(z.literal("")).nullable(),
+      phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits").optional().or(z.literal("")).nullable(),
       password: z
         .string()
         .min(8, "Password must be at least 8 characters long"),

@@ -8,15 +8,15 @@ export const registerSchema = z.object({
     firstName: z
       .string()
       .min(2, "First name must be at least 2 characters long")
-      .max(50, "First name cannot be exceed 50 characters"),
+      .max(50, "First name cannot exceed 50 characters"),
     lastName: z
       .string()
       .min(2, "Last name must be at least 2 characters long")
-      .max(50, "Last name cannot be exceed 50 characters"),
+      .max(50, "Last name cannot exceed 50 characters"),
     email: z.string().email("Invalid email address").toLowerCase(),
     phone: z
       .string()
-      .regex(/^\d{10}$/, "Phone number must be a 10 digits")
+      .regex(/^\d{10}$/, "Phone number must be 10 digits")
       .optional()
       .or(z.literal(""))
       .nullable(),
@@ -41,7 +41,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   body: z.object({
     email: z.string().email("Invalid email address").toLowerCase(),
-    password: z.string().min(8, "Password must be at least 3 characters long"),
+    password: z.string().min(8, "Password must be at least 8 characters long"),
   }),
 });
 

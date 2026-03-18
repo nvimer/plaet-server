@@ -28,7 +28,7 @@ export const createRestaurantSchema = z.object({
       email: z.string().email("Invalid email address"),
       phone: z
         .string()
-        .regex(/^\d{10}$/, "Phone number must be a 10 digits")
+        .regex(/^\d{10}$/, "Phone number must be 10 digits")
         .optional(),
       password: z
         .string()
