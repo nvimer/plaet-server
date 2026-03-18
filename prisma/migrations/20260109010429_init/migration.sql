@@ -149,7 +149,7 @@ CREATE TABLE "menu_items" (
     "stock_quantity" INTEGER,
     "initial_stock" INTEGER,
     "low_stock_alert" INTEGER DEFAULT 5,
-    "auto_mark_unavailable)" BOOLEAN NOT NULL DEFAULT true,
+    "auto_mark_unavailable" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,

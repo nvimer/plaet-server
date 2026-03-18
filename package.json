@@ -60,6 +60,8 @@
     "resend": "^6.9.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
     "winston": "^3.17.0",
     "zod": "^3.25.23"
   },
@@ -94,9 +96,7 @@
     "prettier": "^3.5.3",
     "prisma": "^6.17.1",
     "supertest": "^7.1.4",
-    "ts-jest": "^29.4.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "ts-jest": "^29.4.2"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
