@@ -19,6 +19,7 @@ import { CashClosureRepository } from "../../cash-closures/cash-closure.reposito
 import { getPrismaClient } from "../../../database/prisma";
 import { PrismaTransaction } from "../../../types/prisma-transaction.types";
 import { dateUtils } from "../../../utils/date.utils";
+import { logger } from "../../../config/logger";
 
 type OrderCustomerData = {
   id?: string;
@@ -293,15 +294,24 @@ export class OrderCreationService {
 
         await tx.orderItem.createMany({
           data: data.items.map((item, index) => {
-            const itemBasePrice = Number(
-              menuItems[index]?.price || item.priceAtOrder || 0,
-            );
+            const mi = menuItems[index];
+            const itemBasePrice = mi
+              ? Number(mi.price)
+              : Number(item.priceAtOrder || 0);
+            
             const isMainProtein = index === mainProteinIndex;
+            
+            // FIX: If historical or no daily menu, trust the provided price.
+            // Otherwise, apply the combo (base + protein) logic.
+            const finalPrice = (isHistorical || !dailyMenu) 
+              ? Number(item.priceAtOrder || itemBasePrice)
+              : itemBasePrice + (isMainProtein ? basePrice : 0);
+
             return {
               orderId,
               menuItemId: item.menuItemId!,
               quantity: item.quantity,
-              priceAtOrder: itemBasePrice + (isMainProtein ? basePrice : 0),
+              priceAtOrder: finalPrice,
               notes: item.notes,
               status: this.determineItemStatus(
                 item.menuItemId!,
@@ -355,15 +365,22 @@ export class OrderCreationService {
 
         const mainProtein = proteinItems[0]?.item;
 
-        const itemsWithBasePrice = data.items.map((item) => {
+        const itemsWithCalculatedPrices = data.items.map((item) => {
           const mi = menuItems.find((m) => m?.id === item.menuItemId);
-          const baseItemPrice = mi
+          const itemBasePrice = mi
             ? Number(mi.price)
             : Number(item.priceAtOrder || 0);
+          
           const isMainProtein = item === mainProtein;
+          
+          // FIX: If historical or no daily menu, trust the provided price.
+          const finalPrice = (isHistorical || !dailyMenu)
+            ? Number(item.priceAtOrder || itemBasePrice)
+            : itemBasePrice + (isMainProtein ? basePrice : 0);
+
           return {
             ...item,
-            priceAtOrder: baseItemPrice + (isMainProtein ? basePrice : 0),
+            priceAtOrder: finalPrice,
             status: this.determineItemStatus(
               item.menuItemId || null,
               dailyMenu,
@@ -377,7 +394,7 @@ export class OrderCreationService {
           {
             ...cleanData,
             status: data.status || OrderStatus.OPEN,
-            items: itemsWithBasePrice.map((item) => ({
+            items: itemsWithCalculatedPrices.map((item) => ({
               ...item,
               status: data.itemStatus || item.status,
             })),
@@ -390,7 +407,7 @@ export class OrderCreationService {
 
         // If order is created as PAID (Fast Historical Entry), create a matching payment record
         if (data.status === OrderStatus.PAID) {
-          const totalAmount = itemsWithBasePrice.reduce(
+          const totalAmount = itemsWithCalculatedPrices.reduce(
             (sum, item) => sum + (item.priceAtOrder || 0) * item.quantity,
             0,
           );
@@ -413,31 +430,41 @@ export class OrderCreationService {
         }
       }
 
-      const newItemsTotal = this.calculateOrderTotal(
-        data.items,
-        menuItems.filter((mi): mi is MenuItem => mi !== null),
-        dailyMenu,
+      // Recalculate total for orderRepository.updateTotal
+      // We use the items already calculated above
+      const updatedItems = await tx.orderItem.findMany({
+        where: { orderId }
+      });
+      
+      const newItemsTotal = updatedItems.reduce(
+        (sum, item) => sum + Number(item.priceAtOrder) * item.quantity, 
+        0
       );
 
       await this.orderRepository.updateTotal(
         orderId,
-        currentTotal + newItemsTotal,
+        (existingOrder ? currentTotal : 0) + newItemsTotal,
         tx,
       );
 
-      const stockDeductionPromises = data.items.map((item, index) => {
-        const menuItem = menuItems[index];
-        if (menuItem && menuItem.inventoryType === InventoryType.TRACKED) {
-          return this.itemService.deductStockForOrder(
-            item.menuItemId!,
-            item.quantity,
-            orderId,
-            tx,
-          );
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(stockDeductionPromises);
+      // STOCK DEDUCTION: Skip for historical orders
+      if (!isHistorical) {
+        const stockDeductionPromises = data.items.map((item, index) => {
+          const menuItem = menuItems[index];
+          if (menuItem && menuItem.inventoryType === InventoryType.TRACKED) {
+            return this.itemService.deductStockForOrder(
+              item.menuItemId!,
+              item.quantity,
+              orderId,
+              tx,
+            );
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(stockDeductionPromises);
+      } else {
+        logger.info(`[ORDER CREATION] Skipping stock deduction for historical order: ${orderId}`);
+      }
 
       const updatedOrder = await tx.order.findUnique({
         where: { id: orderId },
@@ -635,16 +662,22 @@ export class OrderCreationService {
             const mi = item.menuItemId
               ? menuItems.find((m) => m.id === item.menuItemId)
               : null;
-            const itemPrice = mi
+            const itemBasePrice = mi
               ? Number(mi.price)
               : Number(item.priceAtOrder || 0);
+            
             const isMainProtein = index === mainProteinIdx;
+
+            // FIX: If historical or no daily menu, trust the provided price.
+            const finalPrice = (isHistorical || !dailyMenu)
+              ? Number(item.priceAtOrder || itemBasePrice)
+              : itemBasePrice + (isMainProtein ? basePrice : 0);
 
             return {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
-              priceAtOrder: itemPrice + (isMainProtein ? basePrice : 0),
+              priceAtOrder: finalPrice,
               notes: item.notes ?? null,
               status:
                 subOrder.itemStatus ||
@@ -658,18 +691,23 @@ export class OrderCreationService {
           }),
         });
 
-        for (const item of subOrder.items) {
-          const mi = item.menuItemId
-            ? menuItems.find((m) => m.id === item.menuItemId)
-            : null;
-          if (mi && mi.inventoryType === InventoryType.TRACKED) {
-            await this.itemService.deductStockForOrder(
-              item.menuItemId!,
-              item.quantity,
-              masterOrderId,
-              tx,
-            );
+        // STOCK DEDUCTION: Skip for historical orders
+        if (!isHistorical) {
+          for (const item of subOrder.items) {
+            const mi = item.menuItemId
+              ? menuItems.find((m) => m.id === item.menuItemId)
+              : null;
+            if (mi && mi.inventoryType === InventoryType.TRACKED) {
+              await this.itemService.deductStockForOrder(
+                item.menuItemId!,
+                item.quantity,
+                masterOrderId,
+                tx,
+              );
+            }
           }
+        } else {
+          logger.info(`[BATCH ORDER] Skipping stock deduction for historical order in master: ${masterOrderId}`);
         }
       }
 
