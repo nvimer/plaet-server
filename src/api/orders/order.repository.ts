@@ -135,7 +135,7 @@ class OrderRepository implements OrderRepositoryInterface {
       data: {
         ...orderData,
         waiterId,
-        status: OrderStatus.OPEN,
+        status: orderData.status || OrderStatus.OPEN,
         totalAmount: 0,
         createdAt: orderData.createdAt || dateUtils.now(), // Support historical date entry or default to now in CO
         items: {
@@ -144,7 +144,7 @@ class OrderRepository implements OrderRepositoryInterface {
             quantity: item.quantity,
             priceAtOrder: item.priceAtOrder || 0,
             notes: item.notes,
-            status: OrderItemStatus.PENDING,
+            status: item.status || OrderItemStatus.PENDING,
             cashClosureId: orderData.cashClosureId,
             createdAt: orderData.createdAt || dateUtils.now(),
           })),

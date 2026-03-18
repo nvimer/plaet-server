@@ -54,6 +54,7 @@ const orderItemSchema = z.object({
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional(),
   priceAtOrder: z.number().nonnegative().optional(),
+  status: orderItemStatusEnum.optional(),
   // SET_LUNCH SPECIFIC FIELDS
   isSubstitution: z.boolean().optional(),
   originalItemId: z.number().int().positive().optional(),

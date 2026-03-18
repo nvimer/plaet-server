@@ -313,11 +313,13 @@ export class OrderCreationService {
               quantity: item.quantity,
               priceAtOrder: finalPrice,
               notes: item.notes,
-              status: this.determineItemStatus(
-                item.menuItemId!,
-                dailyMenu,
-                isMainProtein,
-              ),
+              status:
+                data.itemStatus ||
+                this.determineItemStatus(
+                  item.menuItemId!,
+                  dailyMenu,
+                  isMainProtein,
+                ),
             };
           }),
         });
