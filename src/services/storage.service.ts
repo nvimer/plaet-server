@@ -2,7 +2,13 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { config } from "../config";
 import { logger } from "../config/logger";
-import { Request } from "express";
+
+// Initialize Cloudinary configuration
+cloudinary.config({
+  cloud_name: config.cloudinaryCloudName,
+  api_key: config.cloudinaryApiKey,
+  api_secret: config.cloudinaryApiSecret,
+});
 
 interface CloudinaryStorageParams {
   folder: string;
