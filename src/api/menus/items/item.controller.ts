@@ -179,13 +179,17 @@ class ItemController {
    */
   postItem = asyncHandler(async (req: Request, res: Response) => {
     const data: CreateItemInput = req.body;
+    const authUser = req.user as AuthenticatedUser;
+    const restaurantId = authUser?.restaurantId;
+    
+    logger.info(`[ITEM CONTROLLER] Creating item: ${data.name} for restaurantId: ${restaurantId}`);
 
     if (req.file) {
       data.imageUrl = req.file.path;
       data.imagePublicId = req.file.filename;
     }
 
-    const item = await this.itemService.createItem(data);
+    const item = await this.itemService.createItem(data, restaurantId);
 
     res.status(HttpStatus.CREATED).json({
       success: true,

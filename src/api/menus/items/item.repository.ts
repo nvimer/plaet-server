@@ -77,8 +77,17 @@ class ItemRepository implements ItemRepositoryInterface {
     return item;
   }
 
-  async create(data: CreateItemInput): Promise<MenuItem> {
-    return await prisma.menuItem.create({ data });
+  async create(data: CreateItemInput & { restaurantId?: string }): Promise<MenuItem> {
+    const { restaurantId, ...rest } = data;
+    // @ts-ignore
+    const logger = (await import("../../../config/logger")).logger;
+    logger.info(`[ITEM REPOSITORY] Creating item: ${data.name} with restaurantId: ${restaurantId}`);
+    return await prisma.menuItem.create({ 
+      data: {
+        ...rest,
+        ...(restaurantId && { restaurantId })
+      } 
+    });
   }
 
   async search(
