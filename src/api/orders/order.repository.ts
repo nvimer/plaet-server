@@ -130,17 +130,23 @@ class OrderRepository implements OrderRepositoryInterface {
     // Extract items from order data
     const { items, ...orderData } = data;
 
-    // Create order with items
+    // Create order with items - be explicit about fields to avoid Prisma validation errors
     const order = await client.order.create({
       data: {
-        ...orderData,
+        tableId: orderData.tableId,
         waiterId,
+        customerId: orderData.customerId,
         status: orderData.status || OrderStatus.OPEN,
+        type: orderData.type,
         totalAmount: 0,
+        notes: orderData.notes,
+        whatsappOrderId: orderData.whatsappOrderId,
         createdAt: orderData.createdAt || dateUtils.now(), // Support historical date entry or default to now in CO
+        cashClosureId: orderData.cashClosureId,
+        restaurantId: orderData.restaurantId,
         items: {
           create: items?.map((item: OrderItemInput) => ({
-            menuItemId: item.menuItemId,
+            menuItemId: item.menuItemId ?? null,
             quantity: item.quantity,
             priceAtOrder: item.priceAtOrder || 0,
             notes: item.notes,

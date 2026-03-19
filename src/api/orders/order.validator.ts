@@ -91,6 +91,7 @@ export const createOrderSchema = z.object({
       .optional(),
     createdAt: z.coerce.date().optional(),
     cashClosureId: z.string().uuid().optional(),
+    restaurantId: z.string().uuid().optional(),
     status: orderStatusEnum.optional(),
     itemStatus: orderItemStatusEnum.optional(),
   }),

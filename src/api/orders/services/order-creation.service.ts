@@ -309,14 +309,14 @@ export class OrderCreationService {
 
             return {
               orderId,
-              menuItemId: item.menuItemId!,
+              menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
               priceAtOrder: finalPrice,
               notes: item.notes,
               status:
                 data.itemStatus ||
                 this.determineItemStatus(
-                  item.menuItemId!,
+                  item.menuItemId ?? null,
                   dailyMenu,
                   isMainProtein,
                 ),
@@ -402,6 +402,7 @@ export class OrderCreationService {
             })),
             customerId: customerId ?? undefined,
             cashClosureId: closureId,
+            restaurantId: restaurantId ?? undefined,
           },
           tx,
         );
@@ -577,6 +578,7 @@ export class OrderCreationService {
             createdAt: firstSubOrder.createdAt || dateUtils.now(),
             cashClosureId: closureId,
             status: firstSubOrder.status || OrderStatus.OPEN,
+            restaurantId: restaurantId ?? undefined,
           } as CreateOrderBodyInput,
           tx,
         );
