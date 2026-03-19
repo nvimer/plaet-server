@@ -292,27 +292,27 @@ export class OrderCreationService {
 
         const mainProteinIndex = proteinItems[0]?.index;
 
-        await tx.orderItem.createMany({
-          data: data.items.map((item, index) => {
-            const mi = menuItems[index];
-            const itemBasePrice = mi
-              ? Number(mi.price)
-              : Number(item.priceAtOrder || 0);
-            
-            const isMainProtein = index === mainProteinIndex;
-            
-            // FIX: If historical or no daily menu, trust the provided price.
-            // Otherwise, apply the combo (base + protein) logic.
-            const finalPrice = (isHistorical || !dailyMenu) 
-              ? Number(item.priceAtOrder || itemBasePrice)
-              : itemBasePrice + (isMainProtein ? basePrice : 0);
+        for (let index = 0; index < data.items.length; index++) {
+          const item = data.items[index];
+          const mi = menuItems[index];
+          const itemBasePrice = mi
+            ? Number(mi.price)
+            : Number(item.priceAtOrder || 0);
+          
+          const isMainProtein = index === mainProteinIndex;
+          
+          // FIX: If historical or no daily menu, trust the provided price.
+          const finalPrice = (isHistorical || !dailyMenu) 
+            ? Number(item.priceAtOrder || itemBasePrice)
+            : itemBasePrice + (isMainProtein ? basePrice : 0);
 
-            return {
+          await tx.orderItem.create({
+            data: {
               orderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
               priceAtOrder: finalPrice,
-              notes: item.notes,
+              notes: item.notes || null,
               status:
                 data.itemStatus ||
                 this.determineItemStatus(
@@ -320,9 +320,9 @@ export class OrderCreationService {
                   dailyMenu,
                   isMainProtein,
                 ),
-            };
-          }),
-        });
+            },
+          });
+        }
 
         await tx.table.update({
           where: { id: data.tableId! },
@@ -534,6 +534,7 @@ export class OrderCreationService {
       ? await client.order.findFirst({
           where: {
             tableId: data.tableId,
+            restaurantId: restaurantId || null,
             status: OrderStatus.OPEN,
           },
         })
@@ -541,38 +542,16 @@ export class OrderCreationService {
 
     return await client.$transaction(async (tx: PrismaTransaction) => {
       let masterOrderId: string;
-      let tableTotal = existingOrder ? Number(existingOrder.totalAmount) : 0;
 
       if (existingOrder) {
         masterOrderId = existingOrder.id;
       } else {
-        const firstSubOrder = data.orders[0];
-        const restaurantId = (
-          await tx.user.findUnique({
-            where: { id: waiterId },
-            select: { restaurantId: true },
-          })
-        )?.restaurantId;
-
-        const customerId = await this.getOrCreateCustomer(
-          restaurantId,
-          {
-            id: firstSubOrder.customerId,
-            name: firstSubOrder.customerName,
-            phone: firstSubOrder.customerPhone,
-            phone2: firstSubOrder.customerPhone2,
-            address1: firstSubOrder.address1,
-            address2: firstSubOrder.address2,
-          },
-          tx,
-        );
-
         const newOrder = await this.orderRepository.create(
           waiterId,
           {
             tableId: data.tableId,
             type: firstSubOrder.type,
-            customerId: customerId || undefined,
+            customerId: firstSubOrder.customerId, // Use the ID directly if provided
             items: [],
             notes: "Group Order",
             createdAt: firstSubOrder.createdAt || dateUtils.now(),
@@ -655,23 +634,25 @@ export class OrderCreationService {
 
         const mainProteinIdx = subProteinsWithPrices[0]?.idx;
 
-        await tx.orderItem.createMany({
-          data: subOrder.items.map((item, index) => {
-            const mi = item.menuItemId
-              ? menuItems.find((m) => m.id === item.menuItemId)
-              : null;
-            const itemBasePrice = mi
-              ? Number(mi.price)
-              : Number(item.priceAtOrder || 0);
-            
-            const isMainProtein = index === mainProteinIdx;
+        // Use individual creates to ensure proper Decimal handling and status logic
+        for (let index = 0; index < subOrder.items.length; index++) {
+          const item = subOrder.items[index];
+          const mi = item.menuItemId
+            ? menuItems.find((m) => m.id === item.menuItemId)
+            : null;
+          const itemBasePrice = mi
+            ? Number(mi.price)
+            : Number(item.priceAtOrder || 0);
+          
+          const isMainProtein = index === mainProteinIdx;
 
-            // FIX: If historical or no daily menu, trust the provided price.
-            const finalPrice = (isHistorical || !dailyMenu)
-              ? Number(item.priceAtOrder || itemBasePrice)
-              : itemBasePrice + (isMainProtein ? basePrice : 0);
+          // FIX: If historical or no daily menu, trust the provided price.
+          const finalPrice = (isHistorical || !dailyMenu)
+            ? Number(item.priceAtOrder || itemBasePrice)
+            : itemBasePrice + (isMainProtein ? basePrice : 0);
 
-            return {
+          await tx.orderItem.create({
+            data: {
               orderId: masterOrderId,
               menuItemId: item.menuItemId ?? null,
               quantity: item.quantity,
@@ -685,9 +666,9 @@ export class OrderCreationService {
                   isMainProtein,
                 ),
               createdAt: subOrder.createdAt ?? dateUtils.now(),
-            };
-          }),
-        });
+            },
+          });
+        }
 
         // STOCK DEDUCTION: Skip for historical orders
         if (!isHistorical) {
