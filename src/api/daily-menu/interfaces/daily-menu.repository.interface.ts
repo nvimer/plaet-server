@@ -16,11 +16,14 @@ export type DailyMenuWithRelations = DailyMenu & {
   drinkCategory: MenuCategory | null;
   extraCategory: MenuCategory | null;
   saladCategory: MenuCategory | null;
+  riceCategory: MenuCategory | null;
   dessertCategory: MenuCategory | null;
   soupOption1: MenuItem | null;
   soupOption2: MenuItem | null;
   principleOption1: MenuItem | null;
   principleOption2: MenuItem | null;
+  riceOption1: MenuItem | null;
+  riceOption2: MenuItem | null;
   // Protein options are now loaded separately from proteinIds array
   proteinIds: number[];
   drinkOption1: MenuItem | null;
@@ -47,11 +50,14 @@ export interface CreateDailyMenuData {
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
   saladCategoryId?: number | null;
+  riceCategoryId?: number | null;
   dessertCategoryId?: number | null;
   soupOption1Id?: number | null;
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
   principleOption2Id?: number | null;
+  riceOption1Id?: number | null;
+  riceOption2Id?: number | null;
   drinkOption1Id?: number | null;
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;
@@ -75,11 +81,14 @@ export interface UpdateDailyMenuData {
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
   saladCategoryId?: number | null;
+  riceCategoryId?: number | null;
   dessertCategoryId?: number | null;
   soupOption1Id?: number | null;
   soupOption2Id?: number | null;
   principleOption1Id?: number | null;
   principleOption2Id?: number | null;
+  riceOption1Id?: number | null;
+  riceOption2Id?: number | null;
   drinkOption1Id?: number | null;
   drinkOption2Id?: number | null;
   extraOption1Id?: number | null;

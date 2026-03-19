@@ -61,6 +61,7 @@ class DailyMenuService implements DailyMenuServiceInterface {
       drinkCategory: menu.drinkCategory,
       extraCategory: menu.extraCategory,
       saladCategory: menu.saladCategory,
+      riceCategory: menu.riceCategory,
       dessertCategory: menu.dessertCategory,
 
       // Item options
@@ -91,6 +92,11 @@ class DailyMenuService implements DailyMenuServiceInterface {
       saladOptions: [
         this.toMenuItemOption(menu.saladOption1),
         this.toMenuItemOption(menu.saladOption2),
+      ].filter(Boolean) as MenuItemOption[],
+
+      riceOptions: [
+        this.toMenuItemOption(menu.riceOption1),
+        this.toMenuItemOption(menu.riceOption2),
       ].filter(Boolean) as MenuItemOption[],
 
       dessertOptions: [
@@ -129,11 +135,14 @@ class DailyMenuService implements DailyMenuServiceInterface {
       drinkCategoryId: data.drinkCategoryId,
       extraCategoryId: data.extraCategoryId,
       saladCategoryId: data.saladCategoryId,
+      riceCategoryId: data.riceCategoryId,
       dessertCategoryId: data.dessertCategoryId,
       soupOption1Id: data.soupOptions?.option1Id,
       soupOption2Id: data.soupOptions?.option2Id,
       principleOption1Id: data.principleOptions?.option1Id,
       principleOption2Id: data.principleOptions?.option2Id,
+      riceOption1Id: data.riceOptions?.option1Id,
+      riceOption2Id: data.riceOptions?.option2Id,
       drinkOption1Id: data.drinkOptions?.option1Id,
       drinkOption2Id: data.drinkOptions?.option2Id,
       extraOption1Id: data.extraOptions?.option1Id,

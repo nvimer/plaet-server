@@ -34,6 +34,7 @@ export interface DailyMenuResponse {
   drinkCategory: MenuCategory | null;
   extraCategory: MenuCategory | null;
   saladCategory: MenuCategory | null;
+  riceCategory: MenuCategory | null;
   dessertCategory: MenuCategory | null;
 
   // Item options
@@ -43,6 +44,7 @@ export interface DailyMenuResponse {
   drinkOptions: MenuItemOption[];
   extraOptions: MenuItemOption[];
   saladOptions: MenuItemOption[];
+  riceOptions: MenuItemOption[];
   dessertOptions: MenuItemOption[];
 }
 
@@ -70,6 +72,7 @@ export interface UpdateDailyMenuInput {
   drinkCategoryId?: number | null;
   extraCategoryId?: number | null;
   saladCategoryId?: number | null;
+  riceCategoryId?: number | null;
   dessertCategoryId?: number | null;
 
   // Item options
@@ -78,6 +81,7 @@ export interface UpdateDailyMenuInput {
   drinkOptions?: DailyMenuItemOptionInput;
   extraOptions?: DailyMenuItemOptionInput;
   saladOptions?: DailyMenuItemOptionInput;
+  riceOptions?: DailyMenuItemOptionInput;
   dessertOptions?: DailyMenuItemOptionInput;
 
   // All available protein IDs (replaces proteinOptions)

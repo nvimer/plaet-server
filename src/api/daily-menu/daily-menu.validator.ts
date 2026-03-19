@@ -30,6 +30,7 @@ export const updateDailyMenuBodySchema = z.object({
     drinkCategoryId: z.number().int().positive().optional().nullable(),
     extraCategoryId: z.number().int().positive().optional().nullable(),
     saladCategoryId: z.number().int().positive().optional().nullable(),
+    riceCategoryId: z.number().int().positive().optional().nullable(),
     dessertCategoryId: z.number().int().positive().optional().nullable(),
 
     // Item options for each category
@@ -38,6 +39,7 @@ export const updateDailyMenuBodySchema = z.object({
     drinkOptions: itemOptionSchema.optional(),
     extraOptions: itemOptionSchema.optional(),
     saladOptions: itemOptionSchema.optional(),
+    riceOptions: itemOptionSchema.optional(),
     dessertOptions: itemOptionSchema.optional(),
 
     // All available protein IDs (array replaces proteinOptions)

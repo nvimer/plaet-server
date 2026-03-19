@@ -62,6 +62,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       drinkItems,
       extraItems,
       saladItems,
+      riceItems,
       dessertItems,
       soupCategory,
       principleCategory,
@@ -69,6 +70,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       drinkCategory,
       extraCategory,
       saladCategory,
+      riceCategory,
       dessertCategory,
     ] = await Promise.all([
       this.fetchMenuItems([menu.soupOption1Id, menu.soupOption2Id]),
@@ -76,6 +78,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       this.fetchMenuItems([menu.drinkOption1Id, menu.drinkOption2Id]),
       this.fetchMenuItems([menu.extraOption1Id, menu.extraOption2Id]),
       this.fetchMenuItems([menu.saladOption1Id, menu.saladOption2Id]),
+      this.fetchMenuItems([menu.riceOption1Id, menu.riceOption2Id]),
       this.fetchMenuItems([menu.dessertOption1Id, menu.dessertOption2Id]),
       this.fetchCategory(menu.soupCategoryId),
       this.fetchCategory(menu.principleCategoryId),
@@ -83,6 +86,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       this.fetchCategory(menu.drinkCategoryId),
       this.fetchCategory(menu.extraCategoryId),
       this.fetchCategory(menu.saladCategoryId),
+      this.fetchCategory(menu.riceCategoryId),
       this.fetchCategory(menu.dessertCategoryId),
     ]);
 
@@ -94,6 +98,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       ...drinkItems,
       ...extraItems,
       ...saladItems,
+      ...riceItems,
       ...dessertItems,
     ].forEach((item) => {
       itemMap.set(item.id, item);
@@ -107,6 +112,7 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
       drinkCategory,
       extraCategory,
       saladCategory,
+      riceCategory,
       dessertCategory,
       proteinIds: menu.proteinIds || [],
       soupOption1: menu.soupOption1Id
@@ -120,6 +126,12 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         : null,
       principleOption2: menu.principleOption2Id
         ? itemMap.get(menu.principleOption2Id) || null
+        : null,
+      riceOption1: menu.riceOption1Id
+        ? itemMap.get(menu.riceOption1Id) || null
+        : null,
+      riceOption2: menu.riceOption2Id
+        ? itemMap.get(menu.riceOption2Id) || null
         : null,
       drinkOption1: menu.drinkOption1Id
         ? itemMap.get(menu.drinkOption1Id) || null
@@ -211,11 +223,14 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         drinkCategoryId: data.drinkCategoryId,
         extraCategoryId: data.extraCategoryId,
         saladCategoryId: data.saladCategoryId,
+        riceCategoryId: data.riceCategoryId,
         dessertCategoryId: data.dessertCategoryId,
         soupOption1Id: data.soupOption1Id,
         soupOption2Id: data.soupOption2Id,
         principleOption1Id: data.principleOption1Id,
         principleOption2Id: data.principleOption2Id,
+        riceOption1Id: data.riceOption1Id,
+        riceOption2Id: data.riceOption2Id,
         drinkOption1Id: data.drinkOption1Id,
         drinkOption2Id: data.drinkOption2Id,
         extraOption1Id: data.extraOption1Id,
@@ -283,11 +298,14 @@ class DailyMenuRepository implements DailyMenuRepositoryInterface {
         drinkCategoryId: data.drinkCategoryId,
         extraCategoryId: data.extraCategoryId,
         saladCategoryId: data.saladCategoryId,
+        riceCategoryId: data.riceCategoryId,
         dessertCategoryId: data.dessertCategoryId,
         soupOption1Id: data.soupOption1Id,
         soupOption2Id: data.soupOption2Id,
         principleOption1Id: data.principleOption1Id,
         principleOption2Id: data.principleOption2Id,
+        riceOption1Id: data.riceOption1Id,
+        riceOption2Id: data.riceOption2Id,
         drinkOption1Id: data.drinkOption1Id,
         drinkOption2Id: data.drinkOption2Id,
         extraOption1Id: data.extraOption1Id,
