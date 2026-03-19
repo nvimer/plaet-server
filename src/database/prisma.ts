@@ -98,6 +98,7 @@ export const prisma = prismaClient.$extends({
         }
 
         const extendedArgs = args as ExtendedArgs;
+        let needsFindFirstRedirect = false;
 
         // DEBUG: Log model and operation
         if (MODELS_WITH_TENANT.includes(model)) {
@@ -115,13 +116,14 @@ export const prisma = prismaClient.$extends({
             };
 
             if (extendedArgs.where) {
-              // Wrap existing where in AND to avoid overwriting existing OR conditions
               extendedArgs.where = {
                 AND: [extendedArgs.where, tenantFilter]
               };
             } else {
               extendedArgs.where = tenantFilter;
             }
+
+            if (operation === "findUnique") needsFindFirstRedirect = true;
           }
         }
 
@@ -142,6 +144,7 @@ export const prisma = prismaClient.$extends({
             ["findMany", "findFirst", "findUnique", "count"].includes(operation)
           ) {
             extendedArgs.where = { ...extendedArgs.where, deleted: false };
+            if (operation === "findUnique") needsFindFirstRedirect = true;
           }
 
           if (operation === "delete") {
@@ -161,6 +164,12 @@ export const prisma = prismaClient.$extends({
               data: { deleted: true, deletedAt: new Date() },
             });
           }
+        }
+
+        // 4. Redirect findUnique to findFirst if we added non-unique filters
+        if (needsFindFirstRedirect) {
+          const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+          return (prismaClient as any)[modelKey].findFirst(extendedArgs);
         }
 
         return query(extendedArgs);
