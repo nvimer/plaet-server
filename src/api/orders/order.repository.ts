@@ -4,6 +4,7 @@ import {
   Prisma,
   OrderStatus,
   OrderItemStatus,
+  OrderType,
 } from "@prisma/client";
 import { OrderRepositoryInterface } from "./interfaces/order.repository.interface";
 import {
@@ -127,32 +128,32 @@ class OrderRepository implements OrderRepositoryInterface {
     tx?: PrismaTransaction,
   ): Promise<OrderWithItems> {
     const client = tx || getPrismaClient();
-    // Extract items from order data
-    const { items, ...orderData } = data;
+    
+    // @ts-ignore - Internal logger import for debugging
+    const logger = (await import("../../config/logger")).logger;
 
-    // Create order with items - be explicit about fields to avoid Prisma validation errors
+    // Create order with items - strictly pass only model fields
     const order = await client.order.create({
       data: {
-        tableId: orderData.tableId,
         waiterId,
-        customerId: orderData.customerId,
-        status: orderData.status || OrderStatus.OPEN,
-        type: orderData.type,
+        tableId: data.tableId || null,
+        customerId: data.customerId || null,
+        status: data.status || OrderStatus.OPEN,
+        type: data.type || OrderType.DINE_IN,
         totalAmount: 0,
-        notes: orderData.notes,
-        whatsappOrderId: orderData.whatsappOrderId,
-        createdAt: orderData.createdAt || dateUtils.now(), // Support historical date entry or default to now in CO
-        cashClosureId: orderData.cashClosureId,
-        restaurantId: orderData.restaurantId,
+        notes: data.notes || null,
+        whatsappOrderId: data.whatsappOrderId || null,
+        createdAt: data.createdAt || dateUtils.now(),
+        cashClosureId: data.cashClosureId || null,
+        restaurantId: data.restaurantId || null,
         items: {
-          create: items?.map((item: OrderItemInput) => ({
+          create: (data.items || []).map((item: OrderItemInput) => ({
             menuItemId: item.menuItemId ?? null,
             quantity: item.quantity,
             priceAtOrder: item.priceAtOrder || 0,
-            notes: item.notes,
+            notes: item.notes || null,
             status: item.status || OrderItemStatus.PENDING,
-            cashClosureId: orderData.cashClosureId,
-            createdAt: orderData.createdAt || dateUtils.now(),
+            createdAt: data.createdAt || dateUtils.now(),
           })),
         },
       },
