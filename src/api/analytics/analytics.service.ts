@@ -29,6 +29,10 @@ export class AnalyticsService {
       startDate,
       endDate,
     );
+    const packagingCount = await this.repository.getPackagingCount(
+      startDate,
+      endDate,
+    );
 
     const netBalance = salesSummary.totalSold - totalExpenses;
 
@@ -36,6 +40,7 @@ export class AnalyticsService {
       salesSummary: {
         totalSold: salesSummary.totalSold,
         orderCount: salesSummary.orderCount,
+        packagingCount,
         byPaymentMethod: salesSummary.breakdown,
         byCategory: salesByCategory,
       },

@@ -76,7 +76,7 @@ export class AnalyticsRepository {
     };
   }
 
-  async getTopProducts(startDate: Date, endDate: Date, limit: number = 5) {
+  async getTopProducts(startDate: Date, endDate: Date, limit: number = 10) {
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {
@@ -93,30 +93,58 @@ export class AnalyticsRepository {
     });
 
     const productStats: Record<
-      number,
-      { id: number; name: string; quantity: number; totalRevenue: number }
+      string,
+      { id: number | string; name: string; quantity: number; totalRevenue: number }
     > = {};
 
     orderItems.forEach((item) => {
-      if (!item.menuItemId) return;
+      // Use menuItem ID or a synthetic ID based on notes for manual items
+      const itemKey = item.menuItemId ? `menu-${item.menuItemId}` : `manual-${item.notes || "Otro"}`;
+      const itemName = item.menuItem?.name || item.notes || "Producto Manual";
 
-      if (!productStats[item.menuItemId]) {
-        productStats[item.menuItemId] = {
-          id: item.menuItemId,
-          name: item.menuItem?.name || "Unknown Product",
+      if (!productStats[itemKey]) {
+        productStats[itemKey] = {
+          id: item.menuItemId || itemKey,
+          name: itemName,
           quantity: 0,
           totalRevenue: 0,
         };
       }
 
-      productStats[item.menuItemId].quantity += item.quantity;
-      productStats[item.menuItemId].totalRevenue +=
+      productStats[itemKey].quantity += item.quantity;
+      productStats[itemKey].totalRevenue +=
         Number(item.priceAtOrder) * item.quantity;
     });
 
     return Object.values(productStats)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, limit);
+  }
+
+  /**
+   * Specifically counts packaging items (Portacomidas) based on keywords in notes
+   */
+  async getPackagingCount(startDate: Date, endDate: Date) {
+    const items = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: OrderStatus.PAID,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        OR: [
+          { notes: { contains: "Portacomida", mode: "insensitive" } },
+          { notes: { contains: "Empaque", mode: "insensitive" } }
+        ]
+      },
+      select: {
+        quantity: true
+      }
+    });
+
+    return items.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   async getSalesByCategory(startDate: Date, endDate: Date) {
