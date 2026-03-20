@@ -10,6 +10,7 @@ export type CashClosureSummary = {
   nequiSales: number;
   totalVouchers?: number;
   vouchers?: number;
+  totalDelivery?: number;
   totalExpenses: number;
   expectedBalance: number;
   openingDate?: Date;
@@ -38,6 +39,7 @@ export class CashClosureService {
         cashSales: Number(closure.totalCash || 0),
         nequiSales: Number(closure.totalNequi || 0),
         vouchers: Number(closure.totalVouchers || 0),
+        totalDelivery: Number(closure.totalDelivery || 0),
         totalExpenses: Number(closure.totalExpenses || 0),
         expectedBalance: Number(closure.expectedBalance || 0),
         openingDate: closure.openingDate,
@@ -84,16 +86,23 @@ export class CashClosureService {
     return this.repository.create({ ...data, openedById, restaurantId });
   }
 
-  async closeShift(id: string, actualBalance: number, closedById: string) {
+  async closeShift(
+    id: string,
+    data: { actualBalance: number; totalDelivery: number },
+    closedById: string,
+  ) {
     const summary = await this.getSummary(id);
+    const finalExpectedBalance = summary.expectedBalance + data.totalDelivery;
+
     return this.repository.close(id, {
-      actualBalance,
-      expectedBalance: summary.expectedBalance,
-      difference: actualBalance - summary.expectedBalance,
+      actualBalance: data.actualBalance,
+      expectedBalance: finalExpectedBalance,
+      difference: data.actualBalance - finalExpectedBalance,
       totalCash: summary.cashSales,
       totalNequi: summary.nequiSales,
       totalExpenses: summary.totalExpenses,
       totalVouchers: summary.totalVouchers || summary.vouchers || 0,
+      totalDelivery: data.totalDelivery,
       closedById,
       closingDate: new Date(),
     });

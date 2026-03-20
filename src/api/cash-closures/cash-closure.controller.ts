@@ -48,9 +48,13 @@ export class CashClosureController {
 
   close = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { actualBalance }: CloseCashClosureDto = req.body;
+    const { actualBalance, totalDelivery }: CloseCashClosureDto = req.body;
     const userId = (req.user as AuthenticatedUser).id;
-    const closure = await this.service.closeShift(id, actualBalance, userId);
+    const closure = await this.service.closeShift(
+      id,
+      { actualBalance, totalDelivery: totalDelivery || 0 },
+      userId,
+    );
     res.status(HttpStatus.OK).json({ success: true, data: closure });
   });
 }
