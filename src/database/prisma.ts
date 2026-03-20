@@ -67,6 +67,9 @@ const MODELS_WITH_TENANT = [
   "Customer",
   "Inventory",
   "PurchaseOrder",
+  "TicketBook",
+  "TicketBookUsage",
+  "DailyTicketBookCode",
 ];
 
 const SOFT_DELETE_MODELS = [

@@ -14,6 +14,7 @@ import expensesRouter from "./expenses/expense.route";
 import cashClosuresRouter from "./cash-closures/cash-closure.route";
 import analyticsRouter from "./analytics/analytics.route";
 import restaurantsRouter from "./restaurants/restaurant.route";
+import { ticketBookRoutes } from "./ticket-books/ticket-book.route";
 
 /**
  * Main API Router for v1 endpoints.
@@ -86,5 +87,10 @@ router.use("/analytics", analyticsRouter);
  * Restaurant Management Routes (SuperAdmin only)
  */
 router.use("/restaurants", restaurantsRouter);
+
+/**
+ * Ticket Book Management Routes
+ */
+router.use("/ticket-books", ticketBookRoutes);
 
 export default router;

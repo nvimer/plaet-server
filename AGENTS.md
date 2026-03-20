@@ -1,141 +1,295 @@
-# Agentic Coding Guidelines (Plaet App)
+# Agentic Coding Guidelines (Plaet Server)
 
-Welcome! You are an AI agent operating in the Plaet monorepo, a SaaS application for restaurant management. This project is split into two primary environments: /client (React 19 + Vite) and /server (Node.js + Express + Prisma).
-
-Please read and adhere strictly to these guidelines when analyzing, modifying, or creating code in this repository.
+Welcome! You are an AI agent operating in the Plaet Server API. This is a Node.js + Express + Prisma backend for a multi-tenant restaurant management SaaS.
 
 ---
 
 ## 1. Build, Lint, and Test Commands
 
-Always run commands from their respective directories (/client or /server), NOT the root.
+### Installation
 
-### Client Commands (/client directory)
+```bash
+npm install
+```
 
-- Install: npm install
-- Dev Server: npm run dev
-- Build: npm run build
-- Lint: npm run lint
-- Type-Check: npm run type-check (Run this after major changes to catch TS errors)
-- Test: npm run test (Vitest)
-- Standardize UI: npm run fix:ui (Must be run after creating/modifying UI components)
+### Development & Build
 
-### Server Commands (/server directory)
+```bash
+npm run dev          # Run with ts-node and nodemon (auto-reload)
+npm run build        # Compile TypeScript to dist/
+npm start            # Production: migrate + start compiled
+```
 
-- Install: npm install
-- Dev Server: npm run dev
-- Build: npm run build
-- Lint: npm run eslint-check-only (or npm run eslint-fix)
-- Format: npm run prettier
-- Prisma: npm run prisma:generate, npm run prisma:migrate
+### Linting & Formatting
 
-### Running Tests
+```bash
+npm run eslint-check-only  # Check lint errors
+npm run eslint-fix        # Auto-fix lint errors
+npm run prettier          # Format all files (double quotes, semi-colons)
+```
 
-- Server (Jest): Always ensure tests pass before declaring a task complete.
-  - npm run test, npm run test:integration, npm run test:e2e.
-- Client (Vitest): Use Vitest for business logic and hook testing.
-  - npm run test.
+### Testing
+
+```bash
+npm run test           # Run all tests
+npm run test:watch     # Watch mode for development
+npm run test:coverage  # Coverage report
+
+# Single test file (Jest accepts regex pattern)
+npm test -- orders.service.test.ts
+npm run test:watch -- --testPathPattern="order.repository"
+
+npm run test:integration  # Integration tests (requires TEST_TYPE=integration)
+npm run test:e2e          # End-to-end tests (requires TEST_TYPE=e2e)
+npm run test:all          # Run unit + integration + e2e sequentially
+```
+
+### Test Database Management
+
+```bash
+npm run test:db:start    # Start test PostgreSQL container
+npm run test:db:stop     # Stop container
+npm run test:db:reset     # Reset database
+npm run test:db:migrate  # Run migrations on test DB
+npm run test:db:status   # Check container status
+```
+
+### Prisma
+
+```bash
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:migrate   # Apply migrations
+npm run prisma:seed      # Seed database
+npm run prisma:studio    # Open Prisma Studio GUI
+npm run prisma:reset     # Reset migrations (DANGEROUS)
+```
 
 ---
 
-## 2. Architectural Conventions
+## 2. Code Style & Conventions
 
-### Multi-Tenant Architecture (Crucial)
+### TypeScript Configuration
 
-- Server: Prisma Client extensions automatically filter queries by restaurantId. NEVER manually filter by restaurantId in repositories unless building a global analytics module for SUPERADMIN. The restaurantId is extracted from the JWT.
-- Client: Trust the backend for data isolation. Do not filter data by restaurantId on the frontend manually.
+- Strict mode enabled (all strict checks)
+- Module: CommonJS
+- Paths: Use `@/` alias for `src/` directory
+- JSON modules: enabled (resolveJsonModule)
 
-### Directory Structure
+### Formatting Rules
 
-- Client: Uses a Feature-Based structure (src/features/{name}/).
-  - logic/: Pure TypeScript logic (no React dependencies).
-  - hooks/: Specialized micro-hooks.
-  - stores/: Zustand stores for global/persistent state.
-  - components/: Following Atomic Design (atoms, molecules, organisms).
-- Server: Uses a Layered Modular pattern (src/api/{module}/).
-  - Route -> Controller -> Service -> Repository.
-  - Large services MUST be split into sub-services (e.g., OrderCreationService, OrderStatusService).
+- **Quotes**: Double quotes (`"`)
+- **Semicolons**: Always required
+- **Trailing commas**: All (ES5+)
+- **Tab width**: 2 spaces
+- **Single quotes**: Disabled
 
----
+### Naming Conventions
 
-## 3. Code Style & Guidelines
+| Element             | Convention                    | Example                           |
+| ------------------- | ----------------------------- | --------------------------------- |
+| Files               | kebab-case                    | `order.service.ts`                |
+| Classes             | PascalCase                    | `OrderService`                    |
+| Interfaces          | PascalCase + Interface suffix | `OrderServiceInterface`           |
+| Variables/Functions | camelCase                     | `createOrder`, `orderData`        |
+| Constants           | UPPER_SNAKE_CASE              | `MAX_ITEMS`                       |
+| Types               | PascalCase                    | `OrderStatus`, `PaginationParams` |
+| Enums               | PascalCase members            | `OrderStatus.PENDING`             |
 
-### State Management (Client)
+### Imports
 
-- Zustand FIRST: Use Zustand for all global or persistent state. React Context is deprecated for state sharing due to performance issues.
-- Persistence: Use Zustand persist middleware for operational state (drafts, UI preferences).
+```typescript
+// Use import type for type-only imports
+import type { OrderServiceInterface } from "./interfaces";
+import type { CustomErrorInterface } from "../../types";
 
-### Efficiency & Algorithms
+// Regular imports
+import { Order } from "@prisma/client";
+import { CustomError } from "../../types/custom-errors";
 
-- O(N) Priority: Avoid nested loops (O(N^2)) when processing lists (grouping, filtering). Use Map or Set for single-pass processing.
-- Memoization: Use useMemo and useCallback for expensive transformations or stable references.
+// Internal path alias
+import { paginationHelper } from "@/utils/pagination.helper";
+```
 
 ### Types & TypeScript
 
-- STRICT ZERO TOLERANCE for any or unknown. Always define explicit types or interfaces.
-- Use import type for interfaces and type definitions.
+- **STRICT ZERO TOLERANCE** for `any` or `unknown` - always define explicit types
+- Use `import type` for interfaces and type definitions
+- Use `Prisma.Decimal` for monetary values (never use number for money)
+- Define interfaces for all services (`*ServiceInterface` suffix)
 
-### Error Handling & Validation
+### Error Handling
 
-- Validation: Use Zod everywhere.
-- Server Errors: Use CustomError class for expected failures.
+- Use `CustomError` class for expected failures (validation, not found, etc.)
+- Use Winston logger (never raw `console.log`)
+- All errors should have `statusCode` and optional `errorCode`
+
+```typescript
+throw new CustomError(
+  "Order not found",
+  HttpStatus.NOT_FOUND,
+  "ORDER_NOT_FOUND",
+);
+```
+
+### Validation
+
+- Use **Zod** for all input validation (request bodies, query params)
+- For optional DB fields (`String?`), use `.optional().nullable()` in Zod schemas
 
 ### Logging
 
-- NO RAW console.log().
-- Client: Use @/utils/logger.ts.
-- Server: Use centralized Winston logger.
+```typescript
+import { logger } from "@/config/logger";
 
-### Language & Communication Policy
-- English ONLY: All code comments, technical documentation, commit messages, and internal communication must be strictly in English.
-- Spanish for UI ONLY: Only content explicitly displayed to the end-user (UI strings, error messages for users, labels) must be in Spanish.
-- No Emojis: Do not use emojis in commit messages, pull requests, or code comments. Keep the workflow professional and clean.
-
-### Email Service (Server)
-- Provider: We use Resend via HTTPS API.
-- Library: resend (Do NOT use nodemailer or smtp implementations).
-- Template: Use the getEmailLayout helper in src/config/email.ts for consistent, humanized styling.
-
-### Validation & Schemas
-- Nullable Fields: For optional database fields (String?), always use .optional().nullable() in Zod schemas to prevent validation errors when processing data from Prisma.
-
-### Access Control (RBAC)
-
-- Client: Use usePermissions() hook. Use declarative UI: <Guard permission="name">...</Guard>.
-- Server: Use permissionMiddleware("module:action").
-
-### Frontend UI & Styling (Client)
-
-- Atomic Design:
-  - atoms/: Primitives (Button, Input).
-  - molecules/: Composite functional components (StatCard, Modals).
-  - organisms/: Complex UI blocks (OrderForm).
-- Standardized Imports: Always import components from the central @/components alias.
-
-### Cash Closure & Historical Data (Critical)
-
-- Date-Aware Validation: When creating orders or payments, check if the date is historical.
-- Today: Requires an OPEN cash closure.
-- Past: Try to find a closure on that date; allow creation (associating or with null) if it's a historical entry. Never block historical data entry due to current closure status.
+logger.info("Message with context", { userId, action });
+logger.error("Error occurred", { error: err.message, stack });
+```
 
 ---
 
-## 4. General Working Process for Agents
+## 3. Architecture
 
-1. Analyze Context: Read package.json and AGENTS.md.
-2. Modularize: Split large files into atomic pieces. Extract pure logic from React components.
-3. Optimize: Ensure algorithms are efficient (O(N)).
-4. Build & Verify: Always run type-check and lint.
+### Directory Structure
+
+```
+src/
+  api/{module}/
+    {module}.route.ts      # Express routes
+    {module}.controller.ts # Request handling
+    {module}.service.ts    # Business logic
+    {module}.repository.ts # Data access
+    {module}.validator.ts  # Zod schemas
+    interfaces/            # Contract definitions
+    services/              # Sub-services (for large modules)
+    __tests__/             # Tests (unit/, integration/, e2e/, helpers/)
+  config/                  # App configuration
+  database/                # Prisma client setup
+  middlewares/             # Express middleware
+  types/                  # TypeScript types
+  utils/                  # Utilities
+```
+
+### Layered Modular Pattern
+
+```
+Route -> Controller -> Service -> Repository
+```
+
+- Routes define endpoints and apply middleware
+- Controllers handle request/response (use `asyncHandler`)
+- Services contain business logic (can be split into sub-services)
+- Repositories handle data access via Prisma
+
+### Large Service Splitting
+
+Services that exceed ~200 lines MUST be split:
+
+```typescript
+// order.service.ts
+export class OrderService {
+  private creationService: OrderCreationService;
+  private statusService: OrderStatusService;
+  // ...
+}
+```
 
 ---
 
-## 5. Troubleshooting Vault
+## 4. Multi-Tenant Architecture (CRITICAL)
 
-Document significant errors in /client/troubleshooting/ or /server/troubleshooting/.
-Naming: [timestamp]-[short-description].md.
+### Server-Side
+
+- Prisma Client extensions automatically filter all queries by `restaurantId`
+- **NEVER manually filter by `restaurantId`** in repositories (except for SUPERADMIN analytics)
+- `restaurantId` is extracted from JWT and set via `tenantContext`
+- Global queries (cross-tenant) use `getBasePrismaClient()`
+
+### Security
+
+- Soft delete enforced at Prisma extension level
+- All tenant-aware models checked on `findUnique`, `update`, `findMany`
+- Unauthorized cross-tenant access returns `null` (not 403)
 
 ---
 
-## 6. Git Workflow
+## 5. Testing Patterns
 
-Isolated branches: feature/, bugfix/, refactor/, perf/. Small, atomic commits. Conventional Commits standard.
+### Test Structure
+
+```
+__tests__/
+  unit/           # Isolated service/repository tests
+  integration/    # API endpoint tests with test DB
+  e2e/            # Full flow tests
+  helpers/        # Fixtures and mock factories
+```
+
+### Mocking Prisma
+
+```typescript
+// Mock BEFORE imports
+const mockPrismaClient = {
+  order: { findUnique: jest.fn(), create: jest.fn() /* ... */ },
+  $transaction: jest.fn(),
+};
+
+jest.mock("../../../../database/prisma", () => ({
+  default: { $transaction: mockPrismaClient.$transaction },
+  getPrismaClient: jest.fn(() => mockPrismaClient),
+}));
+```
+
+### Fixtures Pattern
+
+```typescript
+export function createOrderFixture(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  return {
+    id: "default-id",
+    status: OrderStatus.PENDING,
+    createdAt: new Date("2024-01-01T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+```
+
+### Test Requirements
+
+- Coverage threshold: 80% (branches, functions, lines, statements)
+- All tests must pass before declaring task complete
+- Integration tests require running test database
+
+---
+
+## 6. Access Control (RBAC)
+
+- Use `permissionMiddleware("module:action")` for route protection
+- Permissions follow pattern: `{resource}:{action}`
+- SuperAdmin bypasses all permission checks
+- Users can always access their own roles/permissions (`/users/:id` with own ID)
+
+---
+
+## 7. API Documentation
+
+- Swagger docs located in `./docs/**/*.yaml`
+- Access at `/api/v1/docs` when server running
+- JSON spec at `/api/v1/docs.json`
+
+---
+
+## 8. Git Workflow
+
+- Branch naming: `feature/`, `bugfix/`, `refactor/`, `perf/`
+- Small, atomic commits
+- Conventional Commits standard
+- Run lint and tests before committing
+
+---
+
+## 9. Language Policy
+
+- **English ONLY** for code, comments, commits, documentation
+- **Spanish ONLY** for user-facing UI strings (errors, labels, messages)
+- No emojis in commits or code comments

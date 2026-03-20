@@ -31,6 +31,9 @@ model Restaurant {
   orders       Order[]
   tables       Table[]
   users        User[]
+  ticketBooks  TicketBook[]
+  ticketBookUsages TicketBookUsage[]
+  dailyTicketBookCodes DailyTicketBookCode[]
 
   @@map("restaurants")
 }
@@ -312,14 +315,18 @@ model TicketBook {
   expiryDate       DateTime          @map("expiry_date")
   totalPortions    Int               @map("total_portions")
   consumedPortions Int               @default(0) @map("consumed_portions")
+  purchasePrice    Decimal           @default(0.00) @map("purchase_price") @db.Decimal(10, 2)
   status           String            @default("active")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   deleted          Boolean           @default(false)
   deletedAt        DateTime?         @map("deleted_at")
+  restaurantId     String?           @map("restaurant_id")
   usages           TicketBookUsage[]
   customer         Customer?         @relation(fields: [customerId], references: [id])
+  restaurant       Restaurant?       @relation(fields: [restaurantId], references: [id])
 
+  @@index([restaurantId])
   @@map("ticket_books")
 }
 
@@ -333,10 +340,13 @@ model TicketBookUsage {
   updatedAt    DateTime            @updatedAt @map("updated_at")
   deleted      Boolean             @default(false)
   deletedAt    DateTime?           @map("deleted_at")
+  restaurantId String?             @map("restaurant_id")
   dailyCode    DailyTicketBookCode @relation(fields: [dailyCodeId], references: [id])
   payments     Payment             @relation("TicketUsages", fields: [paymentId], references: [id])
   ticketBook   TicketBook          @relation(fields: [ticketBookId], references: [id])
+  restaurant   Restaurant?         @relation(fields: [restaurantId], references: [id])
 
+  @@index([restaurantId])
   @@map("ticket_book_usages")
 }
 
@@ -418,11 +428,14 @@ model DailyTicketBookCode {
   isUsed          Boolean           @default(false) @map("is_used")
   usedAtPaymentId Int?              @unique @map("used_at_payment_id")
   createdAt       DateTime          @default(now()) @map("created_at")
+  restaurantId    String?           @map("restaurant_id")
   customer        Customer?         @relation(fields: [customerId], references: [id])
   usedAtPayment   Payment?          @relation("CodeUsedInPayment")
   ticketBookUsage TicketBookUsage[]
+  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
 
   @@unique([customerId, date])
+  @@index([restaurantId])
   @@map("daily_ticket_book_codes")
 }
 

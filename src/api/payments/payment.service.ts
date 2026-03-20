@@ -101,6 +101,8 @@ export class PaymentService {
             HttpStatus.BAD_REQUEST,
           );
 
+        const restaurantId = order.restaurantId;
+
         // Update TicketBook portions
         await tx.ticketBook.update({
           where: { id: activeTicket.id },
@@ -119,9 +121,10 @@ export class PaymentService {
           dailyCode = await tx.dailyTicketBookCode.create({
             data: {
               customerId: customer.id,
-              code: Math.random().toString(36).substring(2, 6).toUpperCase(),
+              code: `TB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
               date: today,
               isUsed: true,
+              restaurantId,
             },
           });
         }
@@ -132,6 +135,7 @@ export class PaymentService {
             paymentId: payment.id,
             dailyCodeId: dailyCode.id,
             portionCount: 1,
+            restaurantId,
           },
         });
       }

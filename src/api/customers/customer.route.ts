@@ -445,6 +445,36 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/customers/phone/{phone}/tickets:
+ *   get:
+ *     summary: Get customer and their active tickets by phone
+ *     description: Retrieve a specific customer and their active ticket books by their phone number
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phone
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 10
+ *         description: Customer phone number
+ *     responses:
+ *       200:
+ *         description: Customer and tickets retrieved successfully
+ *       404:
+ *         description: Customer not found
+ */
+router.get(
+  "/phone/:phone/tickets",
+  authJwt,
+  roleMiddleware(["ADMIN", "CASHIER", "WAITER"]),
+  customerController.getCustomerByPhoneWithTickets,
+);
+
+/**
+ * @swagger
  * /api/v1/customers/{id}:
  *   patch:
  *     summary: Update customer information
