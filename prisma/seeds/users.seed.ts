@@ -50,7 +50,18 @@ export async function seedUsers() {
     });
 
     for (const roleName of userData.roles) {
-      const role = await prisma.role.findUnique({ where: { name: roleName } });
+      // Since roles are now multi-tenant, we find the role either 
+      // globally (null) or specifically for this user's restaurant
+      const role = await prisma.role.findFirst({
+        where: {
+          name: roleName,
+          OR: [
+            { restaurantId: user.restaurantId },
+            { restaurantId: null },
+          ],
+        },
+      });
+
       if (role) {
         await prisma.userRole.upsert({
           where: { roleId_userId: { roleId: role.id, userId: user.id } },
