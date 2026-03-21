@@ -6,11 +6,17 @@ import {
 import { CreateRoleInput, UpdateRoleInput } from "../role.validator";
 
 export interface RoleServiceInterface {
-  findAll(params: PaginationParams): Promise<PaginatedResponse<Role>>;
+  findAll(
+    params: PaginationParams,
+    restaurantId?: string,
+    includeSystem?: boolean,
+  ): Promise<PaginatedResponse<Role>>;
   searchRoles(
     params: PaginationParams,
     search: string,
     active?: boolean,
+    restaurantId?: string,
+    includeSystem?: boolean,
   ): Promise<PaginatedResponse<Role>>;
   findById(id: number): Promise<Role>;
   createRole(data: CreateRoleInput): Promise<Role>;

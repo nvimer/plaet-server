@@ -4,6 +4,8 @@ import roleService from "./role.service";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { CreateRoleInput, UpdateRoleInput } from "./role.validator";
 import { PaginationParams } from "../../interfaces/pagination.interfaces";
+import { AuthenticatedUser } from "../../types/express";
+import { RoleName } from "@prisma/client";
 
 /**
  * Role Controller
@@ -27,10 +29,16 @@ class RoleController {
   getRoles = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const user = req.user as AuthenticatedUser;
+    const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
 
     const params: PaginationParams = { page, limit };
 
-    const roles = await roleService.findAll(params);
+    const roles = await roleService.findAll(
+      params, 
+      user.restaurantId || undefined, 
+      isSuperAdmin
+    );
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Roles fetched successfully",
@@ -60,6 +68,9 @@ class RoleController {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
+    const user = req.user as AuthenticatedUser;
+    const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
+
     const active =
       req.query.active === "true"
         ? true
@@ -69,7 +80,13 @@ class RoleController {
 
     const params: PaginationParams = { page, limit };
 
-    const roles = await roleService.searchRoles(params, search, active);
+    const roles = await roleService.searchRoles(
+      params, 
+      search, 
+      active, 
+      user.restaurantId || undefined, 
+      isSuperAdmin
+    );
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Roles searched successfully",

@@ -108,8 +108,14 @@ export class RolePermissionService implements RolePermissionServiceInterface {
    */
   async getRolesWithPermissions(
     params: PaginationParams,
+    restaurantId?: string,
+    includeSystem: boolean = false,
   ): Promise<PaginatedResponse<Role>> {
-    return this.roleRepository.getRolesWithPermissions(params);
+    return this.roleRepository.getRolesWithPermissions(
+      params,
+      restaurantId,
+      includeSystem,
+    );
   }
 }
 

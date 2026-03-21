@@ -112,10 +112,16 @@ class RolePermissionController {
     async (req: Request, res: Response) => {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      const user = req.user as AuthenticatedUser;
+      const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
 
       const params: PaginationParams = { page, limit };
 
-      const roles = await rolePermissionService.getRolesWithPermissions(params);
+      const roles = await rolePermissionService.getRolesWithPermissions(
+        params,
+        user.restaurantId || undefined,
+        isSuperAdmin,
+      );
       res.status(HttpStatus.OK).json({
         success: true,
         message: "Roles with permissions fetched successfully",

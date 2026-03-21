@@ -50,5 +50,7 @@ export interface RolePermissionServiceInterface {
    */
   getRolesWithPermissions(
     params: PaginationParams,
+    restaurantId?: string,
+    includeSystem?: boolean,
   ): Promise<PaginatedResponse<Role>>;
 }

@@ -18,13 +18,30 @@ class RoleRepository implements RoleRepositoryInterface {
    * This method supports efficient pagination for large role datasets
    * and excludes soft-deleted roles from the results.
    */
-  async findAll(params: PaginationParams): Promise<PaginatedResponse<Role>> {
+  async findAll(
+    params: PaginationParams,
+    restaurantId?: string,
+    includeSystem: boolean = false,
+  ): Promise<PaginatedResponse<Role>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
 
+    const where: Record<string, unknown> = { deleted: false };
+    
+    if (restaurantId && !includeSystem) {
+      where.restaurantId = restaurantId;
+    } else if (restaurantId && includeSystem) {
+      where.OR = [
+        { restaurantId },
+        { restaurantId: null }
+      ];
+    } else if (!restaurantId && !includeSystem) {
+      where.restaurantId = null;
+    }
+
     const [roles, total] = await Promise.all([
       prisma.role.findMany({
-        where: { deleted: false },
+        where,
         orderBy: { name: "asc" },
         include: {
           permissions: {
@@ -32,12 +49,15 @@ class RoleRepository implements RoleRepositoryInterface {
               permission: true,
             },
           },
+          _count: {
+            select: { users: true }
+          }
         },
         skip,
         take: limit,
       }),
       prisma.role.count({
-        where: { deleted: false },
+        where,
       }),
     ]);
 
@@ -59,6 +79,8 @@ class RoleRepository implements RoleRepositoryInterface {
     params: PaginationParams,
     search: string,
     active?: boolean,
+    restaurantId?: string,
+    includeSystem: boolean = false,
   ): Promise<PaginatedResponse<Role>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
@@ -67,9 +89,20 @@ class RoleRepository implements RoleRepositoryInterface {
       deleted: false,
       name: {
         contains: search,
-        mode: "insensitive",
+        mode: "insensitive" as const,
       },
     };
+
+    if (restaurantId && !includeSystem) {
+      whereClause.restaurantId = restaurantId;
+    } else if (restaurantId && includeSystem) {
+      whereClause.OR = [
+        { restaurantId },
+        { restaurantId: null }
+      ];
+    } else if (!restaurantId && !includeSystem) {
+      whereClause.restaurantId = null;
+    }
 
     if (active !== undefined) {
       whereClause.active = active;
@@ -79,6 +112,11 @@ class RoleRepository implements RoleRepositoryInterface {
       prisma.role.findMany({
         where: whereClause,
         orderBy: { name: "asc" },
+        include: {
+          _count: {
+            select: { users: true }
+          }
+        },
         skip,
         take: limit,
       }),
@@ -314,6 +352,9 @@ class RoleRepository implements RoleRepositoryInterface {
               permission: true,
             },
           },
+          _count: {
+            select: { users: true }
+          }
         },
       })) as Role;
     });
@@ -321,12 +362,28 @@ class RoleRepository implements RoleRepositoryInterface {
 
   async getRolesWithPermissions(
     params: PaginationParams,
+    restaurantId?: string,
+    includeSystem: boolean = false,
   ): Promise<PaginatedResponse<Role>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = { deleted: false };
+    
+    if (restaurantId && !includeSystem) {
+      where.restaurantId = restaurantId;
+    } else if (restaurantId && includeSystem) {
+      where.OR = [
+        { restaurantId },
+        { restaurantId: null }
+      ];
+    } else if (!restaurantId && !includeSystem) {
+      where.restaurantId = null;
+    }
+
     const [roles, total] = await Promise.all([
       prisma.role.findMany({
-        where: { deleted: false },
+        where,
         orderBy: { name: "asc" },
         skip,
         take: limit,
@@ -336,10 +393,13 @@ class RoleRepository implements RoleRepositoryInterface {
               permission: true,
             },
           },
+          _count: {
+            select: { users: true }
+          }
         },
       }),
       prisma.role.count({
-        where: { deleted: false },
+        where,
       }),
     ]);
 

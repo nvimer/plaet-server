@@ -41,8 +41,12 @@ export class RoleService implements RoleServiceInterface {
    * This method supports pagination for efficient data retrieval
    * and is typically used for role management interfaces.
    */
-  async findAll(params: PaginationParams): Promise<PaginatedResponse<Role>> {
-    return this.roleRepository.findAll(params);
+  async findAll(
+    params: PaginationParams,
+    restaurantId?: string,
+    includeSystem: boolean = false,
+  ): Promise<PaginatedResponse<Role>> {
+    return this.roleRepository.findAll(params, restaurantId, includeSystem);
   }
 
   /**
@@ -60,8 +64,16 @@ export class RoleService implements RoleServiceInterface {
     params: PaginationParams,
     search: string,
     active?: boolean,
+    restaurantId?: string,
+    includeSystem: boolean = false,
   ): Promise<PaginatedResponse<Role>> {
-    return this.roleRepository.searchRoles(params, search, active);
+    return this.roleRepository.searchRoles(
+      params,
+      search,
+      active,
+      restaurantId,
+      includeSystem,
+    );
   }
 
   /**
