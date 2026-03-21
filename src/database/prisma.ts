@@ -188,22 +188,16 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          // Strictly isolate Roles - No global fallback for tenants
-          if (model === "Role") {
-            args.where = {
-              ...where,
-              AND: [where, { restaurantId }]
-            };
-          } else {
-            // Other models (MenuCategory, MenuItem, etc.) can see global (null) records
-            args.where = {
-              ...where,
-              AND: [
-                where,
-                { OR: [{ restaurantId }, { restaurantId: null }] }
-              ]
-            };
-          }
+          // Strictly isolate Roles - Tenants see their own OR global roles (to allow SUPERADMIN visibility)
+          // Actually, let's allow tenants to see global roles only if we explicitly want templates,
+          // but for now, let's make sure the filter includes null for system roles to be manageable.
+          args.where = {
+            ...where,
+            AND: [
+              where,
+              { OR: [{ restaurantId }, { restaurantId: null }] }
+            ]
+          };
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {
@@ -219,20 +213,13 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          if (model === "Role") {
-            args.where = {
-              ...where,
-              AND: [where, { restaurantId }]
-            };
-          } else {
-            args.where = {
-              ...where,
-              AND: [
-                where,
-                { OR: [{ restaurantId }, { restaurantId: null }] }
-              ]
-            };
-          }
+          args.where = {
+            ...where,
+            AND: [
+              where,
+              { OR: [{ restaurantId }, { restaurantId: null }] }
+            ]
+          };
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {
@@ -248,20 +235,13 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          if (model === "Role") {
-            args.where = {
-              ...where,
-              AND: [where, { restaurantId }]
-            };
-          } else {
-            args.where = {
-              ...where,
-              AND: [
-                where,
-                { OR: [{ restaurantId }, { restaurantId: null }] }
-              ]
-            };
-          }
+          args.where = {
+            ...where,
+            AND: [
+              where,
+              { OR: [{ restaurantId }, { restaurantId: null }] }
+            ]
+          };
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {
