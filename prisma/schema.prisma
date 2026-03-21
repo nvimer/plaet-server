@@ -233,8 +233,11 @@ model StockAdjustment {
   orderId        String?             @map("order_id")
   createdAt      DateTime            @default(now()) @map("created_at")
   adjustmentType StockAdjustmentType @map("adjustment_type")
+  restaurantId   String?             @map("restaurant_id")
   menuItem       MenuItem            @relation(fields: [menuItemId], references: [id])
+  restaurant     Restaurant?         @relation(fields: [restaurantId], references: [id])
 
+  @@index([restaurantId])
   @@map("stock_adjustments")
 }
 

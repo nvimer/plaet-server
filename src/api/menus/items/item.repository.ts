@@ -219,6 +219,7 @@ class ItemRepository implements ItemRepositoryInterface {
             reason,
             userId,
             orderId,
+            restaurantId: item.restaurantId,
           },
         }),
       ]);
@@ -246,6 +247,7 @@ class ItemRepository implements ItemRepositoryInterface {
           reason,
           userId,
           orderId,
+          restaurantId: item.restaurantId,
         },
       }),
     ]);
@@ -254,6 +256,11 @@ class ItemRepository implements ItemRepositoryInterface {
 
   async dailyStockReset(menuItems: DailyStockResetInput): Promise<void> {
     await prisma.$transaction(async (tx) => {
+      // Fetch items to get their restaurantId
+      const itemsToUpdate = await tx.menuItem.findMany({
+        where: { id: { in: menuItems.items.map(i => i.itemId) } }
+      });
+
       await Promise.all(
         menuItems.items.map((item) =>
           tx.menuItem.update({
@@ -268,14 +275,18 @@ class ItemRepository implements ItemRepositoryInterface {
       );
 
       await tx.stockAdjustment.createMany({
-        data: menuItems.items.map((item) => ({
-          menuItemId: item.itemId,
-          adjustmentType: StockAdjustmentType.DAILY_RESET,
-          previousStock: 0,
-          newStock: item.quantity,
-          quantity: item.quantity,
-          reason: "Begin of the day",
-        })),
+        data: menuItems.items.map((item) => {
+          const originalItem = itemsToUpdate.find(i => i.id === item.itemId);
+          return {
+            menuItemId: item.itemId,
+            adjustmentType: StockAdjustmentType.DAILY_RESET,
+            previousStock: 0,
+            newStock: item.quantity,
+            quantity: item.quantity,
+            reason: "Begin of the day",
+            restaurantId: originalItem?.restaurantId || null,
+          };
+        }),
       });
     });
   }
@@ -370,10 +381,16 @@ class ItemRepository implements ItemRepositoryInterface {
       orderId?: string;
     },
   ): Promise<StockAdjustment> {
+    const item = await tx.menuItem.findUnique({
+      where: { id: data.menuItemId },
+      select: { restaurantId: true }
+    });
+
     return await tx.stockAdjustment.create({
       data: {
         ...data,
         adjustmentType: data.adjustmentType as StockAdjustmentType,
+        restaurantId: item?.restaurantId || null,
         createdAt: new Date(),
       },
     });

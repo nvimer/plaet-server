@@ -70,6 +70,7 @@ const MODELS_WITH_TENANT = [
   "TicketBook",
   "TicketBookUsage",
   "DailyTicketBookCode",
+  "StockAdjustment",
 ];
 
 const SOFT_DELETE_MODELS = [
