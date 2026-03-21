@@ -22,7 +22,10 @@ export interface PermissionRepositoryInterface {
    * - Uses LIMIT and OFFSET for pagination
    * - Performs COUNT query for total records
    */
-  findAll(params: PaginationParams): Promise<PaginatedResponse<Permission>>;
+  findAll(
+    params: PaginationParams,
+    includeSystem?: boolean,
+  ): Promise<PaginatedResponse<Permission>>;
 
   /**
    * Finds a permission by its unique ID
@@ -59,5 +62,6 @@ export interface PermissionRepositoryInterface {
    */
   search(
     params: PaginationParams & PermissionSearchParams,
+    includeSystem?: boolean,
   ): Promise<PaginatedResponse<Permission>>;
 }

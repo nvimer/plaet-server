@@ -1,9 +1,11 @@
 import { Role } from "@prisma/client";
 import roleRepository from "./role.repository";
+import permissionRepository from "../permissions/permission.repository";
 import { CustomError } from "../../types/custom-errors";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { RolePermissionServiceInterface } from "./interfaces/role-permissions.service.interface";
 import { RoleRepositoryInterface } from "./interfaces/role.repository.interface";
+import { PermissionRepositoryInterface } from "../permissions/interfaces/permission.repository.interface";
 import {
   PaginationParams,
   PaginatedResponse,
@@ -13,7 +15,10 @@ import {
  * Role Permission Service
  */
 export class RolePermissionService implements RolePermissionServiceInterface {
-  constructor(private roleRepository: RoleRepositoryInterface) {}
+  constructor(
+    private roleRepository: RoleRepositoryInterface,
+    private permissionRepository: PermissionRepositoryInterface,
+  ) {}
 
   /**
    * Validates that a role exists with permissions and returns the role if found.
@@ -47,8 +52,24 @@ export class RolePermissionService implements RolePermissionServiceInterface {
   async assignPermissionsToRole(
     roleId: number,
     permissionIds: number[],
+    isSuperAdmin: boolean = false,
   ): Promise<Role> {
     await this.findRoleWithPermissionsOrFail(roleId);
+
+    // Security check: Only SuperAdmins can assign system permissions
+    if (!isSuperAdmin) {
+      for (const id of permissionIds) {
+        const permission = await this.permissionRepository.findById(id);
+        if (permission?.isSystem) {
+          throw new CustomError(
+            `Unauthorized: Only SuperAdmins can assign system permission '${permission.name}'.`,
+            HttpStatus.FORBIDDEN,
+            "FORBIDDEN",
+          );
+        }
+      }
+    }
+
     return this.roleRepository.assignPermissionsToRole(roleId, permissionIds);
   }
 
@@ -59,8 +80,24 @@ export class RolePermissionService implements RolePermissionServiceInterface {
   async removePermissionsFromRole(
     roleId: number,
     permissionIds: number[],
+    isSuperAdmin: boolean = false,
   ): Promise<Role> {
     await this.findRoleWithPermissionsOrFail(roleId);
+
+    // Security check: Only SuperAdmins can remove system permissions
+    if (!isSuperAdmin) {
+      for (const id of permissionIds) {
+        const permission = await this.permissionRepository.findById(id);
+        if (permission?.isSystem) {
+          throw new CustomError(
+            `Unauthorized: Only SuperAdmins can remove system permission '${permission.name}'.`,
+            HttpStatus.FORBIDDEN,
+            "FORBIDDEN",
+          );
+        }
+      }
+    }
+
     return this.roleRepository.removePermissionsFromRole(roleId, permissionIds);
   }
 
@@ -76,4 +113,4 @@ export class RolePermissionService implements RolePermissionServiceInterface {
   }
 }
 
-export default new RolePermissionService(roleRepository);
+export default new RolePermissionService(roleRepository, permissionRepository);

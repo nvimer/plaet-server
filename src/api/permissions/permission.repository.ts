@@ -23,19 +23,25 @@ class PermissionRepository implements PermissionRepositoryInterface {
    */
   async findAll(
     params: PaginationParams,
+    includeSystem: boolean = true,
   ): Promise<PaginatedResponse<Permission>> {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
 
+    const where: Record<string, unknown> = { deleted: false };
+    if (!includeSystem) {
+      where.isSystem = false;
+    }
+
     const [permissions, total] = await Promise.all([
       prisma.permission.findMany({
-        where: { deleted: false },
+        where,
         orderBy: { name: "asc" },
         skip,
         take: limit,
       }),
       prisma.permission.count({
-        where: { deleted: false },
+        where,
       }),
     ]);
 
@@ -117,12 +123,17 @@ class PermissionRepository implements PermissionRepositoryInterface {
    */
   async search(
     params: PaginationParams & PermissionSearchParams,
+    includeSystem: boolean = true,
   ): Promise<PaginatedResponse<Permission>> {
     const { page, limit, search } = params;
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: Record<string, unknown> = { deleted: false };
+
+    if (!includeSystem) {
+      where.isSystem = false;
+    }
 
     // Add search filter if provided
     if (search) {

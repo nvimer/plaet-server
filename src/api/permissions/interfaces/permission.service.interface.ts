@@ -21,6 +21,7 @@ export interface PermissionServiceInterface {
    */
   findAllPermissions(
     params: PaginationParams,
+    includeSystem?: boolean,
   ): Promise<PaginatedResponse<Permission>>;
 
   /**
@@ -56,5 +57,6 @@ export interface PermissionServiceInterface {
    */
   searchPermissions(
     params: PaginationParams & PermissionSearchParams,
+    includeSystem?: boolean,
   ): Promise<PaginatedResponse<Permission>>;
 }

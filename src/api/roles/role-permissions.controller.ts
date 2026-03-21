@@ -4,6 +4,8 @@ import rolePermissionService from "./role-permissions.service";
 import { HttpStatus } from "../../utils/httpStatus.enum";
 import { PaginationParams } from "../../interfaces/pagination.interfaces";
 import { logger } from "../../config/logger";
+import { AuthenticatedUser } from "../../types/express";
+import { RoleName } from "@prisma/client";
 
 /**
  * Role Permission Controller
@@ -48,9 +50,13 @@ class RolePermissionController {
     async (req: Request, res: Response) => {
       const roleId = parseInt(req.params.id);
       const { permissionIds } = req.body;
+      const user = req.user as AuthenticatedUser;
+      const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
+
       const role = await rolePermissionService.assignPermissionsToRole(
         roleId,
         permissionIds,
+        isSuperAdmin,
       );
       res.status(HttpStatus.ACCEPTED).json({
         success: true,
@@ -75,10 +81,13 @@ class RolePermissionController {
     async (req: Request, res: Response) => {
       const roleId = parseInt(req.params.id);
       const { permissionIds } = req.body;
+      const user = req.user as AuthenticatedUser;
+      const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
 
       const role = await rolePermissionService.removePermissionsFromRole(
         roleId,
         permissionIds,
+        isSuperAdmin,
       );
       res.status(HttpStatus.ACCEPTED).json({
         success: true,

@@ -19,6 +19,7 @@ import restaurantRepository from "./restaurant.repository";
 import { EmailService } from "../../config/email";
 import { logger } from "../../config/logger";
 import { DEFAULT_CATEGORIES } from "../menus/categories/category.constants";
+import { seedRestaurantRoles } from "../roles/role-seeder.service";
 
 /**
  * Restaurant Service
@@ -89,20 +90,28 @@ export class RestaurantService implements RestaurantServiceInterface {
         const restaurant =
           await this.restaurantRepository.create(restaurantData);
 
-        // b. Find ADMIN role
+        // b. Seed roles for this new restaurant using the transaction client
+        await seedRestaurantRoles(tx, restaurant.id);
+
+        // c. Find the newly created ADMIN role for THIS restaurant
         const adminRole = await tx.role.findUnique({
-          where: { name: RoleName.ADMIN },
+          where: {
+            restaurantId_name: {
+              restaurantId: restaurant.id,
+              name: RoleName.ADMIN,
+            },
+          },
         });
 
         if (!adminRole) {
           throw new CustomError(
-            "ADMIN role not found in system",
+            "ADMIN role could not be created for restaurant",
             HttpStatus.INTERNAL_SERVER_ERROR,
             "ROLE_NOT_FOUND",
           );
         }
 
-        // c. Create Admin User
+        // d. Create Admin User
         const hashedPassword = hasherUtils.hash(tempPassword);
         const user = await tx.user.create({
           data: {
@@ -115,7 +124,7 @@ export class RestaurantService implements RestaurantServiceInterface {
           },
         });
 
-        // d. Assign Role
+        // e. Assign Role
         await tx.userRole.create({
           data: {
             userId: user.id,

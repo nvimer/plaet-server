@@ -28,8 +28,9 @@ export class PermissionService implements PermissionServiceInterface {
    */
   async findAllPermissions(
     params: PaginationParams,
+    includeSystem: boolean = true,
   ): Promise<PaginatedResponse<Permission>> {
-    return this.permissionRepository.findAll(params);
+    return this.permissionRepository.findAll(params, includeSystem);
   }
 
   /**
@@ -109,8 +110,9 @@ export class PermissionService implements PermissionServiceInterface {
    */
   async searchPermissions(
     params: PaginationParams & PermissionSearchParams,
+    includeSystem: boolean = true,
   ): Promise<PaginatedResponse<Permission>> {
-    return this.permissionRepository.search(params);
+    return this.permissionRepository.search(params, includeSystem);
   }
 
   /**

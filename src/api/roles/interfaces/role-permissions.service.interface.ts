@@ -24,6 +24,7 @@ export interface RolePermissionServiceInterface {
   assignPermissionsToRole(
     roleId: number,
     permissionIds: number[],
+    isSuperAdmin?: boolean,
   ): Promise<Role>;
 
   /**
@@ -32,11 +33,13 @@ export interface RolePermissionServiceInterface {
    *
    * @param roleId - Role ID to remove permissions from
    * @param permissionIds - Array of permission IDs to remove
+   * @param isSuperAdmin - Whether the requesting user is a SuperAdmin
    * @returns Promise<Role> - Updated role with remaining permissions
    */
   removePermissionsFromRole(
     roleId: number,
     permissionIds: number[],
+    isSuperAdmin?: boolean,
   ): Promise<Role>;
 
   /**

@@ -31,6 +31,8 @@ model Restaurant {
   orders       Order[]
   tables       Table[]
   users        User[]
+  roles        Role[]
+  stockAdjustments StockAdjustment[]
   ticketBooks  TicketBook[]
   ticketBookUsages TicketBookUsage[]
   dailyTicketBookCodes DailyTicketBookCode[]
@@ -53,15 +55,19 @@ model Token {
 
 model Role {
   id          Int              @id @default(autoincrement())
-  name        RoleName         @unique
+  name        RoleName
   description String?
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
   deleted     Boolean          @default(false)
   deletedAt   DateTime?        @map("deleted_at")
+  restaurantId String?         @map("restaurant_id")
   permissions RolePermission[]
   users       UserRole[]
+  restaurant  Restaurant?      @relation(fields: [restaurantId], references: [id])
 
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
   @@map("roles")
 }
 
@@ -69,6 +75,7 @@ model Permission {
   id          Int              @id @default(autoincrement())
   name        String           @unique
   description String?
+  isSystem    Boolean          @default(false) @map("is_system")
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
   deleted     Boolean          @default(false)

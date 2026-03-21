@@ -71,6 +71,7 @@ const MODELS_WITH_TENANT = [
   "TicketBookUsage",
   "DailyTicketBookCode",
   "StockAdjustment",
+  "Role",
 ];
 
 const SOFT_DELETE_MODELS = [
@@ -121,10 +122,15 @@ export const prisma = prismaClient.$extends({
           const record = result as object;
           if ("restaurantId" in record) {
             const rid = (record as TenantRecord).restaurantId;
-            // If the record has a restaurantId and it doesn't match the current tenant
-            // (and it's not a global record), we hide it.
-            if (rid && rid !== restaurantId) {
-              return null;
+            
+            // Strictly isolate Roles - Tenants cannot see global (null) roles
+            if (model === "Role") {
+              if (rid !== restaurantId) return null;
+            } else {
+              // Other models: hide only if it belongs to ANOTHER tenant
+              if (rid && rid !== restaurantId) {
+                return null;
+              }
             }
           }
         }
@@ -147,22 +153,23 @@ export const prisma = prismaClient.$extends({
         const context = tenantContext.getStore();
         const restaurantId = context?.restaurantId;
 
-        // For updates, we MUST ensure the record belongs to the tenant.
-        // Since we can't modify 'where' without breaking findUnique validation,
-        // we use the result of the query and rely on the fact that if the update 
-        // fails or the record doesn't exist, Prisma throws.
-        // However, to be extra safe, we could perform a findFirst check here,
-        // but that requires dynamic model access which usually involves 'any'.
-        // For now, we allow the update to proceed but we will verify the result.
-        
         const result = await query(args);
 
         if (result && MODELS_WITH_TENANT.includes(model) && restaurantId) {
           const record = result as object;
           if ("restaurantId" in record) {
             const rid = (record as TenantRecord).restaurantId;
-            if (rid && rid !== restaurantId) {
-              throw new Error("Unauthorized update: Record belongs to another restaurant");
+            
+            // Strictly isolate Roles - Tenants cannot update global (null) roles
+            if (model === "Role") {
+              if (rid !== restaurantId) {
+                throw new Error("Unauthorized update: Record belongs to another restaurant or is a system role");
+              }
+            } else {
+              // Other models: throw only if it belongs to ANOTHER tenant
+              if (rid && rid !== restaurantId) {
+                throw new Error("Unauthorized update: Record belongs to another restaurant");
+              }
             }
           }
         }
@@ -181,13 +188,22 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          args.where = {
-            ...where,
-            AND: [
-              where,
-              { OR: [{ restaurantId }, { restaurantId: null }] }
-            ]
-          };
+          // Strictly isolate Roles - No global fallback for tenants
+          if (model === "Role") {
+            args.where = {
+              ...where,
+              AND: [where, { restaurantId }]
+            };
+          } else {
+            // Other models (MenuCategory, MenuItem, etc.) can see global (null) records
+            args.where = {
+              ...where,
+              AND: [
+                where,
+                { OR: [{ restaurantId }, { restaurantId: null }] }
+              ]
+            };
+          }
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {
@@ -203,13 +219,20 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          args.where = {
-            ...where,
-            AND: [
-              where,
-              { OR: [{ restaurantId }, { restaurantId: null }] }
-            ]
-          };
+          if (model === "Role") {
+            args.where = {
+              ...where,
+              AND: [where, { restaurantId }]
+            };
+          } else {
+            args.where = {
+              ...where,
+              AND: [
+                where,
+                { OR: [{ restaurantId }, { restaurantId: null }] }
+              ]
+            };
+          }
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {
@@ -225,13 +248,20 @@ export const prisma = prismaClient.$extends({
         const where = (args.where || {}) as Record<string, object | string | number | boolean | null>;
 
         if (MODELS_WITH_TENANT.includes(model) && restaurantId) {
-          args.where = {
-            ...where,
-            AND: [
-              where,
-              { OR: [{ restaurantId }, { restaurantId: null }] }
-            ]
-          };
+          if (model === "Role") {
+            args.where = {
+              ...where,
+              AND: [where, { restaurantId }]
+            };
+          } else {
+            args.where = {
+              ...where,
+              AND: [
+                where,
+                { OR: [{ restaurantId }, { restaurantId: null }] }
+              ]
+            };
+          }
         }
 
         if (SOFT_DELETE_MODELS.includes(model)) {

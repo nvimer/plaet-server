@@ -3,7 +3,7 @@ import { logger } from "../../src/config/logger";
 
 const prisma = new PrismaClient();
 
-export const rolesConfig = [
+export const globalRoles = [
   {
     name: RoleName.SUPERADMIN,
     description: "Administrador global del sistema (SaaS)",
@@ -31,75 +31,38 @@ export const rolesConfig = [
       "settings:update",
     ],
   },
-  {
-    name: RoleName.ADMIN,
-    description: "Dueño/Gerente del restaurante con acceso total local",
-    permissions: [
-      "users:read",
-      "users:create",
-      "users:update",
-      "users:delete",
-      "roles:manage",
-      "menu:read",
-      "menu:manage",
-      "stock:manage",
-      "tables:manage",
-      "orders:read",
-      "orders:create",
-      "orders:update",
-      "orders:cancel",
-      "orders:pay",
-      "kitchen:view",
-      "kitchen:update",
-      "cash:manage",
-      "expenses:manage",
-      "analytics:view",
-      "settings:update",
-    ],
-  },
-  {
-    name: RoleName.WAITER,
-    description: "Mesero - Toma pedidos y gestiona mesas",
-    permissions: [
-      "menu:read",
-      "tables:manage",
-      "orders:read",
-      "orders:create",
-      "orders:update",
-    ],
-  },
-  {
-    name: RoleName.CASHIER,
-    description: "Cajero - Gestiona pagos y cierres de caja",
-    permissions: [
-      "menu:read",
-      "orders:read",
-      "orders:pay",
-      "cash:manage",
-      "expenses:manage",
-      "analytics:view",
-    ],
-  },
-  {
-    name: RoleName.KITCHEN_MANAGER,
-    description: "Cocina - Visualiza y prepara pedidos",
-    permissions: ["menu:read", "orders:read", "kitchen:view", "kitchen:update"],
-  },
 ];
 
 export async function seedRoles() {
-  logger.info("🌱 Seeding roles and assigning granular permissions...");
+  logger.info("🌱 Seeding global roles...");
 
-  for (const roleConfig of rolesConfig) {
-    const role = await prisma.role.upsert({
-      where: { name: roleConfig.name },
-      update: { description: roleConfig.description },
-      create: {
+  for (const roleConfig of globalRoles) {
+    // Note: Since restaurantId is nullable, we search where it's null
+    // Depending on Prisma version/adapter, null handling in compound unique might vary.
+    // Here we use findFirst and create if not exists to be safe against null typing issues in upsert where.
+    let role = await prisma.role.findFirst({
+      where: {
         name: roleConfig.name,
-        description: roleConfig.description,
-      },
+        restaurantId: null
+      }
     });
-    logger.info(` 📝 Role ${roleConfig.name} seeded`);
+
+    if (!role) {
+      role = await prisma.role.create({
+        data: {
+          name: roleConfig.name,
+          description: roleConfig.description,
+          restaurantId: null,
+        }
+      });
+    } else {
+      await prisma.role.update({
+        where: { id: role.id },
+        data: { description: roleConfig.description }
+      });
+    }
+
+    logger.info(` 📝 Global Role ${roleConfig.name} seeded`);
 
     for (const permissionName of roleConfig.permissions) {
       const permission = await prisma.permission.findUnique({
@@ -122,9 +85,5 @@ export async function seedRoles() {
         });
       }
     }
-    logger.info(
-      `  ✅ ${roleConfig.permissions.length} granular permissions assigned to ${roleConfig.name}`,
-    );
   }
-  logger.info(`✅ ${rolesConfig.length} roles seeded successfully!`);
 }

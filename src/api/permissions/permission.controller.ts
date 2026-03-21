@@ -14,6 +14,8 @@ import {
   DEFAULT_PAGE,
   PaginationParams,
 } from "../../interfaces/pagination.interfaces";
+import { AuthenticatedUser } from "../../types/express";
+import { RoleName } from "@prisma/client";
 
 /**
  * Permission Controller
@@ -40,10 +42,14 @@ class PermissionController {
   getPermissions = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
+    const user = req.user as AuthenticatedUser;
+    
+    // Only include system permissions if user is SUPERADMIN
+    const includeSystem = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
 
     const params: PaginationParams = { page, limit };
 
-    const permissions = await this.permissionService.findAllPermissions(params);
+    const permissions = await this.permissionService.findAllPermissions(params, includeSystem);
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Permissions fetched successfully",
@@ -74,6 +80,10 @@ class PermissionController {
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
     const search = req.query.search as string;
+    const user = req.user as AuthenticatedUser;
+
+    // Only include system permissions if user is SUPERADMIN
+    const includeSystem = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
 
     // Create combined parameters object
     const params: PaginationParams & PermissionSearchParams = {
@@ -82,7 +92,7 @@ class PermissionController {
       search,
     };
 
-    const permissions = await this.permissionService.searchPermissions(params);
+    const permissions = await this.permissionService.searchPermissions(params, includeSystem);
     res.status(HttpStatus.OK).json({
       success: true,
       message: "Permissions search completed successfully",
