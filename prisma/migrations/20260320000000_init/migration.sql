@@ -70,6 +70,7 @@ CREATE TABLE "roles" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
     "deleted_at" TIMESTAMP(3),
+    "restaurant_id" TEXT,
 
     CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
 );
@@ -79,6 +80,7 @@ CREATE TABLE "permissions" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
+    "is_system" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
@@ -217,6 +219,7 @@ CREATE TABLE "stock_adjustments" (
     "order_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "adjustment_type" "StockAdjustmentType" NOT NULL,
+    "restaurant_id" TEXT,
 
     CONSTRAINT "stock_adjustments_pkey" PRIMARY KEY ("id")
 );
@@ -286,11 +289,13 @@ CREATE TABLE "ticket_books" (
     "expiry_date" TIMESTAMP(3) NOT NULL,
     "total_portions" INTEGER NOT NULL,
     "consumed_portions" INTEGER NOT NULL DEFAULT 0,
+    "purchase_price" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
     "deleted_at" TIMESTAMP(3),
+    "restaurant_id" TEXT,
 
     CONSTRAINT "ticket_books_pkey" PRIMARY KEY ("id")
 );
@@ -306,6 +311,7 @@ CREATE TABLE "ticket_book_usages" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
     "deleted_at" TIMESTAMP(3),
+    "restaurant_id" TEXT,
 
     CONSTRAINT "ticket_book_usages_pkey" PRIMARY KEY ("id")
 );
@@ -357,6 +363,7 @@ CREATE TABLE "cash_closures" (
     "total_nequi" DECIMAL(10,2) DEFAULT 0,
     "total_expenses" DECIMAL(10,2) DEFAULT 0,
     "total_vouchers" DECIMAL(10,2) DEFAULT 0,
+    "total_delivery" DECIMAL(10,2) DEFAULT 0,
     "status" "CashClosureStatus" NOT NULL DEFAULT 'OPEN',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -376,6 +383,7 @@ CREATE TABLE "daily_ticket_book_codes" (
     "is_used" BOOLEAN NOT NULL DEFAULT false,
     "used_at_payment_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "restaurant_id" TEXT,
 
     CONSTRAINT "daily_ticket_book_codes_pkey" PRIMARY KEY ("id")
 );
@@ -401,6 +409,9 @@ CREATE TABLE "daily_menus" (
     "soup_category_id" INTEGER,
     "soup_option_1_id" INTEGER,
     "soup_option_2_id" INTEGER,
+    "rice_category_id" INTEGER,
+    "rice_option_1_id" INTEGER,
+    "rice_option_2_id" INTEGER,
     "dessert_category_id" INTEGER,
     "dessert_option_1_id" INTEGER,
     "dessert_option_2_id" INTEGER,
@@ -425,7 +436,10 @@ CREATE UNIQUE INDEX "restaurants_slug_key" ON "restaurants"("slug");
 CREATE UNIQUE INDEX "restaurants_nit_key" ON "restaurants"("nit");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "roles_name_key" ON "roles"("name");
+CREATE INDEX "roles_restaurant_id_idx" ON "roles"("restaurant_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "roles_restaurant_id_name_key" ON "roles"("restaurant_id", "name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "permissions_name_key" ON "permissions"("name");
@@ -452,6 +466,9 @@ CREATE UNIQUE INDEX "menu_categories_restaurant_id_name_key" ON "menu_categories
 CREATE UNIQUE INDEX "menu_items_restaurant_id_category_id_name_key" ON "menu_items"("restaurant_id", "category_id", "name");
 
 -- CreateIndex
+CREATE INDEX "stock_adjustments_restaurant_id_idx" ON "stock_adjustments"("restaurant_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "orders_whatsapp_order_id_key" ON "orders"("whatsapp_order_id");
 
 -- CreateIndex
@@ -467,6 +484,12 @@ CREATE UNIQUE INDEX "customers_restaurant_id_phone_key" ON "customers"("restaura
 CREATE UNIQUE INDEX "customers_restaurant_id_email_key" ON "customers"("restaurant_id", "email");
 
 -- CreateIndex
+CREATE INDEX "ticket_books_restaurant_id_idx" ON "ticket_books"("restaurant_id");
+
+-- CreateIndex
+CREATE INDEX "ticket_book_usages_restaurant_id_idx" ON "ticket_book_usages"("restaurant_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "payments_daily_ticket_book_code_id_key" ON "payments"("daily_ticket_book_code_id");
 
 -- CreateIndex
@@ -480,6 +503,9 @@ CREATE UNIQUE INDEX "daily_ticket_book_codes_code_key" ON "daily_ticket_book_cod
 
 -- CreateIndex
 CREATE UNIQUE INDEX "daily_ticket_book_codes_used_at_payment_id_key" ON "daily_ticket_book_codes"("used_at_payment_id");
+
+-- CreateIndex
+CREATE INDEX "daily_ticket_book_codes_restaurant_id_idx" ON "daily_ticket_book_codes"("restaurant_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "daily_ticket_book_codes_customerId_date_key" ON "daily_ticket_book_codes"("customerId", "date");
@@ -498,6 +524,9 @@ CREATE INDEX "daily_menus_restaurant_id_idx" ON "daily_menus"("restaurant_id");
 
 -- AddForeignKey
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "roles" ADD CONSTRAINT "roles_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -533,6 +562,9 @@ ALTER TABLE "menu_items" ADD CONSTRAINT "menu_items_restaurant_id_fkey" FOREIGN 
 ALTER TABLE "stock_adjustments" ADD CONSTRAINT "stock_adjustments_menu_item_id_fkey" FOREIGN KEY ("menu_item_id") REFERENCES "menu_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "stock_adjustments" ADD CONSTRAINT "stock_adjustments_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -560,6 +592,9 @@ ALTER TABLE "customers" ADD CONSTRAINT "customers_restaurant_id_fkey" FOREIGN KE
 ALTER TABLE "ticket_books" ADD CONSTRAINT "ticket_books_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ticket_books" ADD CONSTRAINT "ticket_books_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ticket_book_usages" ADD CONSTRAINT "ticket_book_usages_daily_code_id_fkey" FOREIGN KEY ("daily_code_id") REFERENCES "daily_ticket_book_codes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -567,6 +602,9 @@ ALTER TABLE "ticket_book_usages" ADD CONSTRAINT "ticket_book_usages_payment_id_f
 
 -- AddForeignKey
 ALTER TABLE "ticket_book_usages" ADD CONSTRAINT "ticket_book_usages_ticket_book_id_fkey" FOREIGN KEY ("ticket_book_id") REFERENCES "ticket_books"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ticket_book_usages" ADD CONSTRAINT "ticket_book_usages_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_daily_ticket_book_code_id_fkey" FOREIGN KEY ("daily_ticket_book_code_id") REFERENCES "daily_ticket_book_codes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -599,4 +637,8 @@ ALTER TABLE "cash_closures" ADD CONSTRAINT "cash_closures_restaurant_id_fkey" FO
 ALTER TABLE "daily_ticket_book_codes" ADD CONSTRAINT "daily_ticket_book_codes_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "daily_ticket_book_codes" ADD CONSTRAINT "daily_ticket_book_codes_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "daily_menus" ADD CONSTRAINT "daily_menus_restaurant_id_fkey" FOREIGN KEY ("restaurant_id") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
