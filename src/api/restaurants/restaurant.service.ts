@@ -1,5 +1,5 @@
 import { Restaurant, RoleName } from "@prisma/client";
-import { getPrismaClient } from "../../database/prisma";
+import { getPrismaClient, getBasePrismaClient } from "../../database/prisma";
 import { RestaurantServiceInterface } from "./interfaces/restaurant.service.interface";
 import { RestaurantRepositoryInterface } from "./interfaces/restaurant.repository.interface";
 import {
@@ -52,11 +52,11 @@ export class RestaurantService implements RestaurantServiceInterface {
   }
 
   async createRestaurant(data: CreateRestaurantInput): Promise<Restaurant> {
-    const prisma = getPrismaClient();
+    const basePrisma = getBasePrismaClient();
     const { adminUser, ...restaurantData } = data;
 
     // 1. Check if restaurant name already exists
-    const existing = await prisma.restaurant.findUnique({
+    const existing = await basePrisma.restaurant.findUnique({
       where: { name: restaurantData.name },
     });
     if (existing) {
@@ -68,7 +68,7 @@ export class RestaurantService implements RestaurantServiceInterface {
     }
 
     // 2. Check if admin email already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await basePrisma.user.findUnique({
       where: { email: adminUser.email },
     });
     if (existingUser) {
@@ -83,21 +83,22 @@ export class RestaurantService implements RestaurantServiceInterface {
     const tempPassword =
       adminUser.password || hasherUtils.generateTempPassword();
 
-    // 4. Create everything in a transaction
-    const restaurant = await prisma.$transaction(
-      async (tx: PrismaTransaction) => {
+    // 4. Create everything in a transaction using the base client to avoid tenant filter clashes
+    const restaurant = await basePrisma.$transaction(
+      async (tx: any) => {
         // a. Create Restaurant (using repository logic for slug)
-        const restaurant =
-          await this.restaurantRepository.create(restaurantData);
+        const newRestaurant =
+          await tx.restaurant.create({ data: restaurantData });
 
         // b. Seed roles for this new restaurant using the transaction client
-        await seedRestaurantRoles(tx, restaurant.id);
+        await seedRestaurantRoles(tx, newRestaurant.id);
 
         // c. Find the newly created ADMIN role for THIS restaurant
+        // Using tx from basePrisma bypasses the tenant security filter
         const adminRole = await tx.role.findUnique({
           where: {
             restaurantId_name: {
-              restaurantId: restaurant.id,
+              restaurantId: newRestaurant.id,
               name: RoleName.ADMIN,
             },
           },
@@ -120,7 +121,7 @@ export class RestaurantService implements RestaurantServiceInterface {
             email: adminUser.email,
             phone: adminUser.phone,
             password: hashedPassword,
-            restaurantId: restaurant.id, // Assign to new restaurant
+            restaurantId: newRestaurant.id, // Assign to new restaurant
           },
         });
 
@@ -132,19 +133,19 @@ export class RestaurantService implements RestaurantServiceInterface {
           },
         });
 
-        // e. Create Default Categories
+        // f. Create Default Categories
         await Promise.all(
-          DEFAULT_CATEGORIES.map((category) =>
+          DEFAULT_CATEGORIES.map((category: any) =>
             tx.menuCategory.create({
               data: {
                 ...category,
-                restaurantId: restaurant.id,
+                restaurantId: newRestaurant.id,
               },
             }),
           ),
         );
 
-        return restaurant;
+        return newRestaurant;
       },
     );
 
