@@ -1,6 +1,6 @@
 import { PrismaClient, RestaurantStatus } from "@prisma/client";
 import { logger } from "../../src/config/logger";
-import { seedRestaurantRoles } from "./roles.seed";
+import { seedRestaurantRoles } from "../../src/api/roles/role-seeder.service";
 
 const prisma = new PrismaClient();
 
@@ -21,7 +21,7 @@ export async function seedRestaurants() {
   });
 
   // Seed roles for this restaurant
-  await seedRestaurantRoles(mainRestaurant.id);
+  await seedRestaurantRoles(prisma, mainRestaurant.id);
 
   logger.info(
     `✅ Initial restaurant created: ${mainRestaurant.name}`,
