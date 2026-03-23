@@ -55,7 +55,6 @@ class ItemRepository implements ItemRepositoryInterface {
       where: {
         categoryId,
         deleted: false,
-        isAvailable: true,
       },
       orderBy: {
         name: "asc",

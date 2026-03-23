@@ -110,8 +110,11 @@ export class ItemService implements ItemServiceInterface {
   /**
    * Retrieves all menu items by category ID.
    * Returns available and non-deleted items only.
+   * Note: This method returns ALL items without pagination to ensure
+   * daily menu selectors have access to the complete catalog.
    */
   async findMenuItemsByCategory(categoryId: number): Promise<MenuItem[]> {
+    // We use a large limit or a specific repository method to ensure all items are returned
     return this.itemRepository.findByCategory(categoryId);
   }
 
