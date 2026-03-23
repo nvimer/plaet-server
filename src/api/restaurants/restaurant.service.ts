@@ -51,6 +51,14 @@ export class RestaurantService implements RestaurantServiceInterface {
     return restaurant;
   }
 
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[\s\W\_]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
   async createRestaurant(data: CreateRestaurantInput): Promise<Restaurant> {
     const basePrisma = getBasePrismaClient();
     const { adminUser, ...restaurantData } = data;
@@ -86,14 +94,30 @@ export class RestaurantService implements RestaurantServiceInterface {
     // 4. Create everything in a transaction using the base client to avoid tenant filter clashes
     const restaurant = await basePrisma.$transaction(
       async (tx: any) => {
-        // a. Create Restaurant (using repository logic for slug)
-        const newRestaurant =
-          await tx.restaurant.create({ data: restaurantData });
+        // a. Generate unique slug
+        const slug = this.generateSlug(restaurantData.name);
+        let uniqueSlug = slug;
+        const existingSlug = await tx.restaurant.findUnique({
+          where: { slug: uniqueSlug },
+        });
+        if (existingSlug) {
+          uniqueSlug = `${slug}-${Math.floor(Math.random() * 1000)}`;
+        }
 
-        // b. Seed roles for this new restaurant using the transaction client
+        // b. Create Restaurant
+        const newRestaurant = await tx.restaurant.create({
+          data: {
+            ...restaurantData,
+            slug: uniqueSlug,
+            currency: restaurantData.currency || "COP",
+            timezone: restaurantData.timezone || "America/Bogota",
+          },
+        });
+
+        // c. Seed roles for this new restaurant using the transaction client
         await seedRestaurantRoles(tx, newRestaurant.id);
 
-        // c. Find the newly created ADMIN role for THIS restaurant
+        // d. Find the newly created ADMIN role for THIS restaurant
         // Using tx from basePrisma bypasses the tenant security filter
         const adminRole = await tx.role.findUnique({
           where: {
@@ -112,7 +136,7 @@ export class RestaurantService implements RestaurantServiceInterface {
           );
         }
 
-        // d. Create Admin User
+        // e. Create Admin User
         const hashedPassword = hasherUtils.hash(tempPassword);
         const user = await tx.user.create({
           data: {
@@ -125,7 +149,7 @@ export class RestaurantService implements RestaurantServiceInterface {
           },
         });
 
-        // e. Assign Role
+        // f. Assign Role
         await tx.userRole.create({
           data: {
             userId: user.id,
@@ -133,7 +157,7 @@ export class RestaurantService implements RestaurantServiceInterface {
           },
         });
 
-        // f. Create Default Categories
+        // g. Create Default Categories
         await Promise.all(
           DEFAULT_CATEGORIES.map((category: any) =>
             tx.menuCategory.create({
