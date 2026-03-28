@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { startTableCleanupJob } from "./jobs/table-cleanup.job";
-import { startOrderAutoCancelJob } from "./jobs/order-auto-cancel.job";
 import app from "./app";
 import { config } from "./config";
 import { logger } from "./config/logger";
@@ -11,7 +10,6 @@ async function startServer() {
     await prisma.$connect();
     logger.info("✅ Connected to the database successfully.");
     startTableCleanupJob();
-    startOrderAutoCancelJob();
 
     app.listen(config.port, () =>
       logger.info(
