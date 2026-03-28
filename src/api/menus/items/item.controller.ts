@@ -141,7 +141,7 @@ class ItemController {
    * GET /items/:id
    */
   getMenuItem = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const id = Number((req.params.id as string));
     const menuItem = await this.itemService.findMenuItemById(id);
 
     res.status(HttpStatus.OK).json({
@@ -238,7 +238,7 @@ class ItemController {
    * POST /items/:id/stock/add
    */
   addStock = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const data: AddStockBodyInput = req.body;
     const user = req.user as AuthenticatedUser;
     const item = await this.itemService.addStock(id, data, user.id);
@@ -254,7 +254,7 @@ class ItemController {
    * POST /items/:id/stock/remove
    */
   removeStock = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const data: AddStockBodyInput = req.body;
     const user = req.user as AuthenticatedUser;
     const item = await this.itemService.removeStock(id, data, user.id);
@@ -293,7 +293,7 @@ class ItemController {
    * GET /items/:id/stock/history
    */
   getStockHistory = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
     const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
     const params: PaginationParams = { page, limit };
@@ -326,7 +326,7 @@ class ItemController {
    * PATCH /items/:id/inventory-type
    */
   setInventoryType = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const data: InventoryTypeInput = req.body;
     const item = await this.itemService.setInventoryType(id, data);
     res.status(HttpStatus.OK).json({
@@ -340,7 +340,7 @@ class ItemController {
    * PATCH /items/:id
    */
   patchItem = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const data: UpdateItemInput = req.body;
     if (req.file) {
       data.imageUrl = req.file.path;
@@ -420,7 +420,7 @@ class ItemController {
   });
 
   deleteItem = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     await this.itemService.deleteItem(id);
     res.status(HttpStatus.NO_CONTENT).send();
   });

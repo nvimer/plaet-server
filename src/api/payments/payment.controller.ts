@@ -5,7 +5,7 @@ import paymentService from "./payment.service";
 
 class PaymentController {
   createPayment = asyncHandler(async (req: Request, res: Response) => {
-    const { orderId } = req.params;
+    const orderId = req.params.orderId as string;
     const data = req.body;
 
     const payment = await paymentService.createPayment(orderId, data);

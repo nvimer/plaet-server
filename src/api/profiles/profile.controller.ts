@@ -58,7 +58,7 @@ class ProfileController {
    * - 404: Profile not found
    */
   getProfile = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
 
     const profile = await profileService.findById(id);
     res.status(HttpStatus.OK).json({
@@ -92,7 +92,7 @@ class ProfileController {
    * - 409: Email already exists (if email is being changed)
    */
   updateProfile = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
     const data: UpdateProfileInput = req.body;
     const profileUpdated = await profileService.updateUser(id, data);
 

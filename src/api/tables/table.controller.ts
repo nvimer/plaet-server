@@ -57,7 +57,7 @@ class TableController {
    *
    */
   getTableById = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const table = await this.tableService.findTableById(id);
     res.status(HttpStatus.OK).json({
       success: true,
@@ -104,7 +104,7 @@ class TableController {
    * - 500: Server error during update
    */
   updateTable = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const data = req.body;
     const table = await this.tableService.updateTable(id, data);
     res.status(HttpStatus.OK).json({
@@ -130,7 +130,7 @@ class TableController {
    *
    */
   deleteTable = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await this.tableService.deleteTable(id);
     res.status(HttpStatus.OK).json({
       success: true,
@@ -152,7 +152,7 @@ class TableController {
    * - 500: Server error during status update
    */
   updateTableStatus = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const { status } = req.body;
     const table = await this.tableService.updateTableStatus(id, status);
     res.status(HttpStatus.OK).json({

@@ -35,7 +35,7 @@ export class ExpenseController {
   });
 
   delete = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await this.service.deleteExpense(id);
 
     res.status(HttpStatus.OK).json({

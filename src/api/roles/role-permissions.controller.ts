@@ -24,7 +24,7 @@ class RolePermissionController {
    * - 404: Role not found
    */
   getRoleWithPermissions = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
 
     const role = await rolePermissionService.findRoleWithPermissions(id);
     res.status(HttpStatus.OK).json({
@@ -48,7 +48,7 @@ class RolePermissionController {
    */
   assignPermissionsToRole = asyncHandler(
     async (req: Request, res: Response) => {
-      const roleId = parseInt(req.params.id);
+      const roleId = parseInt((req.params.id as string));
       const { permissionIds } = req.body;
       const user = req.user as AuthenticatedUser;
       const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);
@@ -79,7 +79,7 @@ class RolePermissionController {
    */
   removePermissionsFromRole = asyncHandler(
     async (req: Request, res: Response) => {
-      const roleId = parseInt(req.params.id);
+      const roleId = parseInt((req.params.id as string));
       const { permissionIds } = req.body;
       const user = req.user as AuthenticatedUser;
       const isSuperAdmin = user.roles.some(r => r.role.name === RoleName.SUPERADMIN);

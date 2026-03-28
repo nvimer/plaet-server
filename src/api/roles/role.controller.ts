@@ -107,7 +107,7 @@ class RoleController {
    * - 404: Role not found
    */
   getRoleById = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
 
     const role = await roleService.findById(id);
     res.status(HttpStatus.OK).json({
@@ -154,7 +154,7 @@ class RoleController {
    * - 409: Role name already exists (if name is being changed)
    */
   patchRole = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
     const data: UpdateRoleInput = req.body;
 
     const role = await roleService.updateRole(id, data);
@@ -179,7 +179,7 @@ class RoleController {
    * - 409: Role cannot be deleted (has active users)
    */
   deleteRole = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt((req.params.id as string));
 
     const role = await roleService.deleteRole(id);
     res.status(HttpStatus.OK).json({

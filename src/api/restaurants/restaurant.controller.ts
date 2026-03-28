@@ -62,7 +62,7 @@ export class RestaurantController {
    * Get a restaurant by ID
    */
   getRestaurantById = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const restaurant = await this.restaurantService.getRestaurantById(id);
 
     res.status(HttpStatus.OK).json({
@@ -89,7 +89,7 @@ export class RestaurantController {
    * Update a restaurant
    */
   updateRestaurant = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const restaurant = await this.restaurantService.updateRestaurant(
       id,
       req.body,
@@ -106,7 +106,7 @@ export class RestaurantController {
    * Soft delete a restaurant
    */
   deleteRestaurant = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await this.restaurantService.deleteRestaurant(id);
 
     res.status(HttpStatus.OK).json({

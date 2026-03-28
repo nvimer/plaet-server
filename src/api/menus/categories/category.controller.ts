@@ -127,7 +127,7 @@ class CategoryController {
    */
   getCategory = asyncHandler(async (req: Request, res: Response) => {
     // Extract and convert category ID from URL parameters
-    const id = Number(req.params.id);
+    const id = Number((req.params.id as string));
 
     // Fetch specific category from service layer
     const menuCategory = await this.categoryService.findCategoryById(id);
@@ -210,7 +210,7 @@ class CategoryController {
     const data: UpdateMenuCategoryInput = req.body;
 
     // Extract and convert category ID from URL parameters
-    const id = Number(req.params.id);
+    const id = Number((req.params.id as string));
 
     // Update category through service layer
     const updatedCategory = await this.categoryService.updateCategory(id, data);
@@ -245,7 +245,7 @@ class CategoryController {
    */
   deleteCategory = asyncHandler(async (req: Request, res: Response) => {
     // Extract and convert category ID from URL parameters
-    const id = Number(req.params.id);
+    const id = Number((req.params.id as string));
 
     // Delete category through service layer
     const deletedCategory = await this.categoryService.deleteCategory(id);

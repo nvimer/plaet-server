@@ -125,7 +125,7 @@ class PermissionController {
    * - Associated roles and users
    */
   getPermissionById = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const permission = await this.permissionService.findPermissionById(id);
     res.status(HttpStatus.OK).json({
       success: true,
@@ -190,7 +190,7 @@ class PermissionController {
    * - 500: Server error during update
    */
   patchPermission = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const data: UpdatePermissionInput = req.body;
 
     const updatedPermission = await this.permissionService.updatePermission(
@@ -219,7 +219,7 @@ class PermissionController {
    * - 500: Server error during deletion
    */
   deletePermission = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
 
     const deletedPermission = await this.permissionService.deletePermission(id);
     res.status(HttpStatus.OK).json({

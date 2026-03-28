@@ -95,7 +95,7 @@ class OrderController {
    * - 500: Server error during retrieval
    */
   getOrder = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
 
     const order = await this.orderService.findOrderById(id);
 
@@ -193,7 +193,7 @@ class OrderController {
    * - 500: Server error during update
    */
   updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
     const status: UpdateOrderStatusBodyInput = req.body;
 
     const order = await this.orderService.updateOrderStatus(id, status);
@@ -232,7 +232,7 @@ class OrderController {
    * - Order preserved in database (soft delete)
    */
   cancelOrder = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
 
     const order = await this.orderService.cancelOrder(id);
     res.status(HttpStatus.OK).json({
@@ -307,7 +307,7 @@ class OrderController {
    * Used by kitchen staff to move dishes through lifecycle.
    */
   updateOrderItemStatus = asyncHandler(async (req: Request, res: Response) => {
-    const orderId = req.params.id;
+    const orderId = (req.params.id as string);
     const itemId = Number(req.params.itemId);
     const { status }: UpdateOrderItemStatusBodyInput = req.body;
 

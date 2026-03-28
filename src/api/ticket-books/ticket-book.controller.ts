@@ -33,7 +33,7 @@ export class TicketBookController {
 
   getCustomerTickets = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { customerId } = req.params;
+      const customerId = req.params.customerId as string;
       const tickets = await this.service.getCustomerTickets(customerId);
       
       res.status(HttpStatus.OK).json({

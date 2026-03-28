@@ -22,7 +22,7 @@ export class CashClosureController {
   });
 
   getSummary = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const summary = await this.service.getSummary(id);
     res.status(HttpStatus.OK).json({ success: true, data: summary });
   });
@@ -47,7 +47,7 @@ export class CashClosureController {
   });
 
   close = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { actualBalance, totalDelivery }: CloseCashClosureDto = req.body;
     const userId = (req.user as AuthenticatedUser).id;
     const closure = await this.service.closeShift(

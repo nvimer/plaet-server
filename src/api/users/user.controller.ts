@@ -110,7 +110,7 @@ class UserController {
    * - 404: User not found
    */
   getUserById = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
 
     const user = await userService.findById(id);
     res.status(HttpStatus.OK).json({
@@ -138,7 +138,7 @@ class UserController {
    * - 404: User not found
    */
   getUserByEmail = asyncHandler(async (req: Request, res: Response) => {
-    const email = req.params.email;
+    const email = req.params.email as string;
 
     const user = await userService.findByEmail(email);
     res.status(HttpStatus.OK).json({
@@ -216,7 +216,7 @@ class UserController {
    * Only the fields provided in the request body will be updated.
    */
   updateUser = asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = (req.params.id as string);
     const data: UpdateUserInput = req.body;
 
     const user = await userService.updateUser(id, data);
@@ -253,7 +253,7 @@ class UserController {
    */
   getUserWithRolesAndPermissions = asyncHandler(
     async (req: Request, res: Response) => {
-      const id = req.params.id;
+      const id = (req.params.id as string);
 
       const user = await userService.findUserWithRolesAndPermissions(id);
       res.status(HttpStatus.OK).json({
