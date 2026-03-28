@@ -6,6 +6,7 @@ import { Table, TableStatus } from "@prisma/client";
 export function createTableFixture(overrides: Partial<Table> = {}): Table {
   return {
     id: 1,
+    restaurantId: (overrides.restaurantId ?? null) as string | null,
     number: "T1",
     status: TableStatus.AVAILABLE,
     location: null,

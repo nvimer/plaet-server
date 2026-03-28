@@ -7,6 +7,7 @@ export function createPermissionFixture(
     id: 1,
     name: "users:read",
     description: "Can read user information",
+    isSystem: overrides.isSystem ?? false,
     deleted: false,
     deletedAt: null,
     createdAt: new Date("2024-01-01T00:00:00.000Z"),

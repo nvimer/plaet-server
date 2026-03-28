@@ -115,7 +115,7 @@ describe("RoleRepository", () => {
       // Assert
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { deleted: false },
+          where: { deleted: false, restaurantId: null },
         }),
       );
     });
@@ -131,6 +131,7 @@ describe("RoleRepository", () => {
       // Assert
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { deleted: false, restaurantId: null },
           orderBy: { name: "asc" },
         }),
       );
@@ -155,6 +156,8 @@ describe("RoleRepository", () => {
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
+            deleted: false,
+            restaurantId: null,
             name: {
               contains: "admin",
               mode: "insensitive",
@@ -276,9 +279,13 @@ describe("RoleRepository", () => {
       expect(result).toEqual(mockCreatedRole);
       expect(mockCreate).toHaveBeenCalledWith({
         data: expect.objectContaining({
+          name: RoleName.WAITER,
+          description: "Waiter role",
           permissions: { create: [] },
         }),
-        include: expect.any(Object),
+        include: {
+          permissions: { include: { permission: true } },
+        },
       });
     });
   });
@@ -485,8 +492,10 @@ describe("RoleRepository", () => {
       expect(result.data).toHaveLength(1);
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { deleted: false, restaurantId: null },
           include: {
             permissions: { include: { permission: true } },
+            _count: { select: { users: true } },
           },
         }),
       );

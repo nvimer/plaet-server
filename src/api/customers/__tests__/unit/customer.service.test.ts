@@ -17,6 +17,10 @@ describe("CustomerService", () => {
     firstName: "John",
     lastName: "Doe",
     phone: "+1234567890",
+    phone2: null,
+    address1: null,
+    address2: null,
+    restaurantId: null,
     email: "john.doe@example.com",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -49,6 +53,10 @@ describe("CustomerService", () => {
       firstName: "Jane",
       lastName: "Smith",
       phone: "+0987654321",
+      phone2: null,
+      address1: null,
+      address2: null,
+      restaurantId: null,
       email: "jane.smith@example.com",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -78,6 +86,9 @@ describe("CustomerService", () => {
         lastName: "Doe",
         phone: "+1234567890",
         email: "john.doe@example.com",
+        phone2: null,
+        address1: null,
+        address2: null,
       });
     });
 
@@ -116,6 +127,9 @@ describe("CustomerService", () => {
         lastName: "Doe",
         phone: "+1234567890",
         email: null,
+        phone2: null,
+        address1: null,
+        address2: null,
       });
     });
   });
@@ -126,6 +140,10 @@ describe("CustomerService", () => {
       firstName: "John",
       lastName: "Doe",
       phone: "+1234567890",
+      phone2: null,
+      address1: null,
+      address2: null,
+      restaurantId: null,
       email: "john.doe@example.com",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -164,6 +182,10 @@ describe("CustomerService", () => {
       firstName: "John",
       lastName: "Doe",
       phone: "+1234567890",
+      phone2: null,
+      address1: null,
+      address2: null,
+      restaurantId: null,
       email: "john.doe@example.com",
       createdAt: new Date(),
       updatedAt: new Date(),

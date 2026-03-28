@@ -10,21 +10,27 @@ import {
 import { config } from "../../../../config";
 
 describe("Customers Integration Tests", () => {
-  let testDb: PrismaClient;
-  let testUser: Awaited<ReturnType<typeof testDb.user.findFirst>>;
+  let testDb: any;
+  let testUser: any;
   let authToken: string;
 
   beforeAll(async () => {
     await connectTestDatabase();
-    testDb = getTestDatabaseClient();
+    testDb = getTestDatabaseClient() as any;
 
     // Create or get existing admin role
     const adminRole = await testDb.role.upsert({
-      where: { name: "ADMIN" },
+      where: {
+        restaurantId_name: {
+          restaurantId: null,
+          name: "ADMIN",
+        },
+      },
       update: {},
       create: {
         name: "ADMIN",
         description: "Administrator role for testing",
+        restaurantId: null,
       },
     });
 

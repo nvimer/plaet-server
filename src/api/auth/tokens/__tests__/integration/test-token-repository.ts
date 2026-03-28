@@ -1,7 +1,7 @@
 import { PrismaClient, Token, TokenType } from "@prisma/client";
 
 export class TestTokenRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: any) {}
 
   async create(data: {
     token: string;

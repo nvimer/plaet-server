@@ -110,39 +110,46 @@ const createSoftDeleteHandlers = (modelName: SoftDeleteModelName) => ({
   },
 });
 
+// Helper function to initialize the extended client so we can infer its exact type
+const createTestClient = () => {
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: config.testDatabaseUrl,
+      },
+    },
+    // Reduce logging noise during tests
+    log: config.nodeEnv === "test" ? [] : ["warn", "error"],
+  }).$extends({
+    query: {
+      // MenuCategory soft delete
+      menuCategory: createSoftDeleteHandlers("MenuCategory"),
+      // MenuItem soft delete
+      menuItem: createSoftDeleteHandlers("MenuItem"),
+      // Permission soft delete
+      permission: createSoftDeleteHandlers("Permission"),
+      // Role soft delete
+      role: createSoftDeleteHandlers("Role"),
+      // User soft delete
+      user: createSoftDeleteHandlers("User"),
+      // Table soft delete
+      table: createSoftDeleteHandlers("Table"),
+    },
+  });
+};
+
+export type TestPrismaClient = ReturnType<typeof createTestClient>;
+
 // Singleton test database client
-let testDbClient: PrismaClient | null = null;
+let testDbClient: TestPrismaClient | null = null;
 
 /**
  * Gets or creates the test database client singleton
  * @returns PrismaClient instance configured for testing
  */
-export function getTestDatabaseClient(): PrismaClient {
+export function getTestDatabaseClient(): TestPrismaClient {
   if (!testDbClient) {
-    testDbClient = new PrismaClient({
-      datasources: {
-        db: {
-          url: config.testDatabaseUrl,
-        },
-      },
-      // Reduce logging noise during tests
-      log: config.nodeEnv === "test" ? [] : ["warn", "error"],
-    }).$extends({
-      query: {
-        // MenuCategory soft delete
-        menuCategory: createSoftDeleteHandlers("MenuCategory"),
-        // MenuItem soft delete
-        menuItem: createSoftDeleteHandlers("MenuItem"),
-        // Permission soft delete
-        permission: createSoftDeleteHandlers("Permission"),
-        // Role soft delete
-        role: createSoftDeleteHandlers("Role"),
-        // User soft delete
-        user: createSoftDeleteHandlers("User"),
-        // Table soft delete
-        table: createSoftDeleteHandlers("Table"),
-      },
-    });
+    testDbClient = createTestClient();
   }
   return testDbClient;
 }

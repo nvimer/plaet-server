@@ -58,7 +58,7 @@ describe("PermissionService - Unit Tests", () => {
       const result = await permissionService.findAllPermissions(params);
 
       // Assert
-      expect(mockPermissionRepository.findAll).toHaveBeenCalledWith(params);
+      expect(mockPermissionRepository.findAll).toHaveBeenCalledWith(params, true);
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(2);
     });
@@ -412,7 +412,7 @@ describe("PermissionService - Unit Tests", () => {
       const result = await permissionService.searchPermissions(params);
 
       // Assert
-      expect(mockPermissionRepository.search).toHaveBeenCalledWith(params);
+      expect(mockPermissionRepository.search).toHaveBeenCalledWith(params, true);
       expect(result).toEqual(expectedResponse);
     });
 

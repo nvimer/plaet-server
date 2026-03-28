@@ -136,7 +136,7 @@ describe("Order Validator - Unit Tests", () => {
     test("should validate correct status update", () => {
       const validData = {
         params: { id: validUUID },
-        body: { status: OrderStatus.IN_KITCHEN },
+        body: { status: OrderStatus.SENT_TO_CASHIER },
       };
 
       expect(() => updateOrderStatusSchema.parse(validData)).not.toThrow();
@@ -166,7 +166,7 @@ describe("Order Validator - Unit Tests", () => {
 
     test("should reject missing params", () => {
       const invalidData = {
-        body: { status: OrderStatus.IN_KITCHEN },
+        body: { status: OrderStatus.SENT_TO_CASHIER },
       };
 
       expect(() => updateOrderStatusSchema.parse(invalidData)).toThrow();
@@ -177,7 +177,7 @@ describe("Order Validator - Unit Tests", () => {
     test("should accept any string as id (current behavior)", () => {
       const data = {
         params: { id: "any-string-works" },
-        body: { status: OrderStatus.IN_KITCHEN },
+        body: { status: OrderStatus.SENT_TO_CASHIER },
       };
 
       // Current schema only validates string type, not UUID format
@@ -187,7 +187,7 @@ describe("Order Validator - Unit Tests", () => {
     test("should reject missing id", () => {
       const invalidData = {
         params: {},
-        body: { status: OrderStatus.IN_KITCHEN },
+        body: { status: OrderStatus.SENT_TO_CASHIER },
       };
 
       expect(() => updateOrderStatusSchema.parse(invalidData)).toThrow();
@@ -231,7 +231,7 @@ describe("Order Validator - Unit Tests", () => {
 
     test("should validate status filter", () => {
       const validData = {
-        query: { status: OrderStatus.PENDING },
+        query: { status: OrderStatus.OPEN },
       };
 
       expect(() => orderSearchSchema.parse(validData)).not.toThrow();
@@ -264,7 +264,7 @@ describe("Order Validator - Unit Tests", () => {
     test("should validate combined filters", () => {
       const validData = {
         query: {
-          status: OrderStatus.IN_KITCHEN,
+          status: OrderStatus.SENT_TO_CASHIER,
           type: OrderType.DINE_IN,
           tableId: 3,
         },

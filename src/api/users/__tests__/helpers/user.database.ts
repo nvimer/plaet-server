@@ -20,6 +20,7 @@ export async function createTestUser(
       phone: faker.phone.number(),
       deleted: false,
       deletedAt: null,
+      restaurantId: (overrides.restaurantId ?? null) as string | null,
       ...overrides,
     },
   });
@@ -100,6 +101,7 @@ export async function createTestUserWithProfile(
       email: faker.internet.email().toLowerCase(),
       password: faker.internet.password({ length: 12 }),
       phone: faker.phone.number(),
+      restaurantId: (overrides.restaurantId ?? null) as string | null,
       ...overrides,
       profile: {
         create: {

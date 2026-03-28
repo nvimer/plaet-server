@@ -3,8 +3,15 @@ const mockPrismaClient = {
   order: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
+  },
+  dailyMenu: {
+    findUnique: jest.fn(),
+  },
+  cashClosure: {
+    findFirst: jest.fn(),
   },
   $transaction: jest.fn(),
 };
@@ -15,6 +22,7 @@ jest.mock("../../../../database/prisma", () => ({
     $transaction: mockPrismaClient.$transaction,
   },
   getPrismaClient: jest.fn(() => mockPrismaClient),
+  getBasePrismaClient: jest.fn(() => mockPrismaClient),
 }));
 
 import { Prisma } from "@prisma/client";
@@ -29,6 +37,14 @@ import {
   createOrderWithRelationsFixture,
 } from "../helpers/order.fixtures";
 import { createMenuItemFixture } from "../../../menus/items/__tests__/helpers";
+
+// Mock CashClosureRepository
+jest.mock("../../../cash-closures/cash-closure.repository", () => ({
+  CashClosureRepository: jest.fn().mockImplementation(() => ({
+    findCurrentOpen: jest.fn().mockResolvedValue({ id: "closure-123" }),
+    findActiveOnDate: jest.fn().mockResolvedValue({ id: "closure-123" }),
+  })),
+}));
 
 describe("OrderService - Basic Tests", () => {
   let orderService: OrderService; // ✅ Instancia REAL del servicio
@@ -96,7 +112,7 @@ describe("OrderService - Basic Tests", () => {
         waiterId,
         tableId: 1,
         type: OrderType.DINE_IN,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
         totalAmount: new Prisma.Decimal("0"),
       });
 
@@ -105,12 +121,15 @@ describe("OrderService - Basic Tests", () => {
         waiterId,
         tableId: 1,
         type: OrderType.DINE_IN,
-        status: OrderStatus.PENDING,
-        totalAmount: new Prisma.Decimal("28000"), // 2 * 14000
+        status: OrderStatus.OPEN,
+        totalAmount: new Prisma.Decimal("28000"),
       });
+      // Correct the items to have the same price as the menuItem
+      orderWithItems.items[0].priceAtOrder = new Prisma.Decimal("14000");
 
       mockItemService.findMenuItemById.mockResolvedValue(mockMenuItem);
       mockItemService.deductStockForOrder.mockResolvedValue(undefined);
+      mockPrismaClient.dailyMenu.findUnique.mockResolvedValue({ id: 1 }); // Mock daily menu
 
       // Mock the transaction to return the order with items
       const mockTx = {
@@ -118,6 +137,21 @@ describe("OrderService - Basic Tests", () => {
           create: jest.fn().mockResolvedValue(orderWithItems),
           findUnique: jest.fn().mockResolvedValue(orderWithItems),
           update: jest.fn(),
+        },
+        orderItem: {
+          findMany: jest.fn().mockResolvedValue(orderWithItems.items),
+          create: jest.fn().mockResolvedValue({}),
+        },
+        table: {
+          update: jest.fn().mockResolvedValue({}),
+        },
+        customer: {
+          findFirst: jest.fn().mockResolvedValue(null),
+          update: jest.fn().mockResolvedValue({}),
+          create: jest.fn().mockResolvedValue({ id: "customer-123" }),
+        },
+        payment: {
+          create: jest.fn().mockResolvedValue({}),
         },
       };
       mockPrismaClient.$transaction.mockImplementation(async (callback) => {
@@ -129,7 +163,8 @@ describe("OrderService - Basic Tests", () => {
       mockOrderRepository.updateTotal.mockResolvedValue(undefined as any);
 
       // Act
-      const result = await orderService.createOrder(waiterId, orderData);
+      const restaurantId = "restaurant-123";
+      const result = await orderService.createOrder(waiterId, restaurantId, orderData);
 
       // Assert
       expect(mockItemService.findMenuItemById).toHaveBeenCalledWith(1);
@@ -144,11 +179,12 @@ describe("OrderService - Basic Tests", () => {
         expect.objectContaining({
           tableId: 1,
           type: OrderType.DINE_IN,
+          restaurantId: restaurantId,
           items: expect.arrayContaining([
             expect.objectContaining({
               menuItemId: 1,
               quantity: 2,
-              priceAtOrder: new Prisma.Decimal("14000"),
+              priceAtOrder: 14000,
             }),
           ]),
         }),
@@ -173,7 +209,7 @@ describe("OrderService - Basic Tests", () => {
       const orderId = "order-123";
       const expectedOrder = createOrderWithRelationsFixture({
         id: orderId,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
         waiterId: "waiter-123",
       });
       mockPrismaClient.order.findUnique.mockResolvedValue(expectedOrder);
@@ -226,10 +262,10 @@ describe("OrderService - Basic Tests", () => {
     test("should update order status when order exists", async () => {
       // Arrange
       const orderId = "order-123";
-      const status = OrderStatus.IN_KITCHEN;
+      const status = OrderStatus.SENT_TO_CASHIER;
       const existingOrder = createOrderWithRelationsFixture({
         id: orderId,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
         waiterId: "waiter-123",
       });
       const updatedOrder = createOrderFixture({
@@ -263,7 +299,7 @@ describe("OrderService - Basic Tests", () => {
       const orderId = "order-123";
       const deliveredOrder = createOrderWithRelationsFixture({
         id: orderId,
-        status: OrderStatus.DELIVERED,
+        status: OrderStatus.PAID,
       });
 
       mockPrismaClient.order.findUnique.mockResolvedValue(deliveredOrder);
@@ -271,9 +307,9 @@ describe("OrderService - Basic Tests", () => {
       // Act & Assert
       await expect(
         orderService.updateOrderStatus(orderId, {
-          status: OrderStatus.PENDING,
+          status: OrderStatus.OPEN,
         }),
-      ).rejects.toThrow("Cannot change status of delivered order");
+      ).rejects.toThrow("Cannot change status of paid order");
       expect(mockPrismaClient.order.update).not.toHaveBeenCalled();
     });
 
@@ -290,7 +326,7 @@ describe("OrderService - Basic Tests", () => {
       // Act & Assert
       await expect(
         orderService.updateOrderStatus(orderId, {
-          status: OrderStatus.PENDING,
+          status: OrderStatus.OPEN,
         }),
       ).rejects.toThrow("Cannot change status of cancelled order");
       expect(mockPrismaClient.order.update).not.toHaveBeenCalled();
@@ -303,7 +339,7 @@ describe("OrderService - Basic Tests", () => {
       const orderId = "order-123";
       const existingOrder = createOrderWithItemsFixture({
         id: orderId,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
         waiterId: "waiter-123",
       });
       const cancelledOrder = createOrderFixture({
@@ -354,14 +390,14 @@ describe("OrderService - Basic Tests", () => {
       const orderId = "order-123";
       const deliveredOrder = createOrderWithItemsFixture({
         id: orderId,
-        status: OrderStatus.DELIVERED,
+        status: OrderStatus.PAID,
       });
 
       mockPrismaClient.order.findUnique.mockResolvedValue(deliveredOrder);
 
       // Act & Assert
       await expect(orderService.cancelOrder(orderId)).rejects.toThrow(
-        "Cannot cancel delivered order",
+        "Cannot cancel paid order",
       );
       expect(mockPrismaClient.$transaction).not.toHaveBeenCalled();
     });

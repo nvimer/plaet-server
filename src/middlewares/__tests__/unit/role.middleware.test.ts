@@ -39,6 +39,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 1,
+              restaurantId: "restaurant-1",
               name: RoleName.WAITER,
               description: "Waiter role",
               createdAt: new Date(),
@@ -80,6 +81,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 1,
+              restaurantId: "restaurant-1",
               name: RoleName.ADMIN,
               description: "Admin role",
               createdAt: new Date(),
@@ -118,6 +120,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 1,
+              restaurantId: "restaurant-1",
               name: RoleName.WAITER,
               description: "Waiter role",
               createdAt: new Date(),
@@ -130,6 +133,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 2,
+              restaurantId: "restaurant-1",
               name: RoleName.CASHIER,
               description: "Cashier role",
               createdAt: new Date(),
@@ -215,6 +219,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 1,
+              restaurantId: "restaurant-1",
               name: RoleName.WAITER,
               description: "Waiter role",
               createdAt: new Date(),
@@ -343,6 +348,7 @@ describe("Role Middleware - Unit Tests", () => {
           {
             role: {
               id: 1,
+              restaurantId: "restaurant-1",
               name: RoleName.WAITER,
               description: "Waiter role",
               createdAt: new Date(),

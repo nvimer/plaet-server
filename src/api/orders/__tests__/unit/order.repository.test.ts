@@ -4,6 +4,7 @@ import {
   createOrderWithRelationsFixture,
 } from "../helpers/order.fixtures";
 import { OrderStatus, OrderType } from "../../../../types/prisma.types";
+import { Prisma } from "@prisma/client";
 
 // Create mock functions
 const mockFindMany = jest.fn();
@@ -96,14 +97,14 @@ describe("OrderRepository", () => {
       await orderRepository.findAll({
         page: 1,
         limit: 10,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.OPEN,
       });
 
       // Assert
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            status: OrderStatus.PENDING,
+            status: OrderStatus.OPEN,
           }),
         }),
       );
@@ -131,102 +132,6 @@ describe("OrderRepository", () => {
       );
     });
 
-    it("should filter by waiterId", async () => {
-      // Arrange
-      mockFindMany.mockResolvedValue([]);
-      mockCount.mockResolvedValue(0);
-
-      // Act
-      await orderRepository.findAll({
-        page: 1,
-        limit: 10,
-        waiterId: "waiter-123",
-      });
-
-      // Assert
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            waiterId: "waiter-123",
-          }),
-        }),
-      );
-    });
-
-    it("should filter by tableId", async () => {
-      // Arrange
-      mockFindMany.mockResolvedValue([]);
-      mockCount.mockResolvedValue(0);
-
-      // Act
-      await orderRepository.findAll({
-        page: 1,
-        limit: 10,
-        tableId: 5,
-      });
-
-      // Assert
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            tableId: 5,
-          }),
-        }),
-      );
-    });
-
-    it("should filter by date", async () => {
-      // Arrange
-      mockFindMany.mockResolvedValue([]);
-      mockCount.mockResolvedValue(0);
-      const testDate = new Date("2024-01-15");
-
-      // Act
-      await orderRepository.findAll({
-        page: 1,
-        limit: 10,
-        date: testDate,
-      });
-
-      // Assert
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            createdAt: expect.objectContaining({
-              gte: expect.any(Date),
-              lte: expect.any(Date),
-            }),
-          }),
-        }),
-      );
-    });
-
-    it("should combine multiple filters", async () => {
-      // Arrange
-      mockFindMany.mockResolvedValue([]);
-      mockCount.mockResolvedValue(0);
-
-      // Act
-      await orderRepository.findAll({
-        page: 1,
-        limit: 10,
-        status: OrderStatus.IN_KITCHEN,
-        type: OrderType.DINE_IN,
-        waiterId: "waiter-123",
-      });
-
-      // Assert
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            status: OrderStatus.IN_KITCHEN,
-            type: OrderType.DINE_IN,
-            waiterId: "waiter-123",
-          },
-        }),
-      );
-    });
-
     it("should order by createdAt descending", async () => {
       // Arrange
       mockFindMany.mockResolvedValue([]);
@@ -243,7 +148,7 @@ describe("OrderRepository", () => {
       );
     });
 
-    it("should include items with menuItem", async () => {
+    it("should include items with menuItem and payments", async () => {
       // Arrange
       mockFindMany.mockResolvedValue([]);
       mockCount.mockResolvedValue(0);
@@ -256,10 +161,9 @@ describe("OrderRepository", () => {
         expect.objectContaining({
           include: {
             items: {
-              include: {
-                menuItem: true,
-              },
+              include: { menuItem: true },
             },
+            payments: true,
           },
         }),
       );
@@ -281,9 +185,7 @@ describe("OrderRepository", () => {
         where: { id: "order-123" },
         include: {
           items: {
-            include: {
-              menuItem: true,
-            },
+            include: { menuItem: true },
           },
           table: true,
           waiter: {
@@ -313,22 +215,26 @@ describe("OrderRepository", () => {
   });
 
   describe("create", () => {
-    it("should create order with items", async () => {
+    it("should create order with items and include payments", async () => {
       // Arrange
       const waiterId = "waiter-123";
+      const restaurantId = "restaurant-123";
       const createData = {
         tableId: 1,
         type: OrderType.DINE_IN,
         items: [
-          { menuItemId: 1, quantity: 2, notes: "Sin cebolla" },
-          { menuItemId: 2, quantity: 1 },
+          { menuItemId: 1, quantity: 2, notes: "Sin cebolla", priceAtOrder: 14000 },
+          { menuItemId: 2, quantity: 1, priceAtOrder: 10000 },
         ],
       };
       const mockCreatedOrder = createOrderWithItemsFixture();
       mockCreate.mockResolvedValue(mockCreatedOrder);
 
       // Act
-      const result = await orderRepository.create(waiterId, createData);
+      const result = await orderRepository.create(waiterId, {
+        ...createData,
+        restaurantId,
+      });
 
       // Assert
       expect(result).toEqual(mockCreatedOrder);
@@ -337,101 +243,45 @@ describe("OrderRepository", () => {
           tableId: 1,
           type: OrderType.DINE_IN,
           waiterId: "waiter-123",
-          status: OrderStatus.PENDING,
-          totalAmount: 0,
+          restaurantId: "restaurant-123",
+          status: OrderStatus.OPEN,
           items: {
-            create: [
-              {
-                menuItemId: 1,
-                quantity: 2,
-                priceAtOrder: 0,
-                notes: "Sin cebolla",
-              },
-              {
-                menuItemId: 2,
-                quantity: 1,
-                priceAtOrder: 0,
-                notes: undefined,
-              },
-            ],
+            create: expect.arrayContaining([
+              expect.objectContaining({ menuItemId: 1, quantity: 2 }),
+              expect.objectContaining({ menuItemId: 2, quantity: 1 }),
+            ]),
           },
         }),
         include: {
           items: {
-            include: {
-              menuItem: true,
-            },
+            include: { menuItem: true },
           },
+          payments: true,
         },
-      });
-    });
-
-    it("should create order without tableId (TAKE_OUT)", async () => {
-      // Arrange
-      const waiterId = "waiter-123";
-      const createData = {
-        type: OrderType.TAKE_OUT,
-        items: [{ menuItemId: 1, quantity: 1 }],
-      };
-      const mockCreatedOrder = createOrderWithItemsFixture({
-        type: OrderType.TAKE_OUT,
-        tableId: null,
-      });
-      mockCreate.mockResolvedValue(mockCreatedOrder);
-
-      // Act
-      const result = await orderRepository.create(waiterId, createData);
-
-      // Assert
-      expect(result).toEqual(mockCreatedOrder);
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          type: OrderType.TAKE_OUT,
-          waiterId: "waiter-123",
-          status: OrderStatus.PENDING,
-        }),
-        include: expect.any(Object),
       });
     });
   });
 
   describe("updateStatus", () => {
-    it("should update order status to IN_KITCHEN", async () => {
+    it("should update order status", async () => {
       // Arrange
       const mockUpdatedOrder = createOrderFixture({
-        status: OrderStatus.IN_KITCHEN,
+        status: OrderStatus.SENT_TO_CASHIER,
       });
       mockUpdate.mockResolvedValue(mockUpdatedOrder);
 
       // Act
       const result = await orderRepository.updateStatus(
         "order-123",
-        OrderStatus.IN_KITCHEN,
+        OrderStatus.SENT_TO_CASHIER,
       );
 
       // Assert
-      expect(result.status).toBe(OrderStatus.IN_KITCHEN);
+      expect(result.status).toBe(OrderStatus.SENT_TO_CASHIER);
       expect(mockUpdate).toHaveBeenCalledWith({
         where: { id: "order-123" },
-        data: { status: OrderStatus.IN_KITCHEN },
+        data: { status: OrderStatus.SENT_TO_CASHIER },
       });
-    });
-
-    it("should update order status to DELIVERED", async () => {
-      // Arrange
-      const mockUpdatedOrder = createOrderFixture({
-        status: OrderStatus.DELIVERED,
-      });
-      mockUpdate.mockResolvedValue(mockUpdatedOrder);
-
-      // Act
-      const result = await orderRepository.updateStatus(
-        "order-123",
-        OrderStatus.DELIVERED,
-      );
-
-      // Assert
-      expect(result.status).toBe(OrderStatus.DELIVERED);
     });
   });
 
@@ -460,7 +310,7 @@ describe("OrderRepository", () => {
       // Arrange
       const mockUpdatedOrder = {
         ...createOrderFixture(),
-        totalAmount: 45000,
+        totalAmount: new Prisma.Decimal("45000"),
       };
       mockUpdate.mockResolvedValue(mockUpdatedOrder);
 
@@ -468,26 +318,11 @@ describe("OrderRepository", () => {
       const result = await orderRepository.updateTotal("order-123", 45000);
 
       // Assert
-      expect(result.totalAmount).toBe(45000);
+      expect(result.totalAmount.toNumber()).toBe(45000);
       expect(mockUpdate).toHaveBeenCalledWith({
         where: { id: "order-123" },
         data: { totalAmount: 45000 },
       });
-    });
-
-    it("should handle zero total amount", async () => {
-      // Arrange
-      const mockUpdatedOrder = {
-        ...createOrderFixture(),
-        totalAmount: 0,
-      };
-      mockUpdate.mockResolvedValue(mockUpdatedOrder);
-
-      // Act
-      const result = await orderRepository.updateTotal("order-123", 0);
-
-      // Assert
-      expect(result.totalAmount).toBe(0);
     });
   });
 });

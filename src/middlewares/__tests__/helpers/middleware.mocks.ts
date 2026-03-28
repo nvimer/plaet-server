@@ -53,6 +53,7 @@ export function createMockAuthenticatedUser(
   const user = createUserFixture();
   const role: RoleWithPermissions = {
     id: 1,
+    restaurantId: user.restaurantId,
     name: RoleName.WAITER,
     description: "Waiter role",
     createdAt: new Date(),
@@ -65,6 +66,7 @@ export function createMockAuthenticatedUser(
   return {
     id: user.id,
     email: user.email,
+    restaurantId: user.restaurantId,
     roles: [
       {
         role,

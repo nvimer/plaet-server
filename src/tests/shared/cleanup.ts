@@ -21,13 +21,12 @@ export async function cleanupAllTestData(): Promise<void> {
 
   // Menu related
   await db.stockAdjustment.deleteMany();
-  await db.dailyMenuOption.deleteMany();
+  await db.dailyMenu.deleteMany();
   await db.menuItem.deleteMany();
   await db.menuCategory.deleteMany();
 
   // Expense related
   await db.expense.deleteMany();
-  await db.expenseCategory.deleteMany();
 
   // User related
   await db.profile.deleteMany();
@@ -43,6 +42,7 @@ export async function cleanupAllTestData(): Promise<void> {
   // Other entities
   await db.table.deleteMany();
   await db.customer.deleteMany();
+  await db.restaurant.deleteMany();
 }
 
 /**
@@ -80,7 +80,7 @@ export async function cleanupMenuItems(): Promise<void> {
 
   await db.stockAdjustment.deleteMany();
   await db.orderItem.deleteMany();
-  await db.dailyMenuOption.deleteMany();
+  await db.dailyMenu.deleteMany();
   await db.menuItem.deleteMany();
   await db.menuCategory.deleteMany();
 }

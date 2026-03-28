@@ -74,7 +74,7 @@ describe("AuthService - Unit Tests", () => {
       // Act & Assert
       await expect(authService.login(loginData)).rejects.toThrow(CustomError);
       await expect(authService.login(loginData)).rejects.toThrow(
-        "Invalid credentials",
+        "Email o contraseña incorrectos",
       );
 
       try {
@@ -84,7 +84,7 @@ describe("AuthService - Unit Tests", () => {
         expect(error).toBeInstanceOf(CustomError);
         if (error instanceof CustomError) {
           expect(error.statusCode).toBe(HttpStatus.BAD_REQUEST);
-          expect(error.errorCode).toBe("BAD_REQUEST");
+          expect(error.errorCode).toBe("INVALID_CREDENTIALS");
         }
       }
     });
@@ -107,7 +107,7 @@ describe("AuthService - Unit Tests", () => {
       // Act & Assert
       await expect(authService.login(loginData)).rejects.toThrow(CustomError);
       await expect(authService.login(loginData)).rejects.toThrow(
-        "User not found",
+        "Email o contraseña incorrectos",
       );
       expect(mockUserService.findByEmail).toHaveBeenCalledWith(loginData.email);
       expect(hasherUtils.comparePass).not.toHaveBeenCalled();

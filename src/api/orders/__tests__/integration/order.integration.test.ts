@@ -74,12 +74,12 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         };
 
         // Act
-        const result = await orderService.createOrder(testWaiter.id, orderData);
+        const result = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Assert
         expect(result).toBeDefined();
         expect(result.id).toBeDefined();
-        expect(result.status).toBe(OrderStatus.PENDING);
+        expect(result.status).toBe(OrderStatus.OPEN);
         expect(result.waiterId).toBe(testWaiter.id);
         expect(result.items).toHaveLength(1);
         expect(result.items[0].quantity).toBe(2);
@@ -98,7 +98,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         };
 
         // Act
-        const result = await orderService.createOrder(testWaiter.id, orderData);
+        const result = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Assert - Total should be price * 3 (2 + 1)
         const expectedTotal = Number(testMenuItem.price) * 3;
@@ -117,7 +117,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         };
 
         // Act
-        await orderService.createOrder(testWaiter.id, orderData);
+        await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Assert - Check stock was deducted
         const db = getTestDatabaseClient();
@@ -138,7 +138,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
 
         // Act & Assert
         await expect(
-          orderService.createOrder(testWaiter.id, orderData),
+          orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData),
         ).rejects.toThrow(/insufficient stock/i);
       });
 
@@ -158,7 +158,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
 
         // Act & Assert
         await expect(
-          orderService.createOrder(testWaiter.id, orderData),
+          orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData),
         ).rejects.toThrow(/not available/i);
       });
     });
@@ -173,6 +173,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         };
         const createdOrder = await orderService.createOrder(
           testWaiter.id,
+          testWaiter.restaurantId!,
           orderData,
         );
 
@@ -203,7 +204,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           type: OrderType.DINE_IN,
           items: [{ menuItemId: testMenuItem.id, quantity: 1 }],
         };
-        const order = await orderService.createOrder(testWaiter.id, orderData);
+        const order = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Act
         const result = await orderService.updateOrderStatus(order.id, {
@@ -222,10 +223,10 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           type: OrderType.DINE_IN,
           items: [{ menuItemId: testMenuItem.id, quantity: 1 }],
         };
-        const order = await orderService.createOrder(testWaiter.id, orderData);
+        const order = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
         await db.order.update({
           where: { id: order.id },
-          data: { status: OrderStatus.DELIVERED },
+          data: { status: OrderStatus.PAID },
         });
 
         // Act & Assert
@@ -248,7 +249,7 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           type: OrderType.DINE_IN,
           items: [{ menuItemId: testMenuItem.id, quantity: orderQuantity }],
         };
-        const order = await orderService.createOrder(testWaiter.id, orderData);
+        const order = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Verify stock was deducted
         const db = getTestDatabaseClient();
@@ -278,10 +279,10 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           type: OrderType.DINE_IN,
           items: [{ menuItemId: testMenuItem.id, quantity: 1 }],
         };
-        const order = await orderService.createOrder(testWaiter.id, orderData);
+        const order = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
         await db.order.update({
           where: { id: order.id },
-          data: { status: OrderStatus.DELIVERED },
+          data: { status: OrderStatus.PAID },
         });
 
         // Act & Assert
@@ -300,9 +301,9 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           items: [{ menuItemId: testMenuItem.id, quantity: 1 }],
         };
 
-        await orderService.createOrder(testWaiter.id, orderData);
-        await orderService.createOrder(testWaiter.id, orderData);
-        await orderService.createOrder(testWaiter.id, orderData);
+        await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
+        await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
+        await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Act
         const result = await orderService.findAllOrders({ page: 1, limit: 10 });
@@ -322,20 +323,20 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
           items: [{ menuItemId: testMenuItem.id, quantity: 1 }],
         };
 
-        const order1 = await orderService.createOrder(testWaiter.id, orderData);
-        const order2 = await orderService.createOrder(testWaiter.id, orderData);
+        const order1 = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
+        const order2 = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
 
         // Mark one as IN_KITCHEN
         await db.order.update({
           where: { id: order2.id },
-          data: { status: OrderStatus.IN_KITCHEN },
+          data: { status: OrderStatus.SENT_TO_CASHIER },
         });
 
         // Act - Filter by PENDING
         const result = await orderService.findAllOrders({
           page: 1,
           limit: 10,
-          status: OrderStatus.PENDING,
+          status: OrderStatus.OPEN,
         });
 
         // Assert
@@ -354,8 +355,8 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         };
 
         // Step 1: Create order
-        const order = await orderService.createOrder(testWaiter.id, orderData);
-        expect(order.status).toBe(OrderStatus.PENDING);
+        const order = await orderService.createOrder(testWaiter.id, testWaiter.restaurantId!, orderData);
+        expect(order.status).toBe(OrderStatus.OPEN);
 
         // Step 2: Send to cashier
         const sentToCashier = await orderService.updateOrderStatus(order.id, {
@@ -369,27 +370,9 @@ const runIntegrationTests = process.env.TEST_TYPE === "integration";
         });
         expect(paid.status).toBe(OrderStatus.PAID);
 
-        // Step 4: Send to kitchen
-        const inKitchen = await orderService.updateOrderStatus(order.id, {
-          status: OrderStatus.IN_KITCHEN,
-        });
-        expect(inKitchen.status).toBe(OrderStatus.IN_KITCHEN);
-
-        // Step 5: Mark as ready
-        const ready = await orderService.updateOrderStatus(order.id, {
-          status: OrderStatus.READY,
-        });
-        expect(ready.status).toBe(OrderStatus.READY);
-
-        // Step 6: Deliver
-        const delivered = await orderService.updateOrderStatus(order.id, {
-          status: OrderStatus.DELIVERED,
-        });
-        expect(delivered.status).toBe(OrderStatus.DELIVERED);
-
         // Verify final state in database
         const finalOrder = await orderService.findOrderById(order.id);
-        expect(finalOrder?.status).toBe(OrderStatus.DELIVERED);
+        expect(finalOrder?.status).toBe(OrderStatus.PAID);
       });
     });
   },

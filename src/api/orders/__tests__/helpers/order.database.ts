@@ -10,7 +10,7 @@ import {
  * Creates a test menu category (required for menu items)
  */
 export async function createTestMenuCategory(
-  overrides: Partial<Record<string, unknown>> = {},
+  overrides: Partial<Record<string, any>> = {},
 ): Promise<MenuCategory> {
   const db = getTestDatabaseClient();
 
@@ -19,8 +19,9 @@ export async function createTestMenuCategory(
       name: `Test Category ${Date.now()}`,
       description: "Category for order tests",
       order: 1,
+      restaurantId: overrides.restaurantId || null,
       ...overrides,
-    } as Prisma.MenuCategoryCreateInput,
+    } as any,
   });
 }
 
@@ -29,7 +30,7 @@ export async function createTestMenuCategory(
  */
 export async function createTestMenuItem(
   categoryId: number,
-  overrides: Partial<Record<string, unknown>> = {},
+  overrides: Partial<Record<string, any>> = {},
 ): Promise<MenuItem> {
   const db = getTestDatabaseClient();
 
@@ -45,8 +46,9 @@ export async function createTestMenuItem(
       stockQuantity: 50,
       lowStockAlert: 5,
       autoMarkUnavailable: true,
+      restaurantId: overrides.restaurantId || null,
       ...overrides,
-    },
+    } as any,
   });
 }
 
@@ -55,18 +57,19 @@ export async function createTestMenuItem(
  */
 export async function createTestOrder(
   waiterId: string,
-  overrides: Partial<Record<string, unknown>> = {},
+  overrides: Partial<Record<string, any>> = {},
 ): Promise<Order> {
   const db = getTestDatabaseClient();
 
   return db.order.create({
     data: {
       waiter: { connect: { id: waiterId } },
-      status: OrderStatus.PENDING,
+      status: OrderStatus.OPEN,
       type: OrderType.DINE_IN,
       totalAmount: new Prisma.Decimal("0"),
+      restaurantId: overrides.restaurantId || null,
       ...overrides,
-    },
+    } as any,
   });
 }
 
@@ -76,16 +79,17 @@ export async function createTestOrder(
 export async function createTestOrderWithItems(
   waiterId: string,
   menuItemId: number,
-  overrides: Partial<Record<string, unknown>> = {},
+  overrides: Partial<Record<string, any>> = {},
 ) {
   const db = getTestDatabaseClient();
 
   return db.order.create({
     data: {
       waiter: { connect: { id: waiterId } },
-      status: OrderStatus.PENDING,
+      status: OrderStatus.OPEN,
       type: OrderType.DINE_IN,
       totalAmount: new Prisma.Decimal("25000"),
+      restaurantId: overrides.restaurantId || null,
       items: {
         create: [
           {
@@ -97,7 +101,7 @@ export async function createTestOrderWithItems(
         ],
       },
       ...overrides,
-    },
+    } as any,
     include: {
       items: {
         include: {
@@ -122,7 +126,7 @@ export async function createCompleteTestOrder(
     data: {
       waiter: { connect: { id: waiterId } },
       ...(tableId && { table: { connect: { id: tableId } } }),
-      status: OrderStatus.PENDING,
+      status: OrderStatus.OPEN,
       type: tableId ? OrderType.DINE_IN : OrderType.TAKE_OUT,
       totalAmount: new Prisma.Decimal("25000"),
       items: {
@@ -274,7 +278,7 @@ export async function deleteAllTestMenuItems(): Promise<void> {
 
   await db.stockAdjustment.deleteMany();
   await db.orderItem.deleteMany();
-  await db.dailyMenuOption.deleteMany();
+  await db.dailyMenu.deleteMany();
   await db.menuItem.deleteMany();
   await db.menuCategory.deleteMany();
 }
@@ -283,7 +287,7 @@ export async function deleteAllTestMenuItems(): Promise<void> {
  * Creates a test table
  */
 export async function createTestTable(
-  overrides: Partial<Record<string, unknown>> = {},
+  overrides: Partial<Record<string, any>> = {},
 ) {
   const db = getTestDatabaseClient();
 
@@ -292,8 +296,9 @@ export async function createTestTable(
       number: `T${Date.now()}`,
       status: "AVAILABLE",
       location: "Interior",
+      restaurantId: overrides.restaurantId || null,
       ...overrides,
-    } as Prisma.TableCreateInput,
+    } as any,
   });
 }
 

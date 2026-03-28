@@ -6,13 +6,14 @@ export function createMenuItemFixture(
 ): MenuItem {
   return {
     id: 1,
-    restaurantId: overrides.restaurantId ?? null,
+    restaurantId: (overrides.restaurantId ?? null) as string | null,
     categoryId: 1,
     name: "Hamburguesa Clásica",
     description: "Hamburguesa con carne, lechuga y tomate",
     price: new Prisma.Decimal("14000"),
     isAvailable: true,
     imageUrl: null,
+    imagePublicId: null,
     inventoryType: InventoryType.TRACKED,
     stockQuantity: 50,
     lowStockAlert: 5,

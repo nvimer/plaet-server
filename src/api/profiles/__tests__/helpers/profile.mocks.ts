@@ -24,6 +24,7 @@ export function createMockProfileRepository(): jest.Mocked<ProfileRepositoryInte
     findAll: jest.fn(),
     findById: jest.fn(),
     update: jest.fn(),
+    updatePhoto: jest.fn(),
   };
 }
 
@@ -36,6 +37,7 @@ export function createMockProfileService(): jest.Mocked<ProfileServiceInterface>
     findById: jest.fn(),
     updateUser: jest.fn(),
     getMyProfile: jest.fn(),
+    updatePhoto: jest.fn(),
   };
 }
 

@@ -1,4 +1,4 @@
-import { User, Role, UserRole } from "@prisma/client";
+import { User, Role, UserRole, RoleName } from "@prisma/client";
 import { UserWithRoles } from "../../user.repository";
 
 /**
@@ -8,7 +8,7 @@ import { UserWithRoles } from "../../user.repository";
 export function createUserFixture(overrides: Partial<User> = {}): User {
   return {
     id: "user-fixture-id-001",
-    restaurantId: overrides.restaurantId ?? null,
+    restaurantId: (overrides.restaurantId ?? null) as string | null,
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@fixture.test",
@@ -21,6 +21,7 @@ export function createUserFixture(overrides: Partial<User> = {}): User {
     // Auth fields
     emailVerified: true,
     emailVerifiedAt: new Date("2024-01-01T00:00:00.000Z"),
+    mustChangePassword: overrides.mustChangePassword ?? false,
     failedLoginAttempts: 0,
     lockedUntil: null,
     lastFailedLogin: null,
@@ -123,6 +124,8 @@ export function createUserWithRolesFixture(
       assignedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
+      deleted: false,
+      deletedAt: null,
     })),
   };
 }

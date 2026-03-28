@@ -102,7 +102,7 @@ const runE2ETests = process.env.TEST_TYPE === "e2e";
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty("id");
-      expect(response.body.data.status).toBe(OrderStatus.PENDING);
+      expect(response.body.data.status).toBe(OrderStatus.OPEN);
       expect(response.body.data.items).toHaveLength(1);
     });
 
@@ -226,12 +226,12 @@ const runE2ETests = process.env.TEST_TYPE === "e2e";
       const response = await request(app)
         .patch(`/api/v1/orders/${orderId}/status`)
         .set("Authorization", `Bearer ${authToken}`)
-        .send({ status: OrderStatus.IN_KITCHEN });
+        .send({ status: OrderStatus.SENT_TO_CASHIER });
 
       // Assert
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.status).toBe(OrderStatus.IN_KITCHEN);
+      expect(response.body.data.status).toBe(OrderStatus.SENT_TO_CASHIER);
     });
 
     it("should reject invalid status transitions", async () => {
@@ -253,7 +253,7 @@ const runE2ETests = process.env.TEST_TYPE === "e2e";
       // Mark as delivered directly in DB
       await db.order.update({
         where: { id: orderId },
-        data: { status: OrderStatus.DELIVERED },
+        data: { status: OrderStatus.PAID },
       });
 
       // Act - Try to change status from DELIVERED

@@ -324,6 +324,7 @@ describe("ItemRepository", () => {
       const mockTx = {
         menuItem: {
           update: jest.fn().mockResolvedValue({}),
+          findMany: jest.fn().mockResolvedValue([]),
         },
         stockAdjustment: {
           createMany: mockStockAdjustmentCreateMany,

@@ -10,7 +10,7 @@ import {
 import { RegisterInput } from "../../../auth/auth.validator";
 import { UpdateUserInput, UserSearchParams } from "../../user.validator";
 import { AuthenticatedUser } from "../../../../types/express";
-import { UserServices } from "../../user.service";
+import userServiceInstance, { UserServices } from "../../user.service";
 import { UserWithRoles } from "../../user.repository";
 import hasherUtils from "../../../../utils/hasher.utils";
 
@@ -31,6 +31,7 @@ describe("UserServices", () => {
   // Test data factory
   const createMockUser = (overrides: Partial<User> = {}): User => ({
     id: "123e4567-e89b-12d3-a456-426614174000",
+    restaurantId: overrides.restaurantId ?? null,
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@example.com",
@@ -43,6 +44,7 @@ describe("UserServices", () => {
     // Auth fields
     emailVerified: true,
     emailVerifiedAt: new Date("2023-01-01"),
+    mustChangePassword: false,
     failedLoginAttempts: 0,
     lockedUntil: null,
     lastFailedLogin: null,
@@ -91,6 +93,7 @@ describe("UserServices", () => {
     // Create service instance witho mocked dependencies
     userService = new UserServices(mockUserRepository, mockRoleService);
 
+
     // Reset hasher mock
     jest.mocked(hasherUtils.hash).mockReturnValue("hashedPassword");
   });
@@ -127,7 +130,7 @@ describe("UserServices", () => {
       // Assert
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(3);
-      expect(mockUserRepository.findAll).toHaveBeenCalledWith(params);
+      expect(mockUserRepository.findAll).toHaveBeenCalledWith(params, undefined);
       expect(mockUserRepository.findAll).toHaveBeenCalledTimes(1);
     });
 
@@ -403,6 +406,7 @@ describe("UserServices", () => {
       const mockUser = createMockUser();
       const userWithPermissions: AuthenticatedUser = {
         ...mockUser,
+        restaurantId: mockUser.restaurantId,
         roles: [],
       };
 
@@ -557,7 +561,7 @@ describe("UserServices", () => {
       // Assert
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(2);
-      expect(mockUserRepository.search).toHaveBeenCalledWith(params);
+      expect(mockUserRepository.search).toHaveBeenCalledWith(params, undefined);
       expect(mockUserRepository.search).toHaveBeenCalledTimes(1);
     });
 
@@ -581,7 +585,7 @@ describe("UserServices", () => {
       // Assert
       expect(result.data).toEqual([]);
       expect(result.meta.total).toBe(0);
-      expect(mockUserRepository.search).toHaveBeenCalledWith(params);
+      expect(mockUserRepository.search).toHaveBeenCalledWith(params, undefined);
     });
 
     it("should search without search term when not provided", async () => {
@@ -602,7 +606,7 @@ describe("UserServices", () => {
 
       // Assert
       expect(result.data).toEqual([]);
-      expect(mockUserRepository.search).toHaveBeenCalledWith(params);
+      expect(mockUserRepository.search).toHaveBeenCalledWith(params, undefined);
     });
   });
 });

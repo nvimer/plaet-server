@@ -191,7 +191,7 @@ class ItemRepository implements ItemRepositoryInterface {
     const item = await client.menuItem.findUnique({ where: { id } });
 
     if (!item) {
-      throw new Error("MenuItem with id ${id} not found");
+      throw new Error(`MenuItem with id ${id} not found`);
     }
     const previousStock = item.stockQuantity ?? 0;
     const newStock = previousStock + quantity;

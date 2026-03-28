@@ -5,6 +5,7 @@ export function createCategoryFixture(
 ): MenuCategory {
   return {
     id: 1,
+    restaurantId: (overrides.restaurantId ?? null) as string | null,
     name: "Main Dishes",
     description: "Platos principales del menú",
     order: 1,

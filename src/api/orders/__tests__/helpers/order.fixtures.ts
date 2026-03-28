@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, OrderItemStatus } from "@prisma/client";
 import { OrderStatus, OrderType } from "../../../../types/prisma.types";
 
 export function createOrderFixture(
@@ -6,7 +6,7 @@ export function createOrderFixture(
 ) {
   return {
     id: "order-fixture-id-001",
-    status: OrderStatus.PENDING,
+    status: OrderStatus.OPEN,
     type: OrderType.DINE_IN,
     totalAmount: new Prisma.Decimal("25500"),
     notes: null,
@@ -14,6 +14,7 @@ export function createOrderFixture(
     tableId: 1,
     customerId: null,
     waiterId: "waiter-fixture-id-001",
+    restaurantId: "restaurant-fixture-id-001",
     createdAt: new Date("2024-01-01T12:00:00.000Z"),
     updatedAt: new Date("2024-01-01T12:00:00.000Z"),
     ...overrides,
@@ -38,6 +39,7 @@ export function createOrderWithItemsFixture(
         quantity: 2,
         priceAtOrder: new Prisma.Decimal("12750"),
         notes: "Sin cebolla",
+        status: OrderItemStatus.PENDING,
         isFreeSubstitution: false,
         createdAt: new Date("2024-01-01T12:00:00.000Z"),
         updatedAt: new Date("2024-01-01T12:00:00.000Z"),
@@ -192,22 +194,18 @@ export const invalidOrderPayloads = {
  * Valid status transitions for workflow testing
  */
 export const validStatusTransitions = [
-  { from: OrderStatus.PENDING, to: OrderStatus.SENT_TO_CASHIER },
+  { from: OrderStatus.OPEN, to: OrderStatus.SENT_TO_CASHIER },
   { from: OrderStatus.SENT_TO_CASHIER, to: OrderStatus.PAID },
-  { from: OrderStatus.PAID, to: OrderStatus.IN_KITCHEN },
-  { from: OrderStatus.IN_KITCHEN, to: OrderStatus.READY },
-  { from: OrderStatus.READY, to: OrderStatus.DELIVERED },
-  { from: OrderStatus.PENDING, to: OrderStatus.CANCELLED },
+  { from: OrderStatus.PAID, to: OrderStatus.SENT_TO_CASHIER },
+  { from: OrderStatus.OPEN, to: OrderStatus.CANCELLED },
   { from: OrderStatus.SENT_TO_CASHIER, to: OrderStatus.CANCELLED },
-  { from: OrderStatus.PAID, to: OrderStatus.CANCELLED },
 ];
 
 /**
  * Invalid status transitions (terminal states)
  */
 export const invalidStatusTransitions = [
-  { from: OrderStatus.DELIVERED, to: OrderStatus.PENDING },
-  { from: OrderStatus.DELIVERED, to: OrderStatus.CANCELLED },
-  { from: OrderStatus.CANCELLED, to: OrderStatus.IN_KITCHEN },
-  { from: OrderStatus.CANCELLED, to: OrderStatus.PENDING },
+  { from: OrderStatus.PAID, to: OrderStatus.OPEN },
+  { from: OrderStatus.CANCELLED, to: OrderStatus.SENT_TO_CASHIER },
+  { from: OrderStatus.CANCELLED, to: OrderStatus.OPEN },
 ];

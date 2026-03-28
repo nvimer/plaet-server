@@ -9,6 +9,7 @@ import { UserSearchParams } from "../../user.validator";
 // Create mock functions
 const mockFindMany = jest.fn();
 const mockFindUnique = jest.fn();
+const mockFindFirst = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockCount = jest.fn();
@@ -18,6 +19,7 @@ const mockPrismaClient = {
   user: {
     findMany: mockFindMany,
     findUnique: mockFindUnique,
+    findFirst: mockFindFirst,
     create: mockCreate,
     update: mockUpdate,
     count: mockCount,
@@ -159,28 +161,30 @@ describe("UserRepository", () => {
     it("should return user when email exists", async () => {
       // Arrange
       const mockUser = createUserFixture({ email: "test@example.com" });
-      mockFindUnique.mockResolvedValue(mockUser);
+      mockFindFirst.mockResolvedValue(mockUser);
 
       // Act
       const result = await userRepository.findByEmail("test@example.com");
 
       // Assert
       expect(result).toEqual(mockUser);
-      expect(mockFindUnique).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
+      expect(mockFindFirst).toHaveBeenCalledWith({
+        where: { email: { equals: "test@example.com", mode: "insensitive" } },
+        include: { roles: { include: { role: true } } },
       });
     });
 
     it("should return null when email does not exist", async () => {
       // Arrange
-      mockFindUnique.mockResolvedValue(null);
+      mockFindFirst.mockResolvedValue(null);
 
       // Act
-      const result = await userRepository.findByEmail("unknown@example.com");
+      const result = await userRepository.findByEmail("non-existent@example.com");
 
       // Assert
       expect(result).toBeNull();
     });
+
   });
 
   describe("findById", () => {
@@ -196,6 +200,7 @@ describe("UserRepository", () => {
       expect(result).toEqual(mockUser);
       expect(mockFindUnique).toHaveBeenCalledWith({
         where: { id: "user-123" },
+        include: { roles: { include: { role: true } } },
       });
     });
 

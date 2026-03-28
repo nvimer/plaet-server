@@ -21,6 +21,7 @@ describe("Token Repository Integration Tests", () => {
         lastName: "User",
         email: `test-${Date.now()}@example.com`,
         password: "hashedpassword",
+        restaurantId: null,
       },
     });
 

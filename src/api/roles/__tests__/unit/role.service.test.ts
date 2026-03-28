@@ -53,7 +53,7 @@ describe("RoleService - Unit Tests", () => {
       const result = await roleService.findAll(params);
 
       // Assert
-      expect(mockRoleRepository.findAll).toHaveBeenCalledWith(params);
+      expect(mockRoleRepository.findAll).toHaveBeenCalledWith(params, undefined, false);
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(2);
     });
@@ -96,6 +96,8 @@ describe("RoleService - Unit Tests", () => {
         params,
         search,
         active,
+        undefined,
+        false,
       );
       expect(result).toEqual(expectedResponse);
     });

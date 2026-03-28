@@ -186,6 +186,7 @@ describe("Error Middleware - Unit Tests", () => {
         success: false,
         message: "Database operation failed due to invalid data or request.",
         errorCode: "DATABASE_REQUEST_ERROR",
+        prismaCode: "P2003",
       });
       expect(logger.error).toHaveBeenCalledWith(
         "Unhandled Prisma Client Known Request Error:",

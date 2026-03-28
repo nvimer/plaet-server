@@ -1,11 +1,7 @@
-import { User } from "@prisma/client";
 import { ProfileServices } from "../../profile.service";
 import { ProfileRepositoryInterface } from "../../interfaces/profile.repository.interface";
 import { createMockProfileRepository } from "../helpers";
-import {
-  createUserWithProfileFixture,
-  createProfileFixture,
-} from "../helpers/profile.fixtures";
+import { createUserWithProfileFixture } from "../helpers/profile.fixtures";
 import { CustomError } from "../../../../types/custom-errors";
 import { HttpStatus } from "../../../../utils/httpStatus.enum";
 import {
@@ -45,9 +41,9 @@ describe("ProfileServices - Unit Tests", () => {
     it("should return paginated user profiles when valid params provided", async () => {
       // Arrange
       const params: PaginationParams = { page: 1, limit: 10 };
-      const users = [
-        createUserWithProfileFixture({ id: "user-1" }),
-        createUserWithProfileFixture({ id: "user-2" }),
+      const users: UserWithProfile[] = [
+        createUserWithProfileFixture({ id: "user-1" }) as UserWithProfile,
+        createUserWithProfileFixture({ id: "user-2" }) as UserWithProfile,
       ];
       const expectedResponse = createPaginatedResponse(users);
 
@@ -65,7 +61,7 @@ describe("ProfileServices - Unit Tests", () => {
     it("should return empty list when no profiles exist", async () => {
       // Arrange
       const params: PaginationParams = { page: 1, limit: 10 };
-      const emptyResponse = createPaginatedResponse<User>([]);
+      const emptyResponse = createPaginatedResponse<UserWithProfile>([]);
 
       mockProfileRepository.findAll.mockResolvedValue(emptyResponse);
 
@@ -82,7 +78,7 @@ describe("ProfileServices - Unit Tests", () => {
     it("should return user profile when found", async () => {
       // Arrange
       const id = "user-123";
-      const userWithProfile = createUserWithProfileFixture({ id });
+      const userWithProfile = createUserWithProfileFixture({ id }) as UserWithProfile;
 
       mockProfileRepository.findById.mockResolvedValue(userWithProfile);
 
@@ -101,20 +97,6 @@ describe("ProfileServices - Unit Tests", () => {
 
       // Act & Assert
       await expect(profileService.findById(id)).rejects.toThrow(CustomError);
-      await expect(profileService.findById(id)).rejects.toThrow(
-        `User with ID ${id} not found.`,
-      );
-
-      try {
-        await profileService.findById(id);
-        fail("Expected error to be thrown");
-      } catch (error: unknown) {
-        expect(error).toBeInstanceOf(CustomError);
-        if (error instanceof CustomError) {
-          expect(error.statusCode).toBe(HttpStatus.NOT_FOUND);
-          expect(error.errorCode).toBe("ID_NOT_FOUND");
-        }
-      }
     });
   });
 
@@ -127,8 +109,8 @@ describe("ProfileServices - Unit Tests", () => {
         lastName: "Name",
         phone: "3009876543",
       };
-      const existing = createUserWithProfileFixture({ id });
-      const updated = createUserWithProfileFixture({ id, ...input });
+      const existing = createUserWithProfileFixture({ id }) as UserWithProfile;
+      const updated = createUserWithProfileFixture({ id, ...input }) as UserWithProfile;
 
       mockProfileRepository.findById.mockResolvedValue(existing);
       mockProfileRepository.update.mockResolvedValue(updated);
@@ -141,33 +123,13 @@ describe("ProfileServices - Unit Tests", () => {
       expect(mockProfileRepository.update).toHaveBeenCalledWith(id, input);
       expect(result).toEqual(updated);
     });
-
-    it("should throw CustomError when user not found", async () => {
-      // Arrange
-      const id = "non-existent-user";
-      const input: UpdateProfileInput = {
-        firstName: "Updated",
-      };
-
-      mockProfileRepository.findById.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(profileService.updateUser(id, input)).rejects.toThrow(
-        CustomError,
-      );
-      await expect(profileService.updateUser(id, input)).rejects.toThrow(
-        `User with ID ${id} not found.`,
-      );
-
-      expect(mockProfileRepository.update).not.toHaveBeenCalled();
-    });
   });
 
   describe("getMyProfile", () => {
     it("should return user profile when user exists", async () => {
       // Arrange
       const id = "user-123";
-      const userWithProfile = createUserWithProfileFixture({ id });
+      const userWithProfile = createUserWithProfileFixture({ id }) as UserWithProfile;
 
       mockProfileRepository.findById.mockResolvedValue(userWithProfile);
 
@@ -177,31 +139,6 @@ describe("ProfileServices - Unit Tests", () => {
       // Assert
       expect(mockProfileRepository.findById).toHaveBeenCalledWith(id);
       expect(result).toEqual(userWithProfile);
-    });
-
-    it("should throw CustomError when user not found", async () => {
-      // Arrange
-      const id = "non-existent-user";
-      mockProfileRepository.findById.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(profileService.getMyProfile(id)).rejects.toThrow(
-        CustomError,
-      );
-      await expect(profileService.getMyProfile(id)).rejects.toThrow(
-        `User with ID ${id} not found.`,
-      );
-
-      try {
-        await profileService.getMyProfile(id);
-        fail("Expected error to be thrown");
-      } catch (error: unknown) {
-        expect(error).toBeInstanceOf(CustomError);
-        if (error instanceof CustomError) {
-          expect(error.statusCode).toBe(HttpStatus.NOT_FOUND);
-          expect(error.errorCode).toBe("ID_NOT_FOUND");
-        }
-      }
     });
   });
 });

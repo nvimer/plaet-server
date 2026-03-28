@@ -35,7 +35,13 @@ describe("RolePermissionService - Unit Tests", () => {
 
   beforeEach(() => {
     mockRoleRepository = createMockRoleRepository();
-    rolePermissionService = new RolePermissionService(mockRoleRepository);
+    const mockPermissionRepository = {
+      findById: jest.fn(),
+    } as any;
+    rolePermissionService = new RolePermissionService(
+      mockRoleRepository,
+      mockPermissionRepository,
+    );
     jest.clearAllMocks();
   });
 
@@ -221,6 +227,8 @@ describe("RolePermissionService - Unit Tests", () => {
       // Assert
       expect(mockRoleRepository.getRolesWithPermissions).toHaveBeenCalledWith(
         params,
+        undefined,
+        false,
       );
       expect(result).toEqual(expectedResponse);
       expect(result.data).toHaveLength(2);

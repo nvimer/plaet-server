@@ -14,6 +14,7 @@ export function createMockOrderRepository(): jest.Mocked<OrderRepositoryInterfac
     updateStatus: jest.fn(),
     cancel: jest.fn(),
     updateTotal: jest.fn(),
+    updateItemStatus: jest.fn(),
   };
 }
 
@@ -28,6 +29,7 @@ export function createMockOrderService(): jest.Mocked<OrderServiceInterface> {
     updateOrderStatus: jest.fn(),
     cancelOrder: jest.fn(),
     batchCreateOrders: jest.fn(),
+    updateOrderItemStatus: jest.fn(),
   };
 }
 

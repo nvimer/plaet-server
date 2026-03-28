@@ -63,9 +63,10 @@ describe("Auth Middleware - Unit Tests", () => {
 
       // Assert
       await new Promise((resolve) => setImmediate(resolve));
+      const authedUser = mockRequest.user as any;
       expect(mockRequest.user).toEqual(user);
-      expect(mockRequest.user?.id).toBe("test-user-id");
-      expect(mockRequest.user?.email).toBe("test@example.com");
+      expect(authedUser?.id).toBe("test-user-id");
+      expect(authedUser?.email).toBe("test@example.com");
     });
   });
 

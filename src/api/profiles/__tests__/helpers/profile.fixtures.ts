@@ -20,6 +20,7 @@ export function createProfileFixture(
     id: "profile-fixture-id-001",
     userId: "user-fixture-id-001",
     photoUrl: null,
+    imagePublicId: null,
     birthDate: null,
     identification: null,
     address: null,
@@ -39,6 +40,7 @@ export function createCompleteProfileFixture(
 ): Profile {
   return createProfileFixture({
     photoUrl: "https://example.com/photo.jpg",
+    imagePublicId: "photo_public_id",
     birthDate: new Date("1990-05-15"),
     identification: "123456789",
     address: "123 Main St, City",
@@ -56,6 +58,7 @@ export function createUserWithProfileFixture(
   const userId = userOverrides.id ?? "user-fixture-id-001";
   return {
     id: userId,
+    restaurantId: (userOverrides.restaurantId ?? null) as string | null,
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@fixture.test",
@@ -68,6 +71,7 @@ export function createUserWithProfileFixture(
     // Auth fields
     emailVerified: true,
     emailVerifiedAt: new Date("2024-01-01T00:00:00.000Z"),
+    mustChangePassword: userOverrides.mustChangePassword ?? false,
     failedLoginAttempts: 0,
     lockedUntil: null,
     lastFailedLogin: null,

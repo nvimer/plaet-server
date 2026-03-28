@@ -6,6 +6,7 @@ import { Role, RoleName, Permission } from "@prisma/client";
 export function createRoleFixture(overrides: Partial<Role> = {}): Role {
   return {
     id: 1,
+    restaurantId: (overrides.restaurantId ?? null) as string | null,
     name: RoleName.ADMIN,
     description: "Administrator role with full permissions",
     deleted: false,

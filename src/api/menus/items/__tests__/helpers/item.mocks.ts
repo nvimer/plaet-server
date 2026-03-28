@@ -18,8 +18,11 @@ export function createMockItemRepository(): jest.Mocked<ItemRepositoryInterface>
     getLowStock: jest.fn(),
     getOutOfStock: jest.fn(),
     getStockHistory: jest.fn(),
+    findAllStockHistory: jest.fn(),
     setInventoryType: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
+    getStockMovementsByDay: jest.fn(),
   };
 }
 
@@ -39,15 +42,19 @@ export function createMockItemService(): jest.Mocked<ItemServiceInterface> {
     deductStockForOrder: jest.fn(),
     revertStockForOrder: jest.fn(),
     dailyStockReset: jest.fn(),
+    dailyStockResetByCategory: jest.fn(),
     getLowStock: jest.fn(),
     getOutStock: jest.fn(),
     getStockHistory: jest.fn(),
+    getAllStockHistory: jest.fn(),
     setInventoryType: jest.fn(),
     updateItem: jest.fn(),
+    deleteItem: jest.fn(),
     bulkStockUpdate: jest.fn(),
     bulkInventoryTypeUpdate: jest.fn(),
     getInventoryReport: jest.fn(),
     getStockSummary: jest.fn(),
+    getStockMovementsByDay: jest.fn(),
   };
 }
 
