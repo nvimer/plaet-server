@@ -13,7 +13,7 @@ export class TicketBookController {
 
   sell = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = sellTicketBookSchema.parse(req.body);
+      const data = sellTicketBookSchema.parse({ body: req.body });
       const user = req.user as AuthenticatedUser;
       
       const ticketBook = await this.service.sellTicketBook(
