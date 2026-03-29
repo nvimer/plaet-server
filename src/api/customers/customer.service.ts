@@ -26,7 +26,7 @@ export class CustomerService implements ICustomerService {
     }
     return await this.customerRepository.create({
       firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
+      lastName: data.lastName?.trim() || "",
       phone: data.phone.trim(),
       phone2: data.phone2?.trim() || null,
       address1: data.address1?.trim() || null,
@@ -137,7 +137,8 @@ export class CustomerService implements ICustomerService {
     const updateData: Prisma.CustomerUpdateInput = {};
     if (data.firstName !== undefined)
       updateData.firstName = data.firstName.trim();
-    if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
+    if (data.lastName !== undefined) 
+      updateData.lastName = data.lastName?.trim() || "";
     if (data.phone !== undefined) updateData.phone = data.phone.trim();
     if (data.phone2 !== undefined)
       updateData.phone2 = data.phone2?.trim() || null;

@@ -2,7 +2,7 @@ import { Customer, TicketBook } from "@prisma/client";
 
 export interface CreateCustomerData {
   firstName: string;
-  lastName: string;
+  lastName?: string;
   phone: string;
   phone2?: string;
   address1?: string;
