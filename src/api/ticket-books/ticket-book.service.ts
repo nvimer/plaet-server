@@ -56,8 +56,8 @@ export class TicketBookService {
           method: PaymentMethod.CASH, // Customer paid in cash/nequi for the book
           amount: data.purchasePrice,
           cashClosureId: activeClosure.id,
-          notes: `Venta Tiquetera: ${data.totalPortions} porciones`,
-        } as any, // type cast for notes if not in schema yet or using manual item notes
+          transactionRef: `Venta Tiquetera: ${data.totalPortions} porciones`,
+        },
       });
 
       return ticketBook;
