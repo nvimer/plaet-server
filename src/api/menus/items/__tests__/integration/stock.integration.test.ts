@@ -10,8 +10,24 @@ describe("Stock Management Integration Tests", () => {
   let testUserId: string;
   const testPrisma = getTestDatabaseClient();
 
+  const restaurantId = "test-restaurant-id";
+
   beforeAll(async () => {
     await connectTestDatabase();
+
+    // Create a restaurant first
+    await testPrisma.restaurant.upsert({
+      where: { id: restaurantId },
+      update: {},
+      create: {
+        id: restaurantId,
+        name: "Test Restaurant",
+        slug: "test-restaurant",
+        address: "Test Address",
+        phone: "1234567890",
+        nit: "123456789-0",
+      }
+    });
 
     // Create test user for operations
     const testUser = await testPrisma.user.create({
@@ -20,6 +36,7 @@ describe("Stock Management Integration Tests", () => {
         lastName: "User",
         email: `test-${Date.now()}@example.com`,
         password: "hashedpassword",
+        restaurantId,
       },
     });
     testUserId = testUser.id;
@@ -42,7 +59,7 @@ describe("Stock Management Integration Tests", () => {
     test("should successfully reset stock for multiple items", async () => {
       // Create test menu items
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item1 = await testPrisma.menuItem.create({
@@ -51,6 +68,7 @@ describe("Stock Management Integration Tests", () => {
           name: "Test Item 1",
           price: 10000,
           inventoryType: "TRACKED",
+          restaurantId,
         },
       });
 
@@ -60,6 +78,7 @@ describe("Stock Management Integration Tests", () => {
           name: "Test Item 2",
           price: 15000,
           inventoryType: "TRACKED",
+          restaurantId,
         },
       });
 
@@ -89,7 +108,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should throw error for UNLIMITED items", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const unlimitedItem = await testPrisma.menuItem.create({
@@ -112,7 +131,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should throw validation error for negative quantities", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -121,6 +140,7 @@ describe("Stock Management Integration Tests", () => {
           name: "Test Item",
           price: 10000,
           inventoryType: "TRACKED",
+          restaurantId,
         },
       });
 
@@ -135,7 +155,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Add Stock", () => {
     test("should successfully add stock to tracked item", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -172,7 +192,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should throw error for unlimited item", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -198,7 +218,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Remove Stock", () => {
     test("should successfully remove stock from tracked item", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -239,7 +259,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should mark item unavailable when stock reaches zero", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -271,7 +291,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should throw error for insufficient stock", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -298,7 +318,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Low Stock Items", () => {
     test("should return items at or below low stock threshold", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       // Create items at different stock levels
@@ -311,6 +331,7 @@ describe("Stock Management Integration Tests", () => {
             inventoryType: "TRACKED",
             stockQuantity: 20,
             lowStockAlert: 5,
+            restaurantId,
           },
           {
             categoryId: category.id,
@@ -319,6 +340,7 @@ describe("Stock Management Integration Tests", () => {
             inventoryType: "TRACKED",
             stockQuantity: 3,
             lowStockAlert: 5,
+            restaurantId,
           },
           {
             categoryId: category.id,
@@ -327,6 +349,7 @@ describe("Stock Management Integration Tests", () => {
             inventoryType: "TRACKED",
             stockQuantity: 5,
             lowStockAlert: 5,
+            restaurantId,
           },
         ],
       });
@@ -349,7 +372,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Out of Stock Items", () => {
     test("should return items with zero stock", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       await testPrisma.menuItem.createMany({
@@ -360,6 +383,7 @@ describe("Stock Management Integration Tests", () => {
             price: 10000,
             inventoryType: "TRACKED",
             stockQuantity: 10,
+            restaurantId,
           },
           {
             categoryId: category.id,
@@ -367,6 +391,7 @@ describe("Stock Management Integration Tests", () => {
             price: 15000,
             inventoryType: "TRACKED",
             stockQuantity: 0,
+            restaurantId,
           },
         ],
       });
@@ -382,7 +407,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Stock History", () => {
     test("should return paginated stock history for item", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -391,6 +416,7 @@ describe("Stock Management Integration Tests", () => {
           name: "Test Item",
           price: 10000,
           inventoryType: "TRACKED",
+          restaurantId,
         },
       });
 
@@ -453,7 +479,7 @@ describe("Stock Management Integration Tests", () => {
   describe("Inventory Type Update", () => {
     test("should convert TRACKED to UNLIMITED", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -465,6 +491,7 @@ describe("Stock Management Integration Tests", () => {
           stockQuantity: 30,
           lowStockAlert: 5,
           deleted: false,
+          restaurantId,
         },
       });
 
@@ -481,7 +508,7 @@ describe("Stock Management Integration Tests", () => {
 
     test("should convert UNLIMITED to TRACKED", async () => {
       const category = await testPrisma.menuCategory.create({
-        data: { name: "Test Category" },
+        data: { name: "Test Category", restaurantId },
       });
 
       const item = await testPrisma.menuItem.create({
@@ -491,6 +518,7 @@ describe("Stock Management Integration Tests", () => {
           price: 10000,
           inventoryType: "UNLIMITED",
           deleted: false,
+          restaurantId,
         },
       });
 

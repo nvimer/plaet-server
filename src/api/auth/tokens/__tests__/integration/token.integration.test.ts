@@ -413,6 +413,7 @@ describe("Token Repository Integration Tests", () => {
           lastName: `User${Math.random().toString().substring(2, 8)}`,
           email: `test${Math.random().toString().substring(2, 8)}@example.com`,
           password: "hashedpassword",
+          restaurantId: null,
         },
       });
 

@@ -19,20 +19,22 @@ describe("Customers Integration Tests", () => {
     testDb = getTestDatabaseClient() as any;
 
     // Create or get existing admin role
-    const adminRole = await testDb.role.upsert({
+    let adminRole = await testDb.role.findFirst({
       where: {
-        restaurantId_name: {
-          restaurantId: null,
-          name: "ADMIN",
-        },
-      },
-      update: {},
-      create: {
-        name: "ADMIN",
-        description: "Administrator role for testing",
         restaurantId: null,
+        name: "ADMIN",
       },
     });
+
+    if (!adminRole) {
+      adminRole = await testDb.role.create({
+        data: {
+          name: "ADMIN",
+          description: "Administrator role for testing",
+          restaurantId: null,
+        },
+      });
+    }
 
     // Create test user and assign role
     testUser = await testDb.user.create({
@@ -53,17 +55,16 @@ describe("Customers Integration Tests", () => {
     });
 
     // Generate JWT token for test user
-    // The JWT strategy expects 'sub' (subject) field for user ID
+    // The JWT strategy expects 'sub' (subject) field for user ID and 'type' field
     authToken = jwt.sign(
       {
         sub: testUser.id,
-        email: testUser.email,
-        firstName: testUser.firstName,
-        lastName: testUser.lastName,
-        role: adminRole.name,
+        restaurantId: testUser.restaurantId,
+        type: "ACCESS",
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
       },
       config.jwtSecret,
-      { expiresIn: "1h" },
     );
   });
 

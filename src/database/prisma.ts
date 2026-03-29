@@ -85,8 +85,17 @@ const SOFT_DELETE_MODELS = [
   "Order",
 ];
 
+import { config } from "../config";
+
 const prismaClient = new PrismaClient({
-  log: ["info", "warn", "error"],
+  datasources: {
+    db: {
+      url: config.nodeEnv === "test" 
+        ? (config.testDatabaseUrl || "postgresql://postgres:test_password@localhost:5433/sazonarte_test") 
+        : config.databaseUrl,
+    },
+  },
+  log: config.nodeEnv === "test" ? ["error"] : ["info", "warn", "error"],
 });
 
 /**

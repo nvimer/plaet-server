@@ -31,6 +31,13 @@ jest.mock("../../../../../config", () => ({
   },
 }));
 
+jest.mock("../../../../../database/prisma", () => ({
+  __esModule: true,
+  default: {},
+  getPrismaClient: jest.fn(),
+  getBasePrismaClient: jest.fn(),
+}));
+
 describe("TokenService - Unit Tests", () => {
   let tokenService: TokenService;
   let mockTokenRepository: jest.Mocked<TokenRepositoryInterface>;

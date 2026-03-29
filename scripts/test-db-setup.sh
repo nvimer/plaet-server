@@ -19,7 +19,7 @@ fi
 # Function to start test database
 start_db() {
   echo "🚀 Starting test database container..."
-  docker-compose -f $COMPOSE_FILE up -d
+  docker compose -f $COMPOSE_FILE up -d
   
   echo "⏳ Waiting for database to be ready..."
   sleep 3
@@ -37,15 +37,15 @@ start_db() {
 # Function to stop test database
 stop_db() {
   echo "🛑 Stopping test database container..."
-  docker-compose -f $COMPOSE_FILE down
+  docker compose -f $COMPOSE_FILE down
   echo "✅ Test database stopped"
 }
 
 # Function to reset test database
 reset_db() {
   echo "🔄 Resetting test database..."
-  docker-compose -f $COMPOSE_FILE down -v
-  docker-compose -f $COMPOSE_FILE up -d
+  docker compose -f $COMPOSE_FILE down -v
+  docker compose -f $COMPOSE_FILE up -d
   
   echo "⏳ Waiting for database to be ready..."
   sleep 3

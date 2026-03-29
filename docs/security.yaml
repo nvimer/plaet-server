@@ -4,7 +4,7 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormar: JWT
+      bearerFormat: JWT
       description: |
         **JWT Authentication** 
 
