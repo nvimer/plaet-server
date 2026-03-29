@@ -9,25 +9,26 @@ export const createCustomerSchema = z.object({
     .string()
     .min(1, "First name is required")
     .max(50, "First name cannot exceed 50 characters")
-    .regex(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces"),
+    .regex(/^[a-zA-Z0-9\s.\-]+$/, "First name contains invalid characters"),
 
   lastName: z
     .string()
-    .min(1, "Last name is required")
     .max(50, "Last name cannot exceed 50 characters")
-    .regex(/^[a-zA-Z\s]+$/, "Last name can only contain letters and spaces"),
+    .regex(/^[a-zA-Z0-9\s.\-]+$/, "Last name contains invalid characters")
+    .optional()
+    .or(z.literal("")),
 
   phone: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number cannot exceed 15 digits")
-    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format"),
+    .regex(/^\+?\d{10,14}$/, "Invalid phone number format"),
 
   phone2: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number cannot exceed 15 digits")
-    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+    .regex(/^\+?\d{10,14}$/, "Invalid phone number format")
     .optional()
     .or(z.literal("")),
 
@@ -51,28 +52,28 @@ export const updateCustomerSchema = z.object({
     .string()
     .min(1, "First name is required")
     .max(50, "First name cannot exceed 50 characters")
-    .regex(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces")
+    .regex(/^[a-zA-Z0-9\s.\-]+$/, "First name contains invalid characters")
     .optional(),
 
   lastName: z
     .string()
-    .min(1, "Last name is required")
     .max(50, "Last name cannot exceed 50 characters")
-    .regex(/^[a-zA-Z\s]+$/, "Last name can only contain letters and spaces")
-    .optional(),
+    .regex(/^[a-zA-Z0-9\s.\-]+$/, "Last name contains invalid characters")
+    .optional()
+    .or(z.literal("")),
 
   phone: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number cannot exceed 15 digits")
-    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+    .regex(/^\+?\d{10,14}$/, "Invalid phone number format")
     .optional(),
 
   phone2: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number cannot exceed 15 digits")
-    .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+    .regex(/^\+?\d{10,14}$/, "Invalid phone number format")
     .optional()
     .or(z.literal("")),
 
