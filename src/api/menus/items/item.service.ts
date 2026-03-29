@@ -131,8 +131,71 @@ export class ItemService implements ItemServiceInterface {
   async searchMenuItems(
     params: PaginationParams & MenuItemSearchParams,
   ): Promise<PaginatedResponse<MenuItem>> {
-    // Degelete to repository layer for search functionality
-    return await this.itemRepository.search(params);
+    const { forOrder, ...rest } = params;
+
+    // Normal search if not for an order
+    if (!forOrder) {
+      return await this.itemRepository.search(params);
+    }
+
+    // Dynamic Availability Logic for Orders:
+    // 1. Get today's menu
+    const client = getPrismaClient();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const menu = await client.dailyMenu.findUnique({
+      where: { createdAt: today },
+    });
+
+    // 2. Identify "Always Available" categories (Bebidas and Extras)
+    const categories = await client.menuCategory.findMany({
+      where: {
+        name: { in: ["Bebidas", "Extras"], mode: "insensitive" },
+        deleted: false,
+      },
+      select: { id: true },
+    });
+    const excludedCategoryIds = categories.map((c) => c.id);
+
+    // 3. Extract all valid IDs from the Daily Menu
+    const allowedItemIds: number[] = [];
+    if (menu) {
+      const fields = [
+        "soupOption1Id",
+        "soupOption2Id",
+        "principleOption1Id",
+        "principleOption2Id",
+        "drinkOption1Id",
+        "drinkOption2Id",
+        "saladOption1Id",
+        "saladOption2Id",
+        "extraOption1Id",
+        "extraOption2Id",
+        "riceOption1Id",
+        "riceOption2Id",
+        "dessertOption1Id",
+        "dessertOption2Id",
+      ];
+
+      fields.forEach((field) => {
+        const id = (menu as any)[field];
+        if (id) allowedItemIds.push(Number(id));
+      });
+
+      if (menu.proteinIds && Array.isArray(menu.proteinIds)) {
+        menu.proteinIds.forEach((id) => allowedItemIds.push(Number(id)));
+      }
+    }
+
+    // 4. Perform the filtered search
+    // If no menu exists, we ONLY show Bebidas and Extras
+    return await this.itemRepository.search({
+      ...rest,
+      active: true, // Only show available items for orders
+      itemIds: allowedItemIds.length > 0 ? allowedItemIds : undefined,
+      excludedCategoryIds,
+    });
   }
 
   /**

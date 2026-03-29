@@ -77,6 +77,10 @@ export const menuItemSearchSchema = z.object({
       .transform((val) => val === "true")
       .optional(),
     categoryId: z.coerce.number().int().positive().optional(),
+    forOrder: z
+      .enum(["true", "false"])
+      .transform((val) => val === "true")
+      .optional(),
   }),
 });
 

@@ -28,7 +28,11 @@ export interface ItemRepositoryInterface {
   create(data: CreateItemInput & { restaurantId?: string }): Promise<MenuItem>;
 
   search(
-    params: PaginationParams & MenuItemSearchParams,
+    params: PaginationParams &
+      MenuItemSearchParams & {
+        itemIds?: number[];
+        excludedCategoryIds?: number[];
+      },
   ): Promise<PaginatedResponse<MenuItem>>;
   findBySetLunchFilters(
     params: PaginationParams & SetLunchFilterParams,

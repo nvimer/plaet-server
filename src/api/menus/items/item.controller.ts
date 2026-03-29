@@ -65,6 +65,7 @@ class ItemController {
     const categoryId = req.query.categoryId
       ? Number(req.query.categoryId)
       : undefined;
+    const forOrder = req.query.forOrder === "true";
 
     const params: PaginationParams & MenuItemSearchParams = {
       page,
@@ -72,6 +73,7 @@ class ItemController {
       search,
       active,
       categoryId,
+      forOrder,
     };
 
     const menuItems = await this.itemService.searchMenuItems(params);

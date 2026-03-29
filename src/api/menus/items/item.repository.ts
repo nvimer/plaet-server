@@ -88,9 +88,21 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   async search(
-    params: PaginationParams & MenuItemSearchParams,
+    params: PaginationParams &
+      MenuItemSearchParams & {
+        itemIds?: number[];
+        excludedCategoryIds?: number[];
+      },
   ): Promise<PaginatedResponse<MenuItem>> {
-    const { page, limit, search, active, categoryId } = params;
+    const {
+      page,
+      limit,
+      search,
+      active,
+      categoryId,
+      itemIds,
+      excludedCategoryIds,
+    } = params;
     const skip = (page - 1) * limit;
 
     const whereConditions: Prisma.MenuItemWhereInput = {
@@ -110,6 +122,28 @@ class ItemRepository implements ItemRepositoryInterface {
 
     if (categoryId !== undefined) {
       whereConditions.categoryId = Number(categoryId);
+    }
+
+    // Dynamic Availability Logic:
+    // If we have itemIds or excludedCategories, we want items that:
+    // (Are in the always-available categories) OR (Are specifically listed in the menu IDs)
+    if (itemIds || excludedCategoryIds) {
+      whereConditions.OR = [];
+
+      if (excludedCategoryIds && excludedCategoryIds.length > 0) {
+        whereConditions.OR.push({
+          categoryId: { in: excludedCategoryIds },
+        });
+      }
+
+      if (itemIds && itemIds.length > 0) {
+        whereConditions.OR.push({
+          id: { in: itemIds },
+        });
+      }
+
+      // If both lists are empty but we were filtering, return nothing (or just non-restriced)
+      // This is handled by the conditions above.
     }
 
     const [menuItems, total] = await Promise.all([
