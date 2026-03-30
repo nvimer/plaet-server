@@ -31,6 +31,7 @@ export class PaymentService {
       amount: number;
       transactionRef?: string;
       phone?: string;
+      portionCount?: number;
     },
   ): Promise<Payment> {
     return await this.prisma.$transaction(async (tx: PrismaTransaction) => {
@@ -102,11 +103,12 @@ export class PaymentService {
           );
 
         const restaurantId = order.restaurantId;
+        const portionCountToUse = data.portionCount || 1;
 
         // Update TicketBook portions
         await tx.ticketBook.update({
           where: { id: activeTicket.id },
-          data: { consumedPortions: { increment: 1 } },
+          data: { consumedPortions: { increment: portionCountToUse } },
         });
 
         // Register usage. Note: daily_code_id is mandatory in schema, so we look for or create a generic one for today
@@ -134,7 +136,7 @@ export class PaymentService {
             ticketBookId: activeTicket.id,
             paymentId: payment.id,
             dailyCodeId: dailyCode.id,
-            portionCount: 1,
+            portionCount: portionCountToUse,
             restaurantId,
           },
         });
