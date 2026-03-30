@@ -79,19 +79,28 @@ export class PaymentService {
         tx,
       );
 
+      const restaurantId = order.restaurantId;
+
       // 2. Specialized logic for TicketBook (Vouchers)
       if (data.method === PaymentMethod.TICKET_BOOK) {
         if (!data.phone)
           throw new CustomError(
-            "Phone required for ticket book payment",
+            "Query (phone/name) required for ticket book payment",
             HttpStatus.BAD_REQUEST,
           );
 
+        // Find customer with specific search including name/phone
         const customer = await this.customerRepo.findByPhoneWithActiveTickets(
           data.phone,
         );
+        
         if (!customer)
           throw new CustomError("Customer not found", HttpStatus.NOT_FOUND);
+
+        // Check multi-tenancy: customer must belong to the same restaurant as the order
+        if (restaurantId && customer.restaurantId !== restaurantId) {
+          throw new CustomError("Customer does not belong to this restaurant", HttpStatus.FORBIDDEN);
+        }
 
         const activeTicket = customer.ticketBooks.find(
           (tb: TicketBook) => tb.consumedPortions < tb.totalPortions,
@@ -102,7 +111,6 @@ export class PaymentService {
             HttpStatus.BAD_REQUEST,
           );
 
-        const restaurantId = order.restaurantId;
         const portionCountToUse = data.portionCount || 1;
 
         // Update TicketBook portions
@@ -127,9 +135,25 @@ export class PaymentService {
               date: today,
               isUsed: true,
               restaurantId,
+              usedAtPaymentId: payment.id // Link back to payment
             },
           });
+        } else {
+           // Update existing code to link to this payment if not already linked
+           await tx.dailyTicketBookCode.update({
+             where: { id: dailyCode.id },
+             data: { 
+               isUsed: true,
+               usedAtPaymentId: payment.id 
+             }
+           });
         }
+
+        // Link the payment to the daily code as well
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: { dailyTicketBookCodeId: dailyCode.id }
+        });
 
         await tx.ticketBookUsage.create({
           data: {
