@@ -413,6 +413,8 @@ model CashClosure {
   totalExpenses   Decimal?          @default(0) @map("total_expenses") @db.Decimal(10, 2)
   totalVouchers   Decimal?          @default(0) @map("total_vouchers") @db.Decimal(10, 2)
   totalDelivery   Decimal?          @default(0) @map("total_delivery") @db.Decimal(10, 2)
+  deliveryCash    Decimal?          @default(0) @map("delivery_cash") @db.Decimal(10, 2)
+  deliveryNequi   Decimal?          @default(0) @map("delivery_nequi") @db.Decimal(10, 2)
   status          CashClosureStatus @default(OPEN)
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")

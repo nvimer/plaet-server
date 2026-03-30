@@ -11,6 +11,8 @@ export type CashClosureSummary = {
   totalVouchers?: number;
   vouchers?: number;
   totalDelivery?: number;
+  deliveryCash?: number;
+  deliveryNequi?: number;
   totalExpenses: number;
   expectedBalance: number;
   openingDate?: Date;
@@ -40,6 +42,8 @@ export class CashClosureService {
         nequiSales: Number(closure.totalNequi || 0),
         vouchers: Number(closure.totalVouchers || 0),
         totalDelivery: Number(closure.totalDelivery || 0),
+        deliveryCash: Number(closure.deliveryCash || 0),
+        deliveryNequi: Number(closure.deliveryNequi || 0),
         totalExpenses: Number(closure.totalExpenses || 0),
         expectedBalance: Number(closure.expectedBalance || 0),
         openingDate: closure.openingDate,
@@ -88,11 +92,19 @@ export class CashClosureService {
 
   async closeShift(
     id: string,
-    data: { actualBalance: number; totalDelivery: number },
+    data: {
+      actualBalance: number;
+      totalDelivery: number;
+      deliveryCash?: number;
+      deliveryNequi?: number;
+    },
     closedById: string,
   ) {
     const summary = await this.getSummary(id);
-    const finalExpectedBalance = summary.expectedBalance + data.totalDelivery;
+
+    // Only Cash delivery affects the expected physical balance in drawer
+    const deliveryCash = data.deliveryCash || 0;
+    const finalExpectedBalance = summary.expectedBalance + deliveryCash;
 
     return this.repository.close(id, {
       actualBalance: data.actualBalance,
@@ -103,6 +115,8 @@ export class CashClosureService {
       totalExpenses: summary.totalExpenses,
       totalVouchers: summary.totalVouchers || summary.vouchers || 0,
       totalDelivery: data.totalDelivery,
+      deliveryCash: data.deliveryCash || 0,
+      deliveryNequi: data.deliveryNequi || 0,
       closedById,
       closingDate: new Date(),
     });

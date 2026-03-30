@@ -118,6 +118,8 @@ export class CashClosureRepository {
       totalExpenses: number;
       totalVouchers: number;
       totalDelivery?: number;
+      deliveryCash?: number;
+      deliveryNequi?: number;
       closedById: string;
       closingDate: Date;
     },
@@ -133,6 +135,8 @@ export class CashClosureRepository {
         totalExpenses: data.totalExpenses,
         totalVouchers: data.totalVouchers,
         totalDelivery: data.totalDelivery || 0,
+        deliveryCash: data.deliveryCash || 0,
+        deliveryNequi: data.deliveryNequi || 0,
         status: CashClosureStatus.CLOSED,
         closingDate: data.closingDate,
         closedBy: {

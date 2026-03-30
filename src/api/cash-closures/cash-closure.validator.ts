@@ -18,6 +18,16 @@ export const closeCashClosureSchema = z.object({
       .nonnegative("Delivery total must be non-negative")
       .optional()
       .default(0),
+    deliveryCash: z
+      .number()
+      .nonnegative("Delivery cash must be non-negative")
+      .optional()
+      .default(0),
+    deliveryNequi: z
+      .number()
+      .nonnegative("Delivery nequi must be non-negative")
+      .optional()
+      .default(0),
   }),
   params: z.object({
     id: z.string().uuid("Invalid closure ID"),
