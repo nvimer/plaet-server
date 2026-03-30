@@ -19,7 +19,16 @@ export class CustomerRepository implements ICustomerRepository {
   async findById(id: string): Promise<Customer | null> {
     return await this.prisma.customer.findUnique({
       where: { id, deleted: false },
-      include: { orders: false, ticketBooks: false, dailyCodes: false },
+      include: { 
+        orders: { 
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          include: { items: { include: { menuItem: true } } }
+        }, 
+        ticketBooks: {
+          orderBy: { createdAt: "desc" }
+        } 
+      },
     });
   }
 
@@ -53,7 +62,14 @@ export class CustomerRepository implements ICustomerRepository {
       take,
       where: { ...where, deleted: false },
       orderBy,
-      include: { orders: false, ticketBooks: false, dailyCodes: false },
+      include: { 
+        _count: {
+          select: { 
+            ticketBooks: { where: { status: "active" } },
+            orders: true 
+          }
+        }
+      },
     });
   }
 
