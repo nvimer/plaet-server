@@ -1,4 +1,4 @@
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Order, Payment, OrderItem, MenuItem, MenuCategory } from "@prisma/client";
 import prisma from "../../database/prisma";
 
 export class AnalyticsRepository {
@@ -50,7 +50,7 @@ export class AnalyticsRepository {
     });
 
     const totalSold = orders.reduce(
-      (sum, order) => sum + Number(order.totalAmount),
+      (sum: number, order: Order) => sum + Number(order.totalAmount),
       0,
     );
     const orderCount = orders.length;
@@ -61,8 +61,8 @@ export class AnalyticsRepository {
       TICKET_BOOK: 0,
     };
 
-    orders.forEach((order) => {
-      order.payments.forEach((payment) => {
+    orders.forEach((order: Order & { payments: Payment[] }) => {
+      order.payments.forEach((payment: Payment) => {
         if (payment.method in breakdown) {
           breakdown[payment.method] += Number(payment.amount);
         }
@@ -97,7 +97,7 @@ export class AnalyticsRepository {
       { id: number | string; name: string; quantity: number; totalRevenue: number }
     > = {};
 
-    orderItems.forEach((item) => {
+    orderItems.forEach((item: OrderItem & { menuItem: MenuItem | null }) => {
       // Use menuItem ID or a synthetic ID based on notes for manual items
       const itemKey = item.menuItemId ? `menu-${item.menuItemId}` : `manual-${item.notes || "Otro"}`;
       const itemName = item.menuItem?.name || item.notes || "Producto Manual";
@@ -144,7 +144,7 @@ export class AnalyticsRepository {
       }
     });
 
-    return items.reduce((sum, item) => sum + item.quantity, 0);
+    return items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0);
   }
 
   async getSalesByCategory(startDate: Date, endDate: Date) {
@@ -169,7 +169,7 @@ export class AnalyticsRepository {
 
     const categoryStats: Record<string, number> = {};
 
-    orderItems.forEach((item) => {
+    orderItems.forEach((item: OrderItem & { menuItem: (MenuItem & { category: MenuCategory }) | null }) => {
       const categoryName = item.menuItem?.category?.name || "Otros";
       if (!categoryStats[categoryName]) {
         categoryStats[categoryName] = 0;
@@ -200,3 +200,4 @@ export class AnalyticsRepository {
     return Number(expenses._sum.amount || 0);
   }
 }
+

@@ -135,16 +135,14 @@ export class PaymentService {
               date: today,
               isUsed: true,
               restaurantId,
-              usedAtPaymentId: payment.id // Link back to payment
             },
           });
         } else {
-           // Update existing code to link to this payment if not already linked
+           // Update existing code to mark as used
            await tx.dailyTicketBookCode.update({
              where: { id: dailyCode.id },
              data: { 
                isUsed: true,
-               usedAtPaymentId: payment.id 
              }
            });
         }

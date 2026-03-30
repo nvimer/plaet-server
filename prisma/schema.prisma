@@ -438,11 +438,10 @@ model DailyTicketBookCode {
   code            String            @unique
   date            DateTime          @db.Date
   isUsed          Boolean           @default(false) @map("is_used")
-  usedAtPaymentId String?           @unique @map("used_at_payment_id")
   createdAt       DateTime          @default(now()) @map("created_at")
   restaurantId    String?           @map("restaurant_id")
   customer        Customer?         @relation(fields: [customerId], references: [id])
-  usedAtPayment   Payment?          @relation("CodeUsedInPayment", fields: [usedAtPaymentId], references: [id])
+  usedAtPayment   Payment?          @relation("CodeUsedInPayment")
   ticketBookUsage TicketBookUsage[]
   restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id])
 
