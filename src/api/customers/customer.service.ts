@@ -48,9 +48,9 @@ export class CustomerService implements ICustomerService {
   }
 
   async findByPhoneWithActiveTickets(
-    phone: string,
+    query: string,
   ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null> {
-    return await this.customerRepository.findByPhoneWithActiveTickets(phone);
+    return await this.customerRepository.findByPhoneWithActiveTickets(query);
   }
 
   async searchCustomers(

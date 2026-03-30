@@ -114,14 +114,25 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async findByPhoneWithActiveTickets(
-    phone: string,
+    query: string,
   ): Promise<(Customer & { ticketBooks: TicketBook[] }) | null> {
     return await this.prisma.customer.findFirst({
       where: {
         deleted: false,
-        OR: [{ phone: phone }, { phone2: phone }],
+        OR: [
+          { phone: { contains: query } },
+          { phone2: { contains: query } },
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+        ],
       },
-      include: { ticketBooks: { where: { status: "active" } } },
+      include: { 
+        ticketBooks: { 
+          where: { 
+            status: "active",
+          } 
+        } 
+      },
     });
   }
 

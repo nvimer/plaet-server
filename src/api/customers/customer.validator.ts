@@ -107,10 +107,10 @@ export const customerIdSchema = z.object({
 });
 
 /**
- * Schema for phone number validation (for search by phone)
+ * Schema for customer search by query (phone or name)
  */
 export const phoneSearchSchema = z.object({
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  phone: z.string().min(3, "Search query must be at least 3 characters"),
 });
 
 // Type exports for TypeScript
