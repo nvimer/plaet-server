@@ -199,5 +199,64 @@ export class AnalyticsRepository {
 
     return Number(expenses._sum.amount || 0);
   }
+
+  /**
+   * Gets a breakdown of proteins sold (items in 'Proteínas' category)
+   */
+  async getProteinBreakdown(startDate: Date, endDate: Date) {
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          status: OrderStatus.PAID,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        menuItem: {
+          category: {
+            name: "Proteínas",
+          },
+        },
+      },
+      include: {
+        menuItem: true,
+      },
+    });
+
+    const proteinStats: Record<string, number> = {};
+
+    orderItems.forEach((item: OrderItem & { menuItem: MenuItem | null }) => {
+      const proteinName = item.menuItem?.name || "Proteína Desconocida";
+      if (!proteinStats[proteinName]) {
+        proteinStats[proteinName] = 0;
+      }
+      proteinStats[proteinName] += item.quantity;
+    });
+
+    return Object.entries(proteinStats).map(([name, quantity]) => ({
+      name,
+      quantity,
+    }));
+  }
+
+  /**
+   * Counts the total portions used from Ticket Books
+   */
+  async getPortionUsageCount(startDate: Date, endDate: Date) {
+    const usages = await prisma.ticketBookUsage.aggregate({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: {
+        portionCount: true,
+      },
+    });
+
+    return usages._sum.portionCount || 0;
+  }
 }
 

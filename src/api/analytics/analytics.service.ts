@@ -33,6 +33,14 @@ export class AnalyticsService {
       startDate,
       endDate,
     );
+    const proteinBreakdown = await this.repository.getProteinBreakdown(
+      startDate,
+      endDate,
+    );
+    const portionsCount = await this.repository.getPortionUsageCount(
+      startDate,
+      endDate,
+    );
 
     const netBalance = salesSummary.totalSold - totalExpenses;
 
@@ -41,8 +49,10 @@ export class AnalyticsService {
         totalSold: salesSummary.totalSold,
         orderCount: salesSummary.orderCount,
         packagingCount,
+        portionsCount,
         byPaymentMethod: salesSummary.breakdown,
         byCategory: salesByCategory,
+        byProtein: proteinBreakdown,
       },
       topProducts,
       totalExpenses,
