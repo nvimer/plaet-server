@@ -1,4 +1,4 @@
-import { CashClosureStatus, PaymentMethod } from "@prisma/client";
+import { CashClosureStatus, OrderType, PaymentMethod } from "@prisma/client";
 import prisma, { getBasePrismaClient } from "../../database/prisma";
 import { tenantContext } from "../../utils/tenant-context";
 import { OpenCashClosureDto } from "./cash-closure.validator";
@@ -170,6 +170,37 @@ export class CashClosureRepository {
       },
     });
     return Number(result._sum.amount || 0);
+  }
+
+  async sumDeliveryPaymentsByMethod(closureId: string) {
+    const orders = await prisma.order.findMany({
+      where: {
+        cashClosureId: closureId,
+        type: OrderType.DELIVERY,
+      },
+      include: {
+        payments: true,
+      },
+    });
+
+    let deliveryCash = 0;
+    let deliveryNequi = 0;
+
+    for (const order of orders) {
+      for (const payment of order.payments) {
+        if (payment.method === PaymentMethod.CASH) {
+          deliveryCash += Number(payment.amount);
+        } else if (payment.method === PaymentMethod.NEQUI) {
+          deliveryNequi += Number(payment.amount);
+        }
+      }
+    }
+
+    return {
+      totalDelivery: deliveryCash + deliveryNequi,
+      deliveryCash,
+      deliveryNequi,
+    };
   }
 
   async sumCashPayments(startDate: Date, endDate: Date) {

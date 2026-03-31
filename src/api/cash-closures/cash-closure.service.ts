@@ -52,16 +52,17 @@ export class CashClosureService {
     }
 
     // If it's open, calculate current totals using explicit links
-    const [cashSales, nequiSales, totalExpenses, totalVouchers] =
+    const [cashSales, nequiSales, totalExpenses, totalVouchers, deliveryStats] =
       await Promise.all([
         this.repository.sumPaymentsByMethod(id, PaymentMethod.CASH),
         this.repository.sumPaymentsByMethod(id, PaymentMethod.NEQUI),
         this.repository.sumExpensesByClosure(id),
         this.repository.sumPaymentsByMethod(id, PaymentMethod.TICKET_BOOK),
+        this.repository.sumDeliveryPaymentsByMethod(id),
       ]);
 
     const expectedBalance =
-      Number(closure.openingBalance) + cashSales - totalExpenses;
+      Number(closure.openingBalance) + cashSales + deliveryStats.deliveryCash - totalExpenses;
 
     return {
       openingBalance: Number(closure.openingBalance),
@@ -69,6 +70,9 @@ export class CashClosureService {
       nequiSales,
       totalExpenses,
       totalVouchers,
+      totalDelivery: deliveryStats.totalDelivery,
+      deliveryCash: deliveryStats.deliveryCash,
+      deliveryNequi: deliveryStats.deliveryNequi,
       expectedBalance,
       openingDate: closure.openingDate,
     };
