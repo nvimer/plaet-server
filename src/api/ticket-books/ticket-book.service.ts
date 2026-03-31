@@ -31,11 +31,36 @@ export class TicketBookService {
         );
       }
 
-      // 2. Calculate expiry date
+      // 2. Check daily limit: max 3 ticket books per customer per day
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const dailyBooks = await tx.ticketBook.count({
+        where: {
+          customerId: data.customerId,
+          purchaseDate: {
+            gte: today,
+            lt: tomorrow,
+          },
+          status: "active",
+        },
+      });
+
+      if (dailyBooks >= 3) {
+        throw new CustomError(
+          "El cliente ya ha adquirido el límite máximo de 3 tiqueteras hoy. Intenta mañana.",
+          HttpStatus.BAD_REQUEST,
+          "DAILY_TICKET_LIMIT_EXCEEDED"
+        );
+      }
+
+      // 3. Calculate expiry date
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + data.expiryDays);
 
-      // 3. Create TicketBook
+      // 4. Create TicketBook
       const ticketBook = await tx.ticketBook.create({
         data: {
           customerId: data.customerId,
@@ -49,7 +74,7 @@ export class TicketBookService {
         },
       });
 
-      // 4. Register the Payment in the Cash Closure
+      // 5. Register the Payment in the Cash Closure
       // Since it's a Tiquetera SALE, it's CASH income today
       await tx.payment.create({
         data: {
