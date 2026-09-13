@@ -33,13 +33,21 @@ export const errorHandler = (
       meta: err.meta,
     });
     switch (err.code) {
-      case "P2002":
+      case "P2002": {
+        const target = err.meta?.target;
+        const fields = Array.isArray(target) ? target : [];
+        const fieldName = fields.length === 1
+          ? fields[0]
+          : fields.length > 1
+            ? fields.join(", ")
+            : "this value";
         return res.status(HttpStatus.CONFLICT).json({
           success: false,
-          message: "Resource with this unique identifier already exists.",
+          message: `Ya existe un registro con el mismo nombre. Por favor usa uno diferente.`,
           errorCode: "DUPLICATE_ENTRY",
           meta: err.meta,
         });
+      }
       case "P2025":
         return res.status(HttpStatus.NOT_FOUND).json({
           success: false,

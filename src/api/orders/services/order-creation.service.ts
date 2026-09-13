@@ -144,6 +144,7 @@ export class OrderCreationService {
 
     const existing = await tx.customer.findFirst({
       where: {
+        deleted: false,
         restaurantId,
         OR: [{ phone: data.phone }, { phone2: data.phone }],
       },
@@ -472,6 +473,7 @@ export class OrderCreationService {
               menuItem: true,
             },
           },
+          customer: true,
         },
       });
 
@@ -711,7 +713,7 @@ export class OrderCreationService {
 
       const completeOrder = await tx.order.findUnique({
         where: { id: masterOrderId },
-        include: { items: { include: { menuItem: true } } },
+        include: { items: { include: { menuItem: true } }, customer: true },
       });
 
       return { orders: [completeOrder as OrderWithItems], tableTotal: finalTableTotal };

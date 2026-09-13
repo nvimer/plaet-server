@@ -110,6 +110,7 @@ export class OrderService implements OrderServiceInterface {
         include: {
           items: { include: { menuItem: true } },
           table: true,
+          customer: true,
           payments: true,
           waiter: {
             select: { id: true, firstName: true, lastName: true },

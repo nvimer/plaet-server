@@ -85,11 +85,11 @@ export class TicketBookService {
         },
       });
 
-      return ticketBook;
+      return { ...ticketBook, remainingPortions: ticketBook.totalPortions - ticketBook.consumedPortions };
     });
   }
 
-  async getCustomerTickets(customerId: string): Promise<TicketBook[]> {
+  async getCustomerTickets(customerId: string): Promise<(TicketBook & { remainingPortions: number })[]> {
     return await this.repository.findByCustomerId(customerId);
   }
 }

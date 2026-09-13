@@ -17,11 +17,15 @@ export class TicketBookRepository {
     });
   }
 
-  async findByCustomerId(customerId: string): Promise<TicketBook[]> {
-    return await this.prisma.ticketBook.findMany({
+  async findByCustomerId(customerId: string): Promise<(TicketBook & { remainingPortions: number })[]> {
+    const tickets = await this.prisma.ticketBook.findMany({
       where: { customerId, deleted: false },
       orderBy: { purchaseDate: "desc" },
     });
+    return tickets.map((t) => ({
+      ...t,
+      remainingPortions: t.totalPortions - t.consumedPortions,
+    }));
   }
 
   async update(id: string, data: Prisma.TicketBookUpdateInput): Promise<TicketBook> {

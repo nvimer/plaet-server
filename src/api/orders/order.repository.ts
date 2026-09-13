@@ -65,6 +65,7 @@ class OrderRepository implements OrderRepositoryInterface {
               menuItem: true,
             },
           },
+          customer: true,
           payments: true,
         },
         orderBy: { createdAt: "desc" },
@@ -163,6 +164,7 @@ class OrderRepository implements OrderRepositoryInterface {
             menuItem: true,
           },
         },
+        customer: true,
         payments: true,
       },
     });
