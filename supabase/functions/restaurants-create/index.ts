@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getUserFromRequest, hasRole } from "../_shared/auth.ts";
 import { hashPassword } from "../_shared/password.ts";
+import { seedDefaultCategories } from "../_shared/menu-categories.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -99,6 +100,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse({ success: false, message: insertError.message }, 500, origin);
     }
 
+    // A restaurant without categories cannot have menu items or a daily menu.
+    const categoriesCreated = await seedDefaultCategories(supabase, restaurant.id);
+
     let tempPassword: string | null = null;
     let emailSent = false;
 
@@ -156,6 +160,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         nit: restaurant.nit, logoUrl: restaurant.logo_url,
         currency: restaurant.currency, timezone: restaurant.timezone,
         createdAt: restaurant.created_at, updatedAt: restaurant.updated_at,
+        categoriesCreated,
         ...(adminEmail && { adminUser: { email: adminEmail, tempPassword: emailSent ? undefined : tempPassword, emailSent } }),
       },
     }, 201, origin);

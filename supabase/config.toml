@@ -84,6 +84,15 @@ verify_jwt = false
 [functions.menu-categories-get]
 verify_jwt = false
 
+[functions.menu-categories-create]
+verify_jwt = false
+
+[functions.menu-categories-update]
+verify_jwt = false
+
+[functions.menu-categories-delete]
+verify_jwt = false
+
 [functions.tables-list]
 verify_jwt = false
 
