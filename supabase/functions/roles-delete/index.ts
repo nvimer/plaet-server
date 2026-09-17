@@ -17,53 +17,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const url = new URL(req.url);
-    const pathParts = url.pathname.split("/");
-    const itemId = pathParts[pathParts.length - 1];
+    const id = url.searchParams.get("id");
 
-    if (!itemId || isNaN(parseInt(itemId))) {
-      return cors(error("Invalid item ID", 400), req);
-    }
+    if (!id) return cors(error("Role ID is required", 400), req);
 
     const supabase = getSupabase();
 
-    // Verify item exists
-    const { data: existingItem } = await supabase
-      .from("menu_items")
-      .select("id, restaurant_id")
-      .eq("id", parseInt(itemId))
-      .eq("deleted", false)
-      .single();
-
-    if (!existingItem) {
-      return cors(error("Menu item not found", 404, "ITEM_NOT_FOUND"), req);
-    }
-
-    if (user.restaurantId && existingItem.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403), req);
-    }
-
-    // Soft delete
     const { error: deleteError } = await supabase
-      .from("menu_items")
-      .update({
-        deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", parseInt(itemId));
+      .from("roles")
+      .update({ deleted: true, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("deleted", false);
 
     if (deleteError) {
       console.error("Delete error:", deleteError);
-      return cors(error("Failed to delete menu item", 500), req);
+      return cors(error("Failed to delete role", 500), req);
     }
 
     return cors(json({
       success: true,
-      message: "Menu item deleted successfully",
+      message: "Role deleted successfully",
+      data: null,
     }), req);
 
   } catch (e) {
-    console.error("MENU ITEM DELETE ERROR:", e);
+    console.error("ROLES DELETE ERROR:", e);
     return cors(error("Internal server error", 500), req);
   }
 });

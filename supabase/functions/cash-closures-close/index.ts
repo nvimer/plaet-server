@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,17 +9,17 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "POST") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const input = await req.json();
 
     if (input.actualBalance === undefined || input.actualBalance < 0) {
-      return cors(error("Actual balance is required and must be non-negative", 400));
+      return cors(error("Actual balance is required and must be non-negative", 400), req);
     }
 
     const supabase = getSupabase();
@@ -36,7 +36,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (!openClosure) {
-      return cors(error("No open cash closure found", 404, "NO_OPEN_CLOSURE"));
+      return cors(error("No open cash closure found", 404, "NO_OPEN_CLOSURE"), req);
     }
 
     // Calculate totals from orders
@@ -102,13 +102,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (closeError) {
       console.error("Close error:", closeError);
-      return cors(error("Failed to close cash closure", 500));
+      return cors(error("Failed to close cash closure", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Cash closure closed successfully",
-      data: {
+      data: deepToCamelCase({
         ...closedClosure,
         summary: {
           totalRevenue,
@@ -117,11 +117,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           totalVouchers,
           totalExpenses,
         },
-      },
-    }));
+      }),
+    }), req);
 
   } catch (e) {
     console.error("CASH CLOSURE CLOSE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

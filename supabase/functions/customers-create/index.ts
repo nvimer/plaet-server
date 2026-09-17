@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,17 +9,17 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "POST") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const input = await req.json();
 
     if (!input.firstName || !input.lastName || !input.phone) {
-      return cors(error("First name, last name, and phone are required", 400));
+      return cors(error("First name, last name, and phone are required", 400), req);
     }
 
     const supabase = getSupabase();
@@ -33,7 +33,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (existing) {
-      return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"));
+      return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"), req);
     }
 
     const { data: newCustomer, error: createError } = await supabase
@@ -54,17 +54,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (createError) {
       console.error("Create error:", createError);
-      return cors(error("Failed to create customer", 500));
+      return cors(error("Failed to create customer", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Customer created successfully",
-      data: newCustomer,
-    }), 201);
+      data: deepToCamelCase(newCustomer),
+    }, 201), req);
 
   } catch (e) {
     console.error("CUSTOMER CREATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

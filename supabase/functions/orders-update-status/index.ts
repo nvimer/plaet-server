@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -19,22 +19,22 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 };
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "PATCH") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
     const pathParts = url.pathname.split("/");
     const orderId = pathParts[pathParts.length - 2]; // /orders/:id/status
 
-    if (!orderId) return cors(error("Order ID required", 400));
+    if (!orderId) return cors(error("Order ID required", 400), req);
 
     const { status: newStatus } = await req.json();
 
-    if (!newStatus) return cors(error("Status is required", 400));
+    if (!newStatus) return cors(error("Status is required", 400), req);
 
     const supabase = getSupabase();
 
@@ -47,17 +47,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (fetchError || !order) {
-      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"));
+      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     // Validate status transition
     const allowedTransitions = VALID_TRANSITIONS[order.status] || [];
     if (!allowedTransitions.includes(newStatus)) {
-      return cors(error(`Cannot transition from ${order.status} to ${newStatus}`, 400, "INVALID_TRANSITION"));
+      return cors(error(`Cannot transition from ${order.status} to ${newStatus}`, 400, "INVALID_TRANSITION"), req);
     }
 
     // Update order status
@@ -68,7 +68,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return cors(error("Failed to update order status", 500));
+      return cors(error("Failed to update order status", 500), req);
     }
 
     // If cancelled, revert stock
@@ -104,11 +104,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return cors(json({
       success: true,
       message: "Order status updated successfully",
-      data: updatedOrder,
-    }));
+      data: deepToCamelCase(updatedOrder),
+    }), req);
 
   } catch (e) {
     console.error("ORDER STATUS UPDATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

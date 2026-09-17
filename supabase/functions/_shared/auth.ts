@@ -61,11 +61,14 @@ export function getUserFromRequest(req: Request): { id: string; restaurantId: st
   };
 }
 
-export function cors(res: Response): Response {
+export function cors(res: Response, req?: Request): Response {
   const h = new Headers(res.headers);
-  h.set("Access-Control-Allow-Origin", Deno.env.get("ALLOWED_ORIGINS") || "*");
+  const allowed = (Deno.env.get("ALLOWED_ORIGINS") || "").split(",").map(s => s.trim()).filter(Boolean);
+  const origin = req?.headers.get("Origin") || "";
+  const allowOrigin = allowed.length > 0 && allowed.includes(origin) ? origin : (allowed[0] || "*");
+  h.set("Access-Control-Allow-Origin", allowOrigin);
   h.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-  h.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
   h.set("Access-Control-Allow-Credentials", "true");
   return new Response(res.body, { ...res, headers: h });
 }
@@ -79,4 +82,27 @@ export function json(data: unknown, status = 200): Response {
 
 export function error(message: string, status = 400, code?: string): Response {
   return json({ success: false, message, code }, status);
+}
+
+function toSnakeCase(str: string): string {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+export function deepToCamelCase(obj: unknown): unknown {
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepToCamelCase(item));
+  }
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([key, value]) => [
+        toCamelCase(key),
+        deepToCamelCase(value),
+      ])
+    );
+  }
+  return obj;
 }

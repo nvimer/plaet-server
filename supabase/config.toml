@@ -35,3 +35,123 @@ enable_confirmations = false
 [storage]
 enabled = true
 file_size_limit = "5MiB"
+
+[functions.auth-login]
+verify_jwt = false
+
+[functions.auth-register]
+verify_jwt = false
+
+[functions.auth-change-password]
+verify_jwt = false
+
+[functions.orders-list]
+verify_jwt = false
+
+[functions.orders-get]
+verify_jwt = false
+
+[functions.orders-create]
+verify_jwt = false
+
+[functions.orders-update-status]
+verify_jwt = false
+
+[functions.orders-cancel]
+verify_jwt = false
+
+[functions.orders-update-item-status]
+verify_jwt = false
+
+[functions.menu-items-list]
+verify_jwt = false
+
+[functions.menu-items-get]
+verify_jwt = false
+
+[functions.menu-items-create]
+verify_jwt = false
+
+[functions.menu-items-update]
+verify_jwt = false
+
+[functions.menu-items-delete]
+verify_jwt = false
+
+[functions.menu-categories-list]
+verify_jwt = false
+
+[functions.menu-categories-get]
+verify_jwt = false
+
+[functions.tables-list]
+verify_jwt = false
+
+[functions.tables-create]
+verify_jwt = false
+
+[functions.tables-update]
+verify_jwt = false
+
+[functions.customers-list]
+verify_jwt = false
+
+[functions.customers-create]
+verify_jwt = false
+
+[functions.customers-update]
+verify_jwt = false
+
+[functions.cash-closures-list]
+verify_jwt = false
+
+[functions.cash-closures-get]
+verify_jwt = false
+
+[functions.cash-closures-open]
+verify_jwt = false
+
+[functions.cash-closures-close]
+verify_jwt = false
+
+[functions.payments-list]
+verify_jwt = false
+
+[functions.payments-create]
+verify_jwt = false
+
+[functions.roles-list]
+verify_jwt = false
+
+[functions.roles-get]
+verify_jwt = false
+
+[functions.roles-create]
+verify_jwt = false
+
+[functions.roles-update]
+verify_jwt = false
+
+[functions.roles-delete]
+verify_jwt = false
+
+[functions.roles-assign-permissions]
+verify_jwt = false
+
+[functions.permissions-list]
+verify_jwt = false
+
+[functions.restaurants-list]
+verify_jwt = false
+
+[functions.restaurants-get]
+verify_jwt = false
+
+[functions.restaurants-create]
+verify_jwt = false
+
+[functions.restaurants-update]
+verify_jwt = false
+
+[functions.restaurants-delete]
+verify_jwt = false

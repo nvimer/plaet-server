@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,11 +9,11 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "GET") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
@@ -65,7 +65,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (queryError) {
       console.error("Query error:", queryError);
-      return cors(error("Failed to fetch orders", 500));
+      return cors(error("Failed to fetch orders", 500), req);
     }
 
     // Get total count for pagination
@@ -92,17 +92,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return cors(json({
       success: true,
       message: "Orders fetched successfully",
-      data: orders || [],
+      data: deepToCamelCase(orders || []),
       meta: {
         page,
         limit,
         total: total || 0,
         totalPages: Math.ceil((total || 0) / limit),
       },
-    }));
+    }), req);
 
   } catch (e) {
     console.error("ORDERS LIST ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

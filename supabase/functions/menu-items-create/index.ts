@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,21 +9,21 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "POST") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const input = await req.json();
 
     if (!input.name || !input.price || !input.categoryId) {
-      return cors(error("Name, price, and categoryId are required", 400));
+      return cors(error("Name, price, and categoryId are required", 400), req);
     }
 
     if (input.price < 0) {
-      return cors(error("Price must be non-negative", 400));
+      return cors(error("Price must be non-negative", 400), req);
     }
 
     const supabase = getSupabase();
@@ -37,7 +37,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (!category) {
-      return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"));
+      return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"), req);
     }
 
     // Check for duplicate name
@@ -49,7 +49,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (existing) {
-      return cors(error("A menu item with this name already exists", 409, "DUPLICATE_NAME"));
+      return cors(error("A menu item with this name already exists", 409, "DUPLICATE_NAME"), req);
     }
 
     const { data: newItem, error: createError } = await supabase
@@ -78,17 +78,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (createError) {
       console.error("Create error:", createError);
-      return cors(error("Failed to create menu item", 500));
+      return cors(error("Failed to create menu item", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Menu item created successfully",
-      data: newItem,
-    }), 201);
+      data: deepToCamelCase(newItem),
+    }, 201), req);
 
   } catch (e) {
     console.error("MENU ITEM CREATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

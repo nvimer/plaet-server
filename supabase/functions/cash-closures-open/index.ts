@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,17 +9,17 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "POST") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const input = await req.json();
 
     if (input.openingBalance === undefined || input.openingBalance < 0) {
-      return cors(error("Opening balance is required and must be non-negative", 400));
+      return cors(error("Opening balance is required and must be non-negative", 400), req);
     }
 
     const supabase = getSupabase();
@@ -33,7 +33,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (existingOpen) {
-      return cors(error("There is already an open cash closure. Please close it first.", 400, "CLOSURE_ALREADY_OPEN"));
+      return cors(error("There is already an open cash closure. Please close it first.", 400, "CLOSURE_ALREADY_OPEN"), req);
     }
 
     const { data: newClosure, error: createError } = await supabase
@@ -56,17 +56,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (createError) {
       console.error("Create error:", createError);
-      return cors(error("Failed to open cash closure", 500));
+      return cors(error("Failed to open cash closure", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Cash closure opened successfully",
-      data: newClosure,
-    }), 201);
+      data: deepToCamelCase(newClosure),
+    }, 201), req);
 
   } catch (e) {
     console.error("CASH CLOSURE OPEN ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

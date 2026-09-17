@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,11 +9,11 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "GET") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
@@ -21,7 +21,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const orderId = pathParts[pathParts.length - 1];
 
     if (!orderId || !orderId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      return cors(error("Invalid order ID", 400));
+      return cors(error("Invalid order ID", 400), req);
     }
 
     const supabase = getSupabase();
@@ -45,21 +45,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (queryError || !order) {
-      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"));
+      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     return cors(json({
       success: true,
       message: "Order fetched successfully",
-      data: order,
-    }));
+      data: deepToCamelCase(order),
+    }), req);
 
   } catch (e) {
     console.error("ORDER GET ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

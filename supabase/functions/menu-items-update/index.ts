@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,11 +9,11 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "PATCH") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
@@ -21,7 +21,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const itemId = pathParts[pathParts.length - 1];
 
     if (!itemId || isNaN(parseInt(itemId))) {
-      return cors(error("Invalid item ID", 400));
+      return cors(error("Invalid item ID", 400), req);
     }
 
     const input = await req.json();
@@ -37,11 +37,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (!existingItem) {
-      return cors(error("Menu item not found", 404, "ITEM_NOT_FOUND"));
+      return cors(error("Menu item not found", 404, "ITEM_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && existingItem.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     // Check for duplicate name if name is being changed
@@ -55,7 +55,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .single();
 
       if (duplicate) {
-        return cors(error("A menu item with this name already exists", 409, "DUPLICATE_NAME"));
+        return cors(error("A menu item with this name already exists", 409, "DUPLICATE_NAME"), req);
       }
     }
 
@@ -69,7 +69,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .single();
 
       if (!category) {
-        return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"));
+        return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"), req);
       }
     }
 
@@ -80,7 +80,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (input.name !== undefined) updateData.name = input.name.trim();
     if (input.description !== undefined) updateData.description = input.description;
     if (input.price !== undefined) {
-      if (input.price < 0) return cors(error("Price must be non-negative", 400));
+      if (input.price < 0) return cors(error("Price must be non-negative", 400), req);
       updateData.price = input.price;
     }
     if (input.categoryId !== undefined) updateData.category_id = input.categoryId;
@@ -105,17 +105,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return cors(error("Failed to update menu item", 500));
+      return cors(error("Failed to update menu item", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Menu item updated successfully",
-      data: updatedItem,
-    }));
+      data: deepToCamelCase(updatedItem),
+    }), req);
 
   } catch (e) {
     console.error("MENU ITEM UPDATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

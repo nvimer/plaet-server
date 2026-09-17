@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,11 +9,11 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "GET") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
@@ -21,7 +21,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const closureId = pathParts[pathParts.length - 1];
 
     if (!closureId) {
-      return cors(error("Invalid closure ID", 400));
+      return cors(error("Invalid closure ID", 400), req);
     }
 
     const supabase = getSupabase();
@@ -42,11 +42,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (queryError || !closure) {
-      return cors(error("Cash closure not found", 404, "CLOSURE_NOT_FOUND"));
+      return cors(error("Cash closure not found", 404, "CLOSURE_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && closure.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     // Get orders summary for this closure
@@ -77,15 +77,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return cors(json({
       success: true,
       message: "Cash closure fetched successfully",
-      data: {
+      data: deepToCamelCase({
         ...closure,
         ordersSummary,
         expensesSummary,
-      },
-    }));
+      }),
+    }), req);
 
   } catch (e) {
     console.error("CASH CLOSURE GET ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

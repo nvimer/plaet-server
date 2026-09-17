@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,11 +9,11 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "PATCH") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
@@ -21,7 +21,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const customerId = pathParts[pathParts.length - 1];
 
     if (!customerId) {
-      return cors(error("Invalid customer ID", 400));
+      return cors(error("Invalid customer ID", 400), req);
     }
 
     const input = await req.json();
@@ -36,11 +36,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (!existingCustomer) {
-      return cors(error("Customer not found", 404, "CUSTOMER_NOT_FOUND"));
+      return cors(error("Customer not found", 404, "CUSTOMER_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && existingCustomer.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     // Check for duplicate phone if phone is being changed
@@ -54,7 +54,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .single();
 
       if (duplicate) {
-        return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"));
+        return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"), req);
       }
     }
 
@@ -79,17 +79,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return cors(error("Failed to update customer", 500));
+      return cors(error("Failed to update customer", 500), req);
     }
 
     return cors(json({
       success: true,
       message: "Customer updated successfully",
-      data: updatedCustomer,
-    }));
+      data: deepToCamelCase(updatedCustomer),
+    }), req);
 
   } catch (e) {
     console.error("CUSTOMER UPDATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

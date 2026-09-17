@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -83,17 +83,17 @@ async function getOrCreateCustomer(
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "POST") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const input: CreateOrderInput = await req.json();
 
     if (!input.type || !input.items?.length) {
-      return cors(error("Type and items are required", 400));
+      return cors(error("Type and items are required", 400), req);
     }
 
     const supabase = getSupabase();
@@ -130,10 +130,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (item.menuItemId) {
         const mi = menuItemMap.get(item.menuItemId);
         if (mi && !mi.is_available) {
-          return cors(error(`Item ${mi.name} is not available`, 400, "ITEMS_NOT_AVAILABLE"));
+          return cors(error(`Item ${mi.name} is not available`, 400, "ITEMS_NOT_AVAILABLE"), req);
         }
         if (mi && mi.inventory_type === "TRACKED" && (mi.stock_quantity || 0) < item.quantity) {
-          return cors(error(`Insufficient stock for ${mi.name}`, 400, "INSUFFICIENT_STOCK"));
+          return cors(error(`Insufficient stock for ${mi.name}`, 400, "INSUFFICIENT_STOCK"), req);
         }
       }
     }
@@ -191,7 +191,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .single();
 
       if (!closure) {
-        return cors(error("No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.", 400, "CASH_CLOSURE_REQUIRED"));
+        return cors(error("No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.", 400, "CASH_CLOSURE_REQUIRED"), req);
       }
       cashClosureId = closure.id;
     }
@@ -272,7 +272,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (createError || !newOrder) {
         console.error("Create order error:", JSON.stringify(createError));
-        return cors(error("Failed to create order", 500, createError?.message));
+        return cors(error("Failed to create order", 500, createError?.message), req);
       }
 
       orderId = newOrder.id;
@@ -355,11 +355,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return cors(json({
       success: true,
       message: `Order with ID ${orderId} created successfully`,
-      data: createdOrder,
-    }), existingOrderId ? 200 : 201);
+      data: deepToCamelCase(createdOrder),
+    }, existingOrderId ? 200 : 201), req);
 
   } catch (e) {
     console.error("ORDER CREATE ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });

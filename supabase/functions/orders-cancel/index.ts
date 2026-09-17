@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,18 +9,18 @@ function getSupabase() {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
-  if (req.method !== "DELETE") return cors(error("Method not allowed", 405));
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
   const user = getUserFromRequest(req);
-  if (!user) return cors(error("Unauthorized", 401));
+  if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
     const url = new URL(req.url);
     const pathParts = url.pathname.split("/");
     const orderId = pathParts[pathParts.length - 1];
 
-    if (!orderId) return cors(error("Order ID required", 400));
+    if (!orderId) return cors(error("Order ID required", 400), req);
 
     const supabase = getSupabase();
 
@@ -33,16 +33,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (fetchError || !order) {
-      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"));
+      return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
     if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
-      return cors(error("Forbidden", 403));
+      return cors(error("Forbidden", 403), req);
     }
 
     // Check if order can be cancelled
     if (order.status === "DELIVERED" || order.status === "CANCELLED") {
-      return cors(error(`Cannot cancel order with status ${order.status}`, 400, "CANNOT_CANCEL"));
+      return cors(error(`Cannot cancel order with status ${order.status}`, 400, "CANNOT_CANCEL"), req);
     }
 
     // Update order status to CANCELLED
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return cors(error("Failed to cancel order", 500));
+      return cors(error("Failed to cancel order", 500), req);
     }
 
     // Revert stock for all items
@@ -80,11 +80,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return cors(json({
       success: true,
       message: `Order with ID ${orderId} has been CANCELLED`,
-      data: { id: orderId, status: "CANCELLED" },
-    }));
+      data: deepToCamelCase({ id: orderId, status: "CANCELLED" }),
+    }), req);
 
   } catch (e) {
     console.error("ORDER CANCEL ERROR:", e);
-    return cors(error("Internal server error", 500));
+    return cors(error("Internal server error", 500), req);
   }
 });
