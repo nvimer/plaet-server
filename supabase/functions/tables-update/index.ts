@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserFromRequest, hasRole } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -32,12 +33,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "PATCH") return cors(json({ success: false, message: "Method not allowed" }, 405), req);
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    let token = "";
-    if (authHeader?.startsWith("Bearer ")) token = authHeader.substring(7);
-    if (!token) return cors(json({ success: false, message: "Unauthorized" }, 401), req);
-
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const user = await getUserFromRequest(req);
+    if (!user) return cors(json({ success: false, message: "Unauthorized" }, 401), req);
 
     const body = await req.json();
     const { id, ...input } = body;
@@ -59,7 +56,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(json({ success: false, message: "Table not found" }, 404), req);
     }
 
-    if (payload.restaurantId && existingTable.restaurant_id !== payload.restaurantId) {
+    if (!hasRole(user, "SUPERADMIN") && existingTable.restaurant_id !== user.restaurantId) {
       return cors(json({ success: false, message: "Forbidden" }, 403), req);
     }
 

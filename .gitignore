@@ -12,3 +12,4 @@ agents/
 coverage/
 
 supabase/.temp/
+.env.production

@@ -1,38 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserFromRequest } from "../_shared/auth.ts";
+import { hashPassword } from "../_shared/password.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const JWT_SECRET = Deno.env.get("JWT_SECRET")!;
 
 function getSupabaseClient() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-}
-
-function verifyJwt(token: string): Record<string, unknown> | null {
-  try {
-    const [headerB64, bodyB64, sigB64] = token.split(".");
-    const payload = JSON.parse(atob(bodyB64.replace(/-/g, "+").replace(/_/g, "/")));
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-function getUserFromRequest(req: Request) {
-  const authHeader = req.headers.get("Authorization");
-  let token = "";
-  if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.substring(7);
-  }
-  if (!token) return null;
-  const payload = verifyJwt(token);
-  if (!payload) return null;
-  return {
-    id: payload.sub as string,
-    restaurantId: payload.restaurantId as string | null,
-    user_role: payload.user_role as string,
-  };
 }
 
 function corsHeaders(origin: string | null) {
@@ -57,17 +31,6 @@ function generatePassword(length = 16): string {
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
   return Array.from(array, (b) => chars[b % chars.length]).join("");
-}
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256);
-  const hashArray = new Uint8Array(hash);
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const hashHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2:100000:${saltHex}:${hashHex}`;
 }
 
 async function sendInvitationEmail(to: string, name: string, restaurantName: string, tempPassword: string): Promise<boolean> {
@@ -102,7 +65,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse({ success: false, message: "Method not allowed" }, 405, origin);
   }
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return jsonResponse({ success: false, message: "Unauthorized" }, 401, origin);
 
   try {

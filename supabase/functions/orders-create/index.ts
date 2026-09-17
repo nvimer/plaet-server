@@ -86,7 +86,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
