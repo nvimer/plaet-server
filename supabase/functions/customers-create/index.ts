@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -22,15 +22,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("First name, last name, and phone are required", 400), req);
     }
 
+    const restaurantId = writeRestaurantId(user, input.restaurantId);
+    if (!restaurantId) return cors(error("Restaurant context required", 400, "TENANT_REQUIRED"), req);
+
     const supabase = getSupabase();
 
     // Check for duplicate phone
     const { data: existing } = await supabase
       .from("customers")
       .select("id")
+      .eq("restaurant_id", restaurantId)
       .eq("phone", input.phone)
       .eq("deleted", false)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (existing) {
       return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"), req);
@@ -46,7 +51,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         email: input.email || null,
         address1: input.address1 || null,
         address2: input.address2 || null,
-        restaurant_id: user.restaurantId,
+        restaurant_id: restaurantId,
         updated_at: new Date().toISOString(),
       })
       .select("id, first_name, last_name, phone, phone2, email, address1, address2, restaurant_id, created_at")

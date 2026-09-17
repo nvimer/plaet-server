@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, tenantScope, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,6 +14,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
+  const scope = tenantScope(user);
+  if (scope === false) return cors(error("Restaurant context required", 403, "TENANT_REQUIRED"), req);
 
   try {
     const url = new URL(req.url);
@@ -28,11 +30,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .from("payments")
       .select(`
         id, order_id, method, amount, transaction_ref, cash_closure_id, created_at,
-        order:orders(id, status, total_amount, type)
+        order:orders!inner(id, status, total_amount, type, restaurant_id)
       `)
       .order("created_at", { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
+    if (scope) query = query.eq("order.restaurant_id", scope);
     if (orderId) query = query.eq("order_id", orderId);
     if (cashClosureId) query = query.eq("cash_closure_id", cashClosureId);
 
@@ -46,8 +49,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Get total count
     let countQuery = supabase
       .from("payments")
-      .select("id", { count: "exact", head: true });
+      .select("id, order:orders!inner(restaurant_id)", { count: "exact", head: true });
 
+    if (scope) countQuery = countQuery.eq("order.restaurant_id", scope);
     if (orderId) countQuery = countQuery.eq("order_id", orderId);
     if (cashClosureId) countQuery = countQuery.eq("cash_closure_id", cashClosureId);
 

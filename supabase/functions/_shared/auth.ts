@@ -99,6 +99,29 @@ export function hasRole(user: AuthUser, ...roles: string[]): boolean {
   return roles.includes(user.user_role);
 }
 
+/**
+ * Restaurant the caller's data access is limited to:
+ * - string: only rows of that restaurant
+ * - null: SUPERADMIN without a restaurant in the token (global access)
+ * - false: no tenant and not SUPERADMIN, so the request must be rejected
+ */
+export function tenantScope(user: AuthUser): string | null | false {
+  if (user.restaurantId) return user.restaurantId;
+  return hasRole(user, "SUPERADMIN") ? null : false;
+}
+
+export function canAccessRestaurant(user: AuthUser, restaurantId: string | null | undefined): boolean {
+  const scope = tenantScope(user);
+  return scope === null || (scope !== false && scope === restaurantId);
+}
+
+/** Restaurant new rows are written to; a global SUPERADMIN must name one explicitly. */
+export function writeRestaurantId(user: AuthUser, requested?: unknown): string | null {
+  const scope = tenantScope(user);
+  if (scope === false) return null;
+  return scope ?? (typeof requested === "string" && requested ? requested : null);
+}
+
 export function cors(res: Response, req?: Request): Response {
   const h = new Headers(res.headers);
   const allowed = (Deno.env.get("ALLOWED_ORIGINS") || "").split(",").map(s => s.trim()).filter(Boolean);

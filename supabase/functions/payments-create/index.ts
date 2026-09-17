@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -32,13 +32,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Verify order exists
     const { data: order } = await supabase
       .from("orders")
-      .select("id, total_amount, cash_closure_id")
+      .select("id, total_amount, cash_closure_id, restaurant_id")
       .eq("id", input.orderId)
       .eq("deleted", false)
       .single();
 
-    if (!order) {
+    if (!order || !canAccessRestaurant(user, order.restaurant_id)) {
       return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
+    }
+
+    let cashClosureId = order.cash_closure_id;
+    if (input.cashClosureId && input.cashClosureId !== order.cash_closure_id) {
+      const { data: closure } = await supabase
+        .from("cash_closures")
+        .select("id")
+        .eq("id", input.cashClosureId)
+        .eq("restaurant_id", order.restaurant_id)
+        .eq("deleted", false)
+        .maybeSingle();
+      if (!closure) return cors(error("Cash closure not found", 404, "CLOSURE_NOT_FOUND"), req);
+      cashClosureId = closure.id;
     }
 
     const { data: newPayment, error: createError } = await supabase
@@ -49,7 +62,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         amount: input.amount,
         transaction_ref: input.transactionRef || null,
         daily_ticket_book_code_id: input.ticketBookCodeId || null,
-        cash_closure_id: input.cashClosureId || order.cash_closure_id,
+        cash_closure_id: cashClosureId,
       })
       .select(`
         id, order_id, method, amount, transaction_ref, cash_closure_id, created_at,

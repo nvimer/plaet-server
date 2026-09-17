@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, hasRole } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId } from "../_shared/auth.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const corsHeaders = {
@@ -23,8 +23,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const body = await req.json();
     const { number, location, status } = body;
-    // Only SUPERADMIN (no tenant in token) may target a restaurant explicitly.
-    const restaurantId = user.restaurantId || (hasRole(user, "SUPERADMIN") ? body.restaurantId : null);
+    const restaurantId = writeRestaurantId(user, body.restaurantId);
 
     if (!number) {
       return new Response(JSON.stringify({ success: false, message: "Table number is required" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });

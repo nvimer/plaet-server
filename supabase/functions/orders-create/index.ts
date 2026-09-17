@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getRestaurantTimeZone, localDay, localDayRange } from "../_shared/time.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -20,6 +21,7 @@ interface OrderItem {
 }
 
 interface CreateOrderInput {
+  restaurantId?: string;
   tableId?: number;
   customerId?: string;
   customerName?: string;
@@ -38,19 +40,31 @@ interface CreateOrderInput {
 
 async function getOrCreateCustomer(
   supabase: ReturnType<typeof getSupabase>,
-  restaurantId: string | null,
+  restaurantId: string,
   data: { id?: string; name?: string; phone?: string; phone2?: string; address1?: string; address2?: string }
-): Promise<string | null> {
-  if (data.id) return data.id;
-  if (!data.phone || !restaurantId) return null;
+): Promise<string | null | false> {
+  if (data.id) {
+    const { data: owned } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("id", data.id)
+      .eq("restaurant_id", restaurantId)
+      .eq("deleted", false)
+      .maybeSingle();
+    return owned ? owned.id : false;
+  }
+  if (!data.phone) return null;
 
+  // Quoted so commas or parentheses in the phone can't inject extra PostgREST filters.
+  const phone = `"${data.phone.replace(/["\\]/g, "")}"`;
   const { data: existing } = await supabase
     .from("customers")
     .select("id")
     .eq("deleted", false)
     .eq("restaurant_id", restaurantId)
-    .or(`phone.eq.${data.phone},phone2.eq.${data.phone}`)
-    .single();
+    .or(`phone.eq.${phone},phone2.eq.${phone}`)
+    .limit(1)
+    .maybeSingle();
 
   if (existing) {
     await supabase.from("customers").update({
@@ -75,6 +89,7 @@ async function getOrCreateCustomer(
       phone2: data.phone2,
       address1: data.address1,
       address2: data.address2,
+      updated_at: new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -96,59 +111,84 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Type and items are required", 400), req);
     }
 
-    const supabase = getSupabase();
+    const restaurantId = writeRestaurantId(user, input.restaurantId);
+    if (!restaurantId) return cors(error("Restaurant context required", 400, "TENANT_REQUIRED"), req);
 
-    // Get daily menu for pricing
+    const supabase = getSupabase();
+    const timeZone = await getRestaurantTimeZone(supabase, restaurantId);
+
+    // Get daily menu for pricing (restaurant's local day, not the server's UTC day)
     const orderDate = input.createdAt ? new Date(input.createdAt) : new Date();
-    const dayStart = new Date(orderDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(orderDate);
-    dayEnd.setHours(23, 59, 59, 999);
+    const day = localDayRange(orderDate, timeZone);
 
     const { data: dailyMenu } = await supabase
       .from("daily_menus")
       .select("id, base_price, protein_category_id, soup_option1_id, soup_option2_id")
-      .gte("created_at", dayStart.toISOString())
-      .lte("created_at", dayEnd.toISOString())
+      .eq("restaurant_id", restaurantId)
+      .gte("created_at", day.start)
+      .lte("created_at", day.end)
       .eq("deleted", false)
-      .single();
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     const basePrice = dailyMenu ? Number(dailyMenu.base_price) || 3000 : 0;
 
     // Get menu items for validation and pricing
-    const menuItemIds = input.items.filter(i => i.menuItemId).map(i => i.menuItemId!);
+    const menuItemIds = [...new Set(input.items.filter(i => i.menuItemId).map(i => i.menuItemId!))];
     const { data: menuItems } = await supabase
       .from("menu_items")
       .select("id, name, price, category_id, is_available, inventory_type, stock_quantity")
       .in("id", menuItemIds)
+      .eq("restaurant_id", restaurantId)
       .eq("deleted", false);
 
     const menuItemMap = new Map((menuItems || []).map(mi => [mi.id, mi]));
 
+    if (menuItemMap.size !== menuItemIds.length) {
+      return cors(error("One or more menu items were not found", 400, "ITEMS_NOT_FOUND"), req);
+    }
+
     // Check availability
     for (const item of input.items) {
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+        return cors(error("Item quantity must be a positive integer", 400), req);
+      }
       if (item.menuItemId) {
-        const mi = menuItemMap.get(item.menuItemId);
-        if (mi && !mi.is_available) {
+        const mi = menuItemMap.get(item.menuItemId)!;
+        if (!mi.is_available) {
           return cors(error(`Item ${mi.name} is not available`, 400, "ITEMS_NOT_AVAILABLE"), req);
         }
-        if (mi && mi.inventory_type === "TRACKED" && (mi.stock_quantity || 0) < item.quantity) {
+        if (mi.inventory_type === "TRACKED" && (mi.stock_quantity || 0) < item.quantity) {
           return cors(error(`Insufficient stock for ${mi.name}`, 400, "INSUFFICIENT_STOCK"), req);
         }
       }
     }
 
+    if (input.tableId) {
+      const { data: table } = await supabase
+        .from("tables")
+        .select("id")
+        .eq("id", input.tableId)
+        .eq("restaurant_id", restaurantId)
+        .eq("deleted", false)
+        .maybeSingle();
+      if (!table) return cors(error("Table not found", 404, "TABLE_NOT_FOUND"), req);
+    }
+
     // Check for existing open order on same table
     let existingOrderId: string | null = null;
-    if (input.type === "DINE_IN" && input.tableId && user.restaurantId) {
+    if (input.type === "DINE_IN" && input.tableId) {
       const { data: existingOrder } = await supabase
         .from("orders")
         .select("id")
         .eq("table_id", input.tableId)
-        .eq("restaurant_id", user.restaurantId)
+        .eq("restaurant_id", restaurantId)
         .eq("status", "OPEN")
         .eq("deleted", false)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (existingOrder) {
         existingOrderId = existingOrder.id;
@@ -156,7 +196,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Get or create customer
-    const customerId = await getOrCreateCustomer(supabase, user.restaurantId, {
+    const customerId = await getOrCreateCustomer(supabase, restaurantId, {
       id: input.customerId,
       name: input.customerName,
       phone: input.customerPhone,
@@ -164,31 +204,34 @@ Deno.serve(async (req: Request): Promise<Response> => {
       address1: input.address1,
       address2: input.address2,
     });
+    if (customerId === false) return cors(error("Customer not found", 404, "CUSTOMER_NOT_FOUND"), req);
 
     // Get active cash closure
     let cashClosureId: string | null = null;
-    const isHistorical = input.createdAt && new Date(input.createdAt).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+    const isHistorical = !!input.createdAt && localDay(orderDate, timeZone) < localDay(new Date(), timeZone);
 
     if (isHistorical) {
       const { data: closure } = await supabase
         .from("cash_closures")
         .select("id")
+        .eq("restaurant_id", restaurantId)
         .lte("created_at", input.createdAt)
         .eq("status", "OPEN")
         .eq("deleted", false)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       cashClosureId = closure?.id || null;
     } else {
       const { data: closure } = await supabase
         .from("cash_closures")
         .select("id")
+        .eq("restaurant_id", restaurantId)
         .eq("status", "OPEN")
         .eq("deleted", false)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!closure) {
         return cors(error("No hay un turno de caja abierto. Por favor abre caja antes de crear pedidos.", 400, "CASH_CLOSURE_REQUIRED"), req);
@@ -208,50 +251,52 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .sort((a, b) => b.price - a.price);
 
     const mainProteinIndex = proteinItems[0]?.index;
+    const now = new Date().toISOString();
 
-    // Create order
-    let orderId: string;
+    const buildItemRows = (orderId: string) => input.items.map((item, index) => {
+      const mi = item.menuItemId ? menuItemMap.get(item.menuItemId) : null;
+      const itemBasePrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
+      const isMainProtein = index === mainProteinIndex;
+      const finalPrice = (isHistorical || !dailyMenu)
+        ? Number(item.priceAtOrder || itemBasePrice)
+        : itemBasePrice + (isMainProtein ? basePrice : 0);
 
-    if (existingOrderId) {
-      // Add items to existing order
-      for (let index = 0; index < input.items.length; index++) {
-        const item = input.items[index];
-        const mi = item.menuItemId ? menuItemMap.get(item.menuItemId) : null;
-        const itemBasePrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
-        const isMainProtein = index === mainProteinIndex;
-        const finalPrice = (isHistorical || !dailyMenu)
-          ? Number(item.priceAtOrder || itemBasePrice)
-          : itemBasePrice + (isMainProtein ? basePrice : 0);
+      return {
+        order_id: orderId,
+        menu_item_id: item.menuItemId || null,
+        quantity: item.quantity,
+        price_at_order: finalPrice,
+        notes: item.notes || null,
+        status: input.itemStatus || (isMainProtein ? "PENDING" : "READY"),
+        updated_at: now,
+      };
+    });
 
-        await supabase.from("order_items").insert({
-          order_id: existingOrderId,
-          menu_item_id: item.menuItemId || null,
-          quantity: item.quantity,
-          price_at_order: finalPrice,
-          notes: item.notes || null,
-          status: input.itemStatus || (isMainProtein ? "PENDING" : "READY"),
-          updated_at: new Date().toISOString(),
-        });
-      }
-
-      // Update table status
-      if (input.tableId) {
-        await supabase.from("tables").update({ status: "OCCUPIED" }).eq("id", input.tableId);
-      }
-
-      // Recalculate total
+    const recalculateTotal = async (orderId: string): Promise<number> => {
       const { data: allItems } = await supabase
         .from("order_items")
         .select("price_at_order, quantity")
-        .eq("order_id", existingOrderId);
+        .eq("order_id", orderId);
+      const total = (allItems || []).reduce((sum, i) => sum + Number(i.price_at_order) * i.quantity, 0);
+      await supabase.from("orders").update({ total_amount: total, updated_at: now }).eq("id", orderId);
+      return total;
+    };
 
-      const newTotal = (allItems || []).reduce((sum, i) => sum + Number(i.price_at_order) * i.quantity, 0);
-      await supabase.from("orders").update({ total_amount: newTotal }).eq("id", existingOrderId);
+    let orderId: string;
 
+    if (existingOrderId) {
       orderId = existingOrderId;
 
+      const { error: itemsError } = await supabase.from("order_items").insert(buildItemRows(orderId));
+      if (itemsError) {
+        console.error("Add order items error:", JSON.stringify(itemsError));
+        return cors(error("Failed to add items to order", 500), req);
+      }
+
+      await supabase.from("tables").update({ status: "OCCUPIED" }).eq("id", input.tableId!);
+      await recalculateTotal(orderId);
+
     } else {
-      // Create new order
       const { data: newOrder, error: createError } = await supabase
         .from("orders")
         .insert({
@@ -263,49 +308,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
           total_amount: 0,
           notes: input.notes || null,
           whatsapp_order_id: input.whatsappOrderId || null,
-          restaurant_id: user.restaurantId,
+          restaurant_id: restaurantId,
           cash_closure_id: cashClosureId,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
         .select("id")
         .single();
 
       if (createError || !newOrder) {
         console.error("Create order error:", JSON.stringify(createError));
-        return cors(error("Failed to create order", 500, createError?.message), req);
+        return cors(error("Failed to create order", 500), req);
       }
 
       orderId = newOrder.id;
 
-      // Create order items
-      for (let index = 0; index < input.items.length; index++) {
-        const item = input.items[index];
-        const mi = item.menuItemId ? menuItemMap.get(item.menuItemId) : null;
-        const itemBasePrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
-        const isMainProtein = index === mainProteinIndex;
-        const finalPrice = (isHistorical || !dailyMenu)
-          ? Number(item.priceAtOrder || itemBasePrice)
-          : itemBasePrice + (isMainProtein ? basePrice : 0);
-
-        await supabase.from("order_items").insert({
-          order_id: orderId,
-          menu_item_id: item.menuItemId || null,
-          quantity: item.quantity,
-          price_at_order: finalPrice,
-          notes: item.notes || null,
-          status: input.itemStatus || (isMainProtein ? "PENDING" : "READY"),
-          updated_at: new Date().toISOString(),
-        });
+      const { error: itemsError } = await supabase.from("order_items").insert(buildItemRows(orderId));
+      if (itemsError) {
+        console.error("Create order items error:", JSON.stringify(itemsError));
+        // No transaction yet: remove the empty order instead of leaving it behind.
+        await supabase.from("orders").delete().eq("id", orderId);
+        return cors(error("Failed to create order", 500), req);
       }
 
-      // If PAID status, create payment record
-      if (input.status === "PAID") {
-        const totalAmount = input.items.reduce((sum, item) => {
-          const mi = item.menuItemId ? menuItemMap.get(item.menuItemId) : null;
-          const price = Number(mi?.price || item.priceAtOrder || 0);
-          return sum + price * item.quantity;
-        }, 0);
+      const totalAmount = await recalculateTotal(orderId);
 
+      // If PAID status, create payment record for the real order total
+      if (input.status === "PAID") {
         await supabase.from("payments").insert({
           order_id: orderId,
           amount: totalAmount,
@@ -314,7 +342,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
         });
       }
 
-      // Update table status
       if (input.type === "DINE_IN" && input.tableId) {
         await supabase.from("tables").update({ status: "OCCUPIED" }).eq("id", input.tableId);
       }
@@ -326,11 +353,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         if (item.menuItemId) {
           const mi = menuItemMap.get(item.menuItemId);
           if (mi && mi.inventory_type === "TRACKED") {
-            await supabase.rpc("deduct_stock", {
+            const { error: stockError } = await supabase.rpc("deduct_stock", {
               p_menu_item_id: item.menuItemId,
               p_quantity: item.quantity,
               p_order_id: orderId,
             });
+            if (stockError) console.error("DEDUCT STOCK ERROR:", JSON.stringify(stockError));
           }
         }
       }

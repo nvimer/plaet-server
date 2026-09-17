@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -22,6 +22,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Actual balance is required and must be non-negative", 400), req);
     }
 
+    const restaurantId = writeRestaurantId(user, input.restaurantId);
+    if (!restaurantId) return cors(error("Restaurant context required", 400, "TENANT_REQUIRED"), req);
+
     const supabase = getSupabase();
 
     // Get the open closure
@@ -31,9 +34,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         id, opening_balance, restaurant_id,
         opened_by:users!cash_closures_opened_by_id_fkey(id, first_name, last_name)
       `)
+      .eq("restaurant_id", restaurantId)
       .eq("status", "OPEN")
       .eq("deleted", false)
-      .single();
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (!openClosure) {
       return cors(error("No open cash closure found", 404, "NO_OPEN_CLOSURE"), req);

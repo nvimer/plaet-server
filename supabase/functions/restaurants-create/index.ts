@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest } from "../_shared/auth.ts";
+import { getUserFromRequest, hasRole } from "../_shared/auth.ts";
 import { hashPassword } from "../_shared/password.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -67,6 +67,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return jsonResponse({ success: false, message: "Unauthorized" }, 401, origin);
+  if (!hasRole(user, "SUPERADMIN")) return jsonResponse({ success: false, message: "Forbidden" }, 403, origin);
 
   try {
     const body = await req.json();

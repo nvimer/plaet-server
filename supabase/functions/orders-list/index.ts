@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getRestaurantTimeZone, localDayRange } from "../_shared/time.ts";
+import { getUserFromRequest, tenantScope, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,6 +15,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
+  const scope = tenantScope(user);
+  if (scope === false) return cors(error("Restaurant context required", 403, "TENANT_REQUIRED"), req);
 
   try {
     const url = new URL(req.url);
@@ -44,22 +47,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .order("created_at", { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
-    if (user.restaurantId) {
-      query = query.eq("restaurant_id", user.restaurantId);
-    }
+    if (scope) query = query.eq("restaurant_id", scope);
 
     if (status) query = query.eq("status", status);
     if (type) query = query.eq("type", type);
     if (waiterId) query = query.eq("waiter_id", waiterId);
     if (tableId) query = query.eq("table_id", parseInt(tableId));
 
-    if (date) {
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
-    }
+    const dayRange = date ? localDayRange(date, await getRestaurantTimeZone(supabase, scope)) : null;
+    if (dayRange) query = query.gte("created_at", dayRange.start).lte("created_at", dayRange.end);
 
     const { data: orders, error: queryError, count } = await query;
 
@@ -74,18 +70,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .select("id", { count: "exact", head: true })
       .eq("deleted", false);
 
-    if (user.restaurantId) countQuery = countQuery.eq("restaurant_id", user.restaurantId);
+    if (scope) countQuery = countQuery.eq("restaurant_id", scope);
     if (status) countQuery = countQuery.eq("status", status);
     if (type) countQuery = countQuery.eq("type", type);
     if (waiterId) countQuery = countQuery.eq("waiter_id", waiterId);
     if (tableId) countQuery = countQuery.eq("table_id", parseInt(tableId));
-    if (date) {
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      countQuery = countQuery.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
-    }
+    if (dayRange) countQuery = countQuery.gte("created_at", dayRange.start).lte("created_at", dayRange.end);
 
     const { count: total } = await countQuery;
 

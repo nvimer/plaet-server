@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, tenantScope, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,6 +14,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
+  const scope = tenantScope(user);
+  if (scope === false) return cors(error("Restaurant context required", 403, "TENANT_REQUIRED"), req);
 
   try {
     const url = new URL(req.url);
@@ -37,9 +39,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .order("name", { ascending: true })
       .range((page - 1) * limit, page * limit - 1);
 
-    if (user.restaurantId) {
-      query = query.eq("restaurant_id", user.restaurantId);
-    }
+    if (scope) query = query.eq("restaurant_id", scope);
 
     if (categoryId) query = query.eq("category_id", parseInt(categoryId));
     if (isAvailable !== null && isAvailable !== undefined) {
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .select("id", { count: "exact", head: true })
       .eq("deleted", false);
 
-    if (user.restaurantId) countQuery = countQuery.eq("restaurant_id", user.restaurantId);
+    if (scope) countQuery = countQuery.eq("restaurant_id", scope);
     if (categoryId) countQuery = countQuery.eq("category_id", parseInt(categoryId));
     if (isAvailable !== null && isAvailable !== undefined) {
       countQuery = countQuery.eq("is_available", isAvailable === "true");

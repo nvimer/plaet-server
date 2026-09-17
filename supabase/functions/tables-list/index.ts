@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, tenantScope, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,6 +14,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
+  const scope = tenantScope(user);
+  if (scope === false) return cors(error("Restaurant context required", 403, "TENANT_REQUIRED"), req);
 
   try {
     const url = new URL(req.url);
@@ -27,9 +29,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq("deleted", false)
       .order("number", { ascending: true });
 
-    if (user.restaurantId) {
-      query = query.eq("restaurant_id", user.restaurantId);
-    }
+    if (scope) query = query.eq("restaurant_id", scope);
 
     if (status) {
       query = query.eq("status", status);

@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -30,7 +30,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq("deleted", false)
       .single();
 
-    if (queryError || !role) {
+    if (queryError || !role || !canAccessRestaurant(user, role.restaurant_id)) {
       return cors(error("Role not found", 404), req);
     }
 

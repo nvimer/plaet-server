@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -42,7 +42,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Menu item not found", 404, "ITEM_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && item.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, item.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 

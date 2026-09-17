@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -31,7 +31,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Verify item exists
     const { data: existingItem } = await supabase
       .from("menu_items")
-      .select("id, restaurant_id")
+      .select("id, restaurant_id, category_id")
       .eq("id", parseInt(itemId))
       .eq("deleted", false)
       .single();
@@ -40,7 +40,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Menu item not found", 404, "ITEM_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && existingItem.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, existingItem.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 
@@ -49,10 +49,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const { data: duplicate } = await supabase
         .from("menu_items")
         .select("id")
+        .eq("restaurant_id", existingItem.restaurant_id)
+        .eq("category_id", input.categoryId ?? existingItem.category_id)
         .eq("name", input.name.trim())
         .neq("id", parseInt(itemId))
         .eq("deleted", false)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (duplicate) {
         return cors(error("A menu item with this name already exists", 409, "DUPLICATE_NAME"), req);
@@ -65,8 +68,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .from("menu_categories")
         .select("id")
         .eq("id", input.categoryId)
+        .eq("restaurant_id", existingItem.restaurant_id)
         .eq("deleted", false)
-        .single();
+        .maybeSingle();
 
       if (!category) {
         return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"), req);

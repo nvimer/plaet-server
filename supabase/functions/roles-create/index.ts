@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId, hasRole, cors, json, error } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -14,12 +14,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
+  if (!hasRole(user, "ADMIN", "SUPERADMIN")) return cors(error("Forbidden", 403), req);
 
   try {
     const body = await req.json();
     const { name, description } = body;
 
     if (!name) return cors(error("Name is required", 400), req);
+    if (name === "SUPERADMIN" && !hasRole(user, "SUPERADMIN")) return cors(error("Forbidden", 403), req);
+
+    // A global SUPERADMIN may create platform-wide roles (restaurant_id = null).
+    const restaurantId = writeRestaurantId(user, body.restaurantId);
+    if (!restaurantId && !hasRole(user, "SUPERADMIN")) {
+      return cors(error("Restaurant context required", 400, "TENANT_REQUIRED"), req);
+    }
 
     const supabase = getSupabase();
 
@@ -28,7 +36,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .insert({
         name,
         description: description || null,
-        restaurant_id: user.restaurantId || null,
+        restaurant_id: restaurantId,
+        updated_at: new Date().toISOString(),
         deleted: false,
       })
       .select("id, name, description, restaurant_id, created_at, updated_at")
@@ -46,7 +55,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       success: true,
       message: "Role created successfully",
       data: role,
-    }), 201);
+    }, 201), req);
 
   } catch (e) {
     console.error("ROLES CREATE ERROR:", e);
