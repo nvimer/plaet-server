@@ -84,6 +84,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           await supabase.rpc("revert_stock", {
             p_menu_item_id: item.menu_item_id,
             p_quantity: item.quantity,
+            p_order_id: orderId,
           });
         }
       }

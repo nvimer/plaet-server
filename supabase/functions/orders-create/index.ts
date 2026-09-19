@@ -251,9 +251,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .sort((a, b) => b.price - a.price);
 
     const mainProteinIndex = proteinItems[0]?.index;
-    const now = new Date().toISOString();
-
-    const buildItemRows = (orderId: string) => input.items.map((item, index) => {
+    const itemRows = input.items.map((item, index) => {
       const mi = item.menuItemId ? menuItemMap.get(item.menuItemId) : null;
       const itemBasePrice = mi ? Number(mi.price) : Number(item.priceAtOrder || 0);
       const isMainProtein = index === mainProteinIndex;
@@ -262,107 +260,54 @@ Deno.serve(async (req: Request): Promise<Response> => {
         : itemBasePrice + (isMainProtein ? basePrice : 0);
 
       return {
-        order_id: orderId,
         menu_item_id: item.menuItemId || null,
         quantity: item.quantity,
-        price_at_order: finalPrice,
+        price: finalPrice,
         notes: item.notes || null,
         status: input.itemStatus || (isMainProtein ? "PENDING" : "READY"),
-        updated_at: now,
       };
     });
 
-    const recalculateTotal = async (orderId: string): Promise<number> => {
-      const { data: allItems } = await supabase
-        .from("order_items")
-        .select("price_at_order, quantity")
-        .eq("order_id", orderId);
-      const total = (allItems || []).reduce((sum, i) => sum + Number(i.price_at_order) * i.quantity, 0);
-      await supabase.from("orders").update({ total_amount: total, updated_at: now }).eq("id", orderId);
-      return total;
-    };
+    // One transaction: locks the stock, writes the order, its items, the stock
+    // movements and the payment, or rolls all of it back.
+    const { data: createdId, error: txError } = await supabase.rpc("create_order_tx", {
+      p_payload: {
+        restaurant_id: restaurantId,
+        waiter_id: user.id,
+        table_id: input.tableId || null,
+        customer_id: customerId || null,
+        cash_closure_id: cashClosureId,
+        status: input.status || "OPEN",
+        type: input.type,
+        notes: input.notes || null,
+        whatsapp_order_id: input.whatsappOrderId || null,
+        created_at: input.createdAt || null,
+        existing_order_id: existingOrderId,
+        skip_stock: isHistorical,
+        occupy_table: existingOrderId !== null || input.type === "DINE_IN",
+        items: itemRows,
+      },
+    });
 
-    let orderId: string;
-
-    if (existingOrderId) {
-      orderId = existingOrderId;
-
-      const { error: itemsError } = await supabase.from("order_items").insert(buildItemRows(orderId));
-      if (itemsError) {
-        console.error("Add order items error:", JSON.stringify(itemsError));
-        return cors(error("Failed to add items to order", 500), req);
+    if (txError) {
+      const message = String(txError.message || "");
+      const code = message.split(":")[0].trim();
+      const known: Record<string, number> = {
+        INSUFFICIENT_STOCK: 400,
+        ITEMS_NOT_AVAILABLE: 400,
+        ITEM_NOT_FOUND: 400,
+        NO_ITEMS: 400,
+        TENANT_REQUIRED: 400,
+        ORDER_NOT_FOUND: 404,
+      };
+      if (known[code]) {
+        return cors(error(message.slice(code.length + 1).trim() || code, known[code], code), req);
       }
-
-      await supabase.from("tables").update({ status: "OCCUPIED" }).eq("id", input.tableId!);
-      await recalculateTotal(orderId);
-
-    } else {
-      const { data: newOrder, error: createError } = await supabase
-        .from("orders")
-        .insert({
-          waiter_id: user.id,
-          table_id: input.tableId || null,
-          customerId: customerId,
-          status: input.status || "OPEN",
-          type: input.type,
-          total_amount: 0,
-          notes: input.notes || null,
-          whatsapp_order_id: input.whatsappOrderId || null,
-          restaurant_id: restaurantId,
-          cash_closure_id: cashClosureId,
-          updated_at: now,
-        })
-        .select("id")
-        .single();
-
-      if (createError || !newOrder) {
-        console.error("Create order error:", JSON.stringify(createError));
-        return cors(error("Failed to create order", 500), req);
-      }
-
-      orderId = newOrder.id;
-
-      const { error: itemsError } = await supabase.from("order_items").insert(buildItemRows(orderId));
-      if (itemsError) {
-        console.error("Create order items error:", JSON.stringify(itemsError));
-        // No transaction yet: remove the empty order instead of leaving it behind.
-        await supabase.from("orders").delete().eq("id", orderId);
-        return cors(error("Failed to create order", 500), req);
-      }
-
-      const totalAmount = await recalculateTotal(orderId);
-
-      // If PAID status, create payment record for the real order total
-      if (input.status === "PAID") {
-        await supabase.from("payments").insert({
-          order_id: orderId,
-          amount: totalAmount,
-          method: "CASH",
-          cash_closure_id: cashClosureId,
-        });
-      }
-
-      if (input.type === "DINE_IN" && input.tableId) {
-        await supabase.from("tables").update({ status: "OCCUPIED" }).eq("id", input.tableId);
-      }
+      console.error("CREATE ORDER TX ERROR:", JSON.stringify(txError));
+      return cors(error("Failed to create order", 500), req);
     }
 
-    // Stock deduction (skip for historical)
-    if (!isHistorical) {
-      for (const item of input.items) {
-        if (item.menuItemId) {
-          const mi = menuItemMap.get(item.menuItemId);
-          if (mi && mi.inventory_type === "TRACKED") {
-            const { error: stockError } = await supabase.rpc("deduct_stock", {
-              p_menu_item_id: item.menuItemId,
-              p_quantity: item.quantity,
-              p_order_id: orderId,
-            });
-            if (stockError) console.error("DEDUCT STOCK ERROR:", JSON.stringify(stockError));
-          }
-        }
-      }
-    }
+    const orderId = createdId as string;
 
     // Fetch created order with relations
     const { data: createdOrder } = await supabase

@@ -60,6 +60,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (createError) {
+      // Unique index: one open register per restaurant.
+      if (createError.code === "23505") {
+        return cors(error("There is already an open cash closure. Please close it first.", 400, "CLOSURE_ALREADY_OPEN"), req);
+      }
       console.error("Create error:", createError);
       return cors(error("Failed to open cash closure", 500), req);
     }
