@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { isMenuCategoryType, MENU_CATEGORY_TYPES } from "../_shared/menu-categories.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -62,6 +63,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       updateData.name = name;
     }
 
+    if (input.type !== undefined) {
+      if (!isMenuCategoryType(input.type)) {
+        return cors(error(`Invalid type. Must be one of: ${MENU_CATEGORY_TYPES.join(", ")}`, 400), req);
+      }
+      updateData.type = input.type;
+    }
+
     if (input.description !== undefined) updateData.description = input.description;
     if (input.order !== undefined) {
       const order = Number(input.order);
@@ -77,13 +85,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .from("menu_categories")
       .update(updateData)
       .eq("id", categoryId)
-      .select(`id, name, description, "order", restaurant_id, deleted`)
+      .select(`id, name, description, "order", type, restaurant_id, deleted`)
       .single();
 
     if (updateError) {
       console.error("Update error:", JSON.stringify(updateError));
       if (updateError.code === "23505") {
-        return cors(error("A category with this name already exists", 409, "DUPLICATE_NAME"), req);
+        const duplicateRole = String(updateError.message || "").includes("restaurant_id_type");
+        return duplicateRole
+          ? cors(error(`This restaurant already has a ${input.type} category`, 409, "DUPLICATE_TYPE"), req)
+          : cors(error("A category with this name already exists", 409, "DUPLICATE_NAME"), req);
       }
       return cors(error("Failed to update category", 500), req);
     }

@@ -28,7 +28,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let query = supabase
       .from("menu_categories")
       .select(`
-        id, name, description, "order", restaurant_id,
+        id, name, description, "order", type, restaurant_id,
         items:menu_items(id, name, price, is_available)
       `)
       .eq("deleted", false)
