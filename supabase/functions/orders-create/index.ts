@@ -123,7 +123,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const { data: dailyMenu } = await supabase
       .from("daily_menus")
-      .select("id, base_price, protein_category_id, soup_option1_id, soup_option2_id")
+      .select("id, base_price, protein_category_id")
       .eq("restaurant_id", restaurantId)
       .gte("created_at", day.start)
       .lte("created_at", day.end)
