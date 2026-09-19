@@ -33,6 +33,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         notes, whatsapp_order_id, created_at, updated_at, restaurant_id,
         items:order_items(
           id, menu_item_id, quantity, price_at_order, notes, status, created_at,
+          is_substitution, replaces_category_type, original_item_id, is_extra,
           menu_item:menu_items(id, name, price, category_id, is_available, inventory_type, stock_quantity)
         ),
         table:tables(id, number, status),

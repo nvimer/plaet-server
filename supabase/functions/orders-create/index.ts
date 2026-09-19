@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getUserFromRequest, writeRestaurantId, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 import { getRestaurantTimeZone, localDay, localDayRange } from "../_shared/time.ts";
+import { isMenuCategoryType } from "../_shared/menu-categories.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -16,6 +17,8 @@ interface OrderItem {
   priceAtOrder?: number;
   status?: string;
   isSubstitution?: boolean;
+  /** Slot this substitution covers: a MenuCategoryType, or the client key ("soup", "salad"…). */
+  replacesCategoryType?: string;
   originalItemId?: number;
   isExtra?: boolean;
 }
@@ -36,6 +39,19 @@ interface CreateOrderInput {
   createdAt?: string;
   status?: string;
   itemStatus?: string;
+}
+
+// The order builder names the slots in lowercase; the column is a MenuCategoryType.
+const SLOT_KEYS: Record<string, string> = {
+  soup: "SOUP", rice: "RICE", principle: "PRINCIPLE", protein: "PROTEIN",
+  drink: "DRINK", extra: "EXTRA", salad: "SALAD", dessert: "DESSERT",
+};
+
+function toCategoryType(value: string | undefined): string | null {
+  if (!value) return null;
+  const upper = value.toUpperCase();
+  if (isMenuCategoryType(upper)) return upper;
+  return SLOT_KEYS[value.toLowerCase()] ?? null;
 }
 
 async function getOrCreateCustomer(
@@ -147,6 +163,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (menuItemMap.size !== menuItemIds.length) {
       return cors(error("One or more menu items were not found", 400, "ITEMS_NOT_FOUND"), req);
+    }
+
+    for (const item of input.items) {
+      if (item.isSubstitution && item.isExtra) {
+        return cors(error("An item cannot be a substitution and a paid extra at once", 400), req);
+      }
+      if (item.isSubstitution && !toCategoryType(item.replacesCategoryType)) {
+        return cors(error("A substitution must say which category it replaces", 400, "SUBSTITUTION_WITHOUT_SLOT"), req);
+      }
+      if (item.isSubstitution && toCategoryType(item.replacesCategoryType) === "PROTEIN") {
+        return cors(error("The protein cannot be substituted: it sets the price of the lunch", 400, "PROTEIN_NOT_REPLACEABLE"), req);
+      }
     }
 
     // Check availability
@@ -262,9 +290,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return {
         menu_item_id: item.menuItemId || null,
         quantity: item.quantity,
-        price: finalPrice,
+        // A substitution is free: the slot it replaces was already paid for.
+        price: item.isSubstitution ? 0 : finalPrice,
         notes: item.notes || null,
         status: input.itemStatus || (isMainProtein ? "PENDING" : "READY"),
+        is_substitution: !!item.isSubstitution,
+        replaces_category_type: item.isSubstitution ? toCategoryType(item.replacesCategoryType) : null,
+        original_item_id: item.originalItemId || null,
+        is_extra: !!item.isExtra,
       };
     });
 
@@ -317,6 +350,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         notes, whatsapp_order_id, created_at, updated_at, restaurant_id,
         items:order_items(
           id, menu_item_id, quantity, price_at_order, notes, status, created_at,
+          is_substitution, replaces_category_type, original_item_id, is_extra,
           menu_item:menu_items(id, name, price, category_id)
         ),
         table:tables(id, number, status),
