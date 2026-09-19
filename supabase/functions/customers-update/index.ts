@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -39,7 +39,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Customer not found", 404, "CUSTOMER_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && existingCustomer.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, existingCustomer.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 
@@ -48,10 +48,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const { data: duplicate } = await supabase
         .from("customers")
         .select("id")
+        .eq("restaurant_id", existingCustomer.restaurant_id)
         .eq("phone", input.phone)
         .neq("id", customerId)
         .eq("deleted", false)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (duplicate) {
         return cors(error("A customer with this phone already exists", 409, "DUPLICATE_PHONE"), req);

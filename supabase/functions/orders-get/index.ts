@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -33,6 +33,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         notes, whatsapp_order_id, created_at, updated_at, restaurant_id,
         items:order_items(
           id, menu_item_id, quantity, price_at_order, notes, status, created_at,
+          is_substitution, replaces_category_type, original_item_id, is_extra,
           menu_item:menu_items(id, name, price, category_id, is_available, inventory_type, stock_quantity)
         ),
         table:tables(id, number, status),
@@ -48,7 +49,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, order.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 

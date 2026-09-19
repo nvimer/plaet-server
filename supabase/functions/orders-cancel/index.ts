@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -36,7 +36,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, order.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 
@@ -68,6 +68,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         await supabase.rpc("revert_stock", {
           p_menu_item_id: item.menu_item_id,
           p_quantity: item.quantity,
+          p_order_id: orderId,
         });
       }
     }

@@ -8,57 +8,118 @@ export function getSupabase() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
+export interface AuthUser {
+  id: string;
+  restaurantId: string | null;
+  user_role: string;
+}
+
+function base64UrlDecode(input: string): Uint8Array<ArrayBuffer> {
+  const b64 = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+  return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+}
+
+let hmacKey: Promise<CryptoKey> | null = null;
+
+function getHmacKey(): Promise<CryptoKey> {
+  if (!JWT_SECRET) throw new Error("JWT_SECRET is not configured");
+  hmacKey ??= crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(JWT_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+  return hmacKey;
+}
+
 export async function verifyJwt(token: string): Promise<Record<string, unknown> | null> {
   try {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const [headerB64, bodyB64, sigB64] = parts;
+
+    const decoder = new TextDecoder();
+    const header = JSON.parse(decoder.decode(base64UrlDecode(headerB64)));
+    if (header.alg !== "HS256") return null;
+
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      await getHmacKey(),
+      base64UrlDecode(sigB64),
+      new TextEncoder().encode(`${headerB64}.${bodyB64}`)
     );
-
-    const [headerB64, bodyB64, sigB64] = token.split(".");
-    const data = `${headerB64}.${bodyB64}`;
-
-    const sigBytes = Uint8Array.from(atob(sigB64.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
-    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, encoder.encode(data));
-
     if (!valid) return null;
 
-    const payload = JSON.parse(atob(bodyB64.replace(/-/g, "+").replace(/_/g, "/")));
+    const payload = JSON.parse(decoder.decode(base64UrlDecode(bodyB64)));
 
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    if (typeof payload.exp !== "number" || payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
 
     return payload;
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "JWT_SECRET is not configured") console.error(e.message);
     return null;
   }
 }
 
-export function getUserFromRequest(req: Request): { id: string; restaurantId: string | null; user_role: string } | null {
+function getTokenFromRequest(req: Request): string {
   const authHeader = req.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) return authHeader.substring(7);
+
   const cookieHeader = req.headers.get("Cookie");
-
-  let token = "";
-  if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.substring(7);
-  } else if (cookieHeader) {
-    const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => c.split("=")));
-    token = cookies.accessToken || "";
+  if (!cookieHeader) return "";
+  for (const cookie of cookieHeader.split(";")) {
+    const [name, ...rest] = cookie.trim().split("=");
+    if (name === "accessToken") return rest.join("=");
   }
+  return "";
+}
 
+/** Returns the caller only if the access token has a valid signature and is not expired. */
+export async function getUserFromRequest(req: Request): Promise<AuthUser | null> {
+  const token = getTokenFromRequest(req);
   if (!token) return null;
 
-  const payload = JSON.parse(atob(token.split(".")[1]));
+  const payload = await verifyJwt(token);
+  if (!payload || typeof payload.sub !== "string") return null;
+  // Refresh tokens are signed with the same secret; they must not work as access tokens.
+  if (payload.type === "REFRESH") return null;
+
   return {
     id: payload.sub,
-    restaurantId: payload.restaurantId || null,
-    user_role: payload.user_role,
+    restaurantId: typeof payload.restaurantId === "string" ? payload.restaurantId : null,
+    user_role: typeof payload.user_role === "string" ? payload.user_role : "",
   };
+}
+
+export function hasRole(user: AuthUser, ...roles: string[]): boolean {
+  return roles.includes(user.user_role);
+}
+
+/**
+ * Restaurant the caller's data access is limited to:
+ * - string: only rows of that restaurant
+ * - null: SUPERADMIN without a restaurant in the token (global access)
+ * - false: no tenant and not SUPERADMIN, so the request must be rejected
+ */
+export function tenantScope(user: AuthUser): string | null | false {
+  if (user.restaurantId) return user.restaurantId;
+  return hasRole(user, "SUPERADMIN") ? null : false;
+}
+
+export function canAccessRestaurant(user: AuthUser, restaurantId: string | null | undefined): boolean {
+  const scope = tenantScope(user);
+  return scope === null || (scope !== false && scope === restaurantId);
+}
+
+/** Restaurant new rows are written to; a global SUPERADMIN must name one explicitly. */
+export function writeRestaurantId(user: AuthUser, requested?: unknown): string | null {
+  const scope = tenantScope(user);
+  if (scope === false) return null;
+  return scope ?? (typeof requested === "string" && requested ? requested : null);
 }
 
 export function cors(res: Response, req?: Request): Response {

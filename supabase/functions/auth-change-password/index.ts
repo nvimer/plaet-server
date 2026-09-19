@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserFromRequest } from "../_shared/auth.ts";
+import { hashPassword, verifyPassword } from "../_shared/password.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -27,48 +29,14 @@ function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
 
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256);
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2:100000:${saltHex}:${hashHex}`;
-}
-
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (stored.startsWith("$2b$") || stored.startsWith("$2a$")) return false;
-  const parts = stored.split(":");
-  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
-  const iterations = parseInt(parts[1]);
-  const salt = new Uint8Array(parts[2].match(/.{2}/g)!.map(h => parseInt(h, 16)));
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, key, 256);
-  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex === parts[3];
-}
-
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "POST") return cors(json({ success: false, message: "Method not allowed" }, 405), req);
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    let token = "";
-    if (authHeader?.startsWith("Bearer ")) token = authHeader.substring(7);
-
-    if (!token) return cors(json({ success: false, message: "Authentication required" }, 401), req);
-
-    let userId = "";
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      userId = payload.sub;
-    } catch {
-      return cors(json({ success: false, message: "Invalid token" }, 401), req);
-    }
-    if (!userId) return cors(json({ success: false, message: "Invalid token" }, 401), req);
+    const authUser = await getUserFromRequest(req);
+    if (!authUser) return cors(json({ success: false, message: "Authentication required" }, 401), req);
+    const userId = authUser.id;
 
     const { currentPassword, newPassword } = await req.json();
 

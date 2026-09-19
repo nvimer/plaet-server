@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,13 +8,13 @@ function getSupabase() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
+// Mirrors the OrderStatus enum. IN_KITCHEN, READY and DELIVERED belong to
+// OrderItemStatus (orders-update-item-status), not to the order itself: asking
+// for them here used to reach Postgres and fail on the enum.
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  OPEN: ["SENT_TO_CASHIER", "IN_KITCHEN", "CANCELLED"],
-  SENT_TO_CASHIER: ["PAID", "CANCELLED"],
-  PAID: ["IN_KITCHEN", "CANCELLED"],
-  IN_KITCHEN: ["READY", "CANCELLED"],
-  READY: ["DELIVERED", "CANCELLED"],
-  DELIVERED: [],
+  OPEN: ["SENT_TO_CASHIER", "PAID", "CANCELLED"],
+  SENT_TO_CASHIER: ["PAID", "OPEN", "CANCELLED"],
+  PAID: ["CANCELLED"],
   CANCELLED: [],
 };
 
@@ -22,7 +22,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "PATCH") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -41,7 +41,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Get current order
     const { data: order, error: fetchError } = await supabase
       .from("orders")
-      .select("id, status, restaurant_id")
+      .select("id, status, table_id, restaurant_id")
       .eq("id", orderId)
       .eq("deleted", false)
       .single();
@@ -50,7 +50,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Order not found", 404, "ORDER_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && order.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, order.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 
@@ -84,6 +84,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           await supabase.rpc("revert_stock", {
             p_menu_item_id: item.menu_item_id,
             p_quantity: item.quantity,
+            p_order_id: orderId,
           });
         }
       }

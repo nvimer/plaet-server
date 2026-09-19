@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyPassword } from "../_shared/password.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -28,34 +29,6 @@ async function signJwt(payload: Record<string, unknown>, expiresInSec: number): 
     .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 
   return `${data}.${sigB64}`;
-}
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256);
-  const hashArray = new Uint8Array(hash);
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const hashHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2:100000:${saltHex}:${hashHex}`;
-}
-
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (stored.startsWith("$2b$") || stored.startsWith("$2a$")) {
-    // Legacy bcrypt hash - compare with constant-time string comparison
-    // For now, just return false since we're migrating away from bcrypt
-    return false;
-  }
-  if (!stored.startsWith("pbkdf2:")) return false;
-  const [, iterations, saltHex, hashHex] = stored.split(":");
-  const encoder = new TextEncoder();
-  const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(h => parseInt(h, 16)));
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const hash = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: parseInt(iterations), hash: "SHA-256" }, key, 256);
-  const hashArray = new Uint8Array(hash);
-  const computedHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
-  return computedHex === hashHex;
 }
 
 function getOrigin(req: Request): string {
@@ -161,6 +134,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   } catch (e) {
     console.error("LOGIN ERROR:", e);
-    return cors(json({ success: false, message: "Internal server error", detail: String(e) }, 500), req);
+    return cors(json({ success: false, message: "Internal server error" }, 500), req);
   }
 });

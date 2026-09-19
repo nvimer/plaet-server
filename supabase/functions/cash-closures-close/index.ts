@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, writeRestaurantId, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "POST") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -22,88 +22,58 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Actual balance is required and must be non-negative", 400), req);
     }
 
+    const restaurantId = writeRestaurantId(user, input.restaurantId);
+    if (!restaurantId) return cors(error("Restaurant context required", 400, "TENANT_REQUIRED"), req);
+
     const supabase = getSupabase();
 
-    // Get the open closure
-    const { data: openClosure } = await supabase
-      .from("cash_closures")
-      .select(`
-        id, opening_balance, restaurant_id,
-        opened_by:users!cash_closures_opened_by_id_fkey(id, first_name, last_name)
-      `)
-      .eq("status", "OPEN")
-      .eq("deleted", false)
-      .single();
+    // One transaction: locks the open register, totals payments and expenses,
+    // and closes it. Two cashiers closing at once can no longer both succeed.
+    const { data: closureId, error: txError } = await supabase.rpc("close_cash_closure_tx", {
+      p_restaurant_id: restaurantId,
+      p_closed_by: user.id,
+      p_actual_balance: input.actualBalance,
+    });
 
-    if (!openClosure) {
-      return cors(error("No open cash closure found", 404, "NO_OPEN_CLOSURE"), req);
+    if (txError) {
+      const message = String(txError.message || "");
+      if (message.startsWith("NO_OPEN_CLOSURE")) {
+        return cors(error("No open cash closure found", 404, "NO_OPEN_CLOSURE"), req);
+      }
+      console.error("CLOSE CLOSURE TX ERROR:", JSON.stringify(txError));
+      return cors(error("Failed to close cash closure", 500), req);
     }
 
-    // Calculate totals from orders
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("id, total_amount, type")
-      .eq("cash_closure_id", openClosure.id)
-      .eq("deleted", false);
-
-    const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-
-    // Calculate payment method totals
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("id, amount, method")
-      .eq("cash_closure_id", openClosure.id);
-
-    const totalCash = payments?.filter(p => p.method === "CASH").reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-    const totalNequi = payments?.filter(p => p.method === "NEQUI").reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-    const totalVouchers = payments?.filter(p => p.method === "VOUCHER").reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-
-    // Calculate expenses
-    const { data: expenses } = await supabase
-      .from("expenses")
-      .select("id, amount")
-      .eq("cash_closure_id", openClosure.id)
-      .eq("deleted", false);
-
-    const totalExpenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-
-    // Calculate expected balance
-    const expectedBalance = Number(openClosure.opening_balance) + totalCash - totalExpenses;
-
-    // Calculate difference
-    const difference = input.actualBalance - expectedBalance;
-
-    // Update closure
-    const { data: closedClosure, error: closeError } = await supabase
+    const { data: closedClosure } = await supabase
       .from("cash_closures")
-      .update({
-        closed_by_id: user.id,
-        closing_date: new Date().toISOString(),
-        actual_balance: input.actualBalance,
-        expected_balance: expectedBalance,
-        difference: difference,
-        total_cash: totalCash,
-        total_nequi: totalNequi,
-        total_expenses: totalExpenses,
-        total_vouchers: totalVouchers,
-        status: "CLOSED",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", openClosure.id)
       .select(`
         id, opened_by_id, closed_by_id, opening_date, closing_date,
         opening_balance, expected_balance, actual_balance, difference,
         total_cash, total_nequi, total_expenses, total_vouchers,
+        total_delivery, delivery_cash, delivery_nequi,
         status, created_at, restaurant_id,
         opened_by:users!cash_closures_opened_by_id_fkey(id, first_name, last_name),
         closed_by:users!cash_closures_closed_by_id_fkey(id, first_name, last_name)
       `)
+      .eq("id", closureId)
       .single();
 
-    if (closeError) {
-      console.error("Close error:", closeError);
-      return cors(error("Failed to close cash closure", 500), req);
-    }
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("total_amount")
+      .eq("cash_closure_id", closureId)
+      .eq("deleted", false);
+
+    // Lunches served against a ticket book: they move no cash, they are reported apart.
+    const { data: usages } = await supabase
+      .from("ticket_book_usages")
+      .select("portion_count, payment:payments!inner(cash_closure_id)")
+      .eq("payment.cash_closure_id", closureId)
+      .eq("deleted", false);
+
+    const ticketBookPortions = (usages || []).reduce((sum, u) => sum + Number(u.portion_count || 0), 0);
+
+    const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
 
     return cors(json({
       success: true,
@@ -112,10 +82,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
         ...closedClosure,
         summary: {
           totalRevenue,
-          totalCash,
-          totalNequi,
-          totalVouchers,
-          totalExpenses,
+          totalCash: Number(closedClosure?.total_cash || 0),
+          totalNequi: Number(closedClosure?.total_nequi || 0),
+          totalVouchers: Number(closedClosure?.total_vouchers || 0),
+          totalExpenses: Number(closedClosure?.total_expenses || 0),
+          ticketBookPortions,
+          totalTicketBooks: Number(closedClosure?.total_vouchers || 0),
+          totalDelivery: Number(closedClosure?.total_delivery || 0),
+          deliveryCash: Number(closedClosure?.delivery_cash || 0),
+          deliveryNequi: Number(closedClosure?.delivery_nequi || 0),
         },
       }),
     }), req);

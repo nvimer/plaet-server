@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
+import { getUserFromRequest, canAccessRestaurant, cors, json, error, deepToCamelCase } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
   if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
 
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return cors(error("Unauthorized", 401), req);
 
   try {
@@ -45,7 +45,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Cash closure not found", 404, "CLOSURE_NOT_FOUND"), req);
     }
 
-    if (user.restaurantId && closure.restaurant_id !== user.restaurantId) {
+    if (!canAccessRestaurant(user, closure.restaurant_id)) {
       return cors(error("Forbidden", 403), req);
     }
 
@@ -61,6 +61,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       paidOrders: orders?.filter(o => o.status === "PAID").length || 0,
       totalRevenue: orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
     };
+
+    // Lunches served against a ticket book: they move no cash, they are reported apart.
+    const { data: usages } = await supabase
+      .from("ticket_book_usages")
+      .select("portion_count, payment:payments!inner(cash_closure_id)")
+      .eq("payment.cash_closure_id", closureId)
+      .eq("deleted", false);
+
+    const ticketBookPortions = (usages || []).reduce((sum, u) => sum + Number(u.portion_count || 0), 0);
 
     // Get expenses for this closure
     const { data: expenses } = await supabase
@@ -79,6 +88,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       message: "Cash closure fetched successfully",
       data: deepToCamelCase({
         ...closure,
+        ticketBookPortions,
         ordersSummary,
         expensesSummary,
       }),
