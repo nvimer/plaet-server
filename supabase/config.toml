@@ -164,3 +164,48 @@ verify_jwt = false
 
 [functions.restaurants-delete]
 verify_jwt = false
+
+[functions.daily-menu-get]
+verify_jwt = false
+
+[functions.daily-menu-history]
+verify_jwt = false
+
+[functions.daily-menu-upsert]
+verify_jwt = false
+
+[functions.expenses-create]
+verify_jwt = false
+
+[functions.expenses-list]
+verify_jwt = false
+
+[functions.expenses-delete]
+verify_jwt = false
+
+[functions.ticket-books-sell]
+verify_jwt = false
+
+[functions.ticket-books-by-customer]
+verify_jwt = false
+
+[functions.users-list]
+verify_jwt = false
+
+[functions.users-get]
+verify_jwt = false
+
+[functions.users-update]
+verify_jwt = false
+
+[functions.profiles-me]
+verify_jwt = false
+
+[functions.profiles-update]
+verify_jwt = false
+
+[functions.analytics-daily-summary]
+verify_jwt = false
+
+[functions.analytics-top-products]
+verify_jwt = false
