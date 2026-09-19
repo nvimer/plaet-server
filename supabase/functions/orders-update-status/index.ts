@@ -8,13 +8,13 @@ function getSupabase() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
+// Mirrors the OrderStatus enum. IN_KITCHEN, READY and DELIVERED belong to
+// OrderItemStatus (orders-update-item-status), not to the order itself: asking
+// for them here used to reach Postgres and fail on the enum.
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  OPEN: ["SENT_TO_CASHIER", "IN_KITCHEN", "CANCELLED"],
-  SENT_TO_CASHIER: ["PAID", "CANCELLED"],
-  PAID: ["IN_KITCHEN", "CANCELLED"],
-  IN_KITCHEN: ["READY", "CANCELLED"],
-  READY: ["DELIVERED", "CANCELLED"],
-  DELIVERED: [],
+  OPEN: ["SENT_TO_CASHIER", "PAID", "CANCELLED"],
+  SENT_TO_CASHIER: ["PAID", "OPEN", "CANCELLED"],
+  PAID: ["CANCELLED"],
   CANCELLED: [],
 };
 

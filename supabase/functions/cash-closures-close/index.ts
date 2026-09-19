@@ -50,6 +50,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         id, opened_by_id, closed_by_id, opening_date, closing_date,
         opening_balance, expected_balance, actual_balance, difference,
         total_cash, total_nequi, total_expenses, total_vouchers,
+        total_delivery, delivery_cash, delivery_nequi,
         status, created_at, restaurant_id,
         opened_by:users!cash_closures_opened_by_id_fkey(id, first_name, last_name),
         closed_by:users!cash_closures_closed_by_id_fkey(id, first_name, last_name)
@@ -62,6 +63,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .select("total_amount")
       .eq("cash_closure_id", closureId)
       .eq("deleted", false);
+
+    // Lunches served against a ticket book: they move no cash, they are reported apart.
+    const { data: usages } = await supabase
+      .from("ticket_book_usages")
+      .select("portion_count, payment:payments!inner(cash_closure_id)")
+      .eq("payment.cash_closure_id", closureId)
+      .eq("deleted", false);
+
+    const ticketBookPortions = (usages || []).reduce((sum, u) => sum + Number(u.portion_count || 0), 0);
 
     const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
 
@@ -76,6 +86,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           totalNequi: Number(closedClosure?.total_nequi || 0),
           totalVouchers: Number(closedClosure?.total_vouchers || 0),
           totalExpenses: Number(closedClosure?.total_expenses || 0),
+          ticketBookPortions,
+          totalTicketBooks: Number(closedClosure?.total_vouchers || 0),
+          totalDelivery: Number(closedClosure?.total_delivery || 0),
+          deliveryCash: Number(closedClosure?.delivery_cash || 0),
+          deliveryNequi: Number(closedClosure?.delivery_nequi || 0),
         },
       }),
     }), req);

@@ -1,3 +1,66 @@
+-- Ensayo de las migraciones 00004-00006 SIN aplicarlas.
+-- Si algo está mal, Postgres se queja aquí mismo y el ROLLBACK deshace todo.
+-- Postgres aplica el DDL dentro de transacciones, así que esto es seguro.
+
+BEGIN;
+
+-- ============ 00004_menu_category_types.sql ============
+-- ============================
+-- MENU CATEGORY TYPES
+-- ============================
+-- The daily menu (corrientazo) used to find its categories by name: the client
+-- looked up "Sopas", "Proteínas", etc. Renaming a category broke it. The role a
+-- category plays is now explicit data, so restaurants can name their categories
+-- however they want.
+
+DO $$ BEGIN
+  CREATE TYPE "MenuCategoryType" AS ENUM (
+    'SOUP', 'RICE', 'PRINCIPLE', 'PROTEIN', 'DRINK', 'EXTRA', 'SALAD', 'DESSERT', 'OTHER'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TABLE "menu_categories"
+  ADD COLUMN IF NOT EXISTS "type" "MenuCategoryType" NOT NULL DEFAULT 'OTHER';
+
+-- Backfill from the current names, accent- and case-insensitive, the same way the
+-- client matched them. Only the first match per restaurant and role is taken, so
+-- near-duplicate names can't break the unique index below.
+WITH normalized AS (
+  SELECT mc.id, mc.restaurant_id,
+         translate(lower(trim(mc.name)), 'áéíóúüñ', 'aeiouun') AS plain_name
+  FROM "menu_categories" mc
+  WHERE mc.deleted = false AND mc.type = 'OTHER'
+),
+matched AS (
+  SELECT DISTINCT ON (n.restaurant_id, v.type)
+         n.id, v.type::"MenuCategoryType" AS type
+  FROM normalized n
+  JOIN (VALUES
+    ('sopas', 'SOUP'),
+    ('arroces', 'RICE'),
+    ('principios', 'PRINCIPLE'),
+    ('proteinas', 'PROTEIN'),
+    ('bebidas', 'DRINK'),
+    ('extras', 'EXTRA'),
+    ('ensaladas', 'SALAD'),
+    ('postres', 'DESSERT')
+  ) AS v(name, type) ON v.name = n.plain_name
+  ORDER BY n.restaurant_id, v.type, n.id
+)
+UPDATE "menu_categories" mc
+SET "type" = m.type
+FROM matched m
+WHERE mc.id = m.id;
+
+-- One category per role per restaurant, so the lookup is deterministic.
+-- OTHER is unconstrained: a restaurant can have as many of its own as it wants.
+CREATE UNIQUE INDEX IF NOT EXISTS "menu_categories_restaurant_id_type_key"
+  ON "menu_categories"("restaurant_id", "type")
+  WHERE "type" <> 'OTHER' AND "deleted" = false;
+
+-- ============ 00005_transactional_functions.sql ============
 -- ============================
 -- TRANSACTIONAL RPCs
 -- ============================
@@ -330,8 +393,6 @@ DECLARE
   v_total_nequi NUMERIC(10,2);
   v_total_vouchers NUMERIC(10,2);
   v_total_expenses NUMERIC(10,2);
-  v_delivery_cash NUMERIC(10,2);
-  v_delivery_nequi NUMERIC(10,2);
   v_expected NUMERIC(10,2);
 BEGIN
   SELECT id, opening_balance INTO v_closure
@@ -345,29 +406,16 @@ BEGIN
     RAISE EXCEPTION 'NO_OPEN_CLOSURE: this restaurant has no open register';
   END IF;
 
-  -- One bucket per payment method. TICKET_BOOK lands in vouchers: those lunches
-  -- were paid for when the book was sold, so they move no cash today.
   SELECT
     COALESCE(SUM(amount) FILTER (WHERE method = 'CASH'), 0),
     COALESCE(SUM(amount) FILTER (WHERE method = 'NEQUI'), 0),
-    COALESCE(SUM(amount) FILTER (WHERE method = 'TICKET_BOOK'), 0)
+    COALESCE(SUM(amount) FILTER (WHERE method NOT IN ('CASH', 'NEQUI')), 0)
   INTO v_total_cash, v_total_nequi, v_total_vouchers
   FROM payments WHERE cash_closure_id = v_closure.id;
-
-  -- Delivery is a subset of the above, shown apart so the courier can be settled.
-  SELECT
-    COALESCE(SUM(p.amount) FILTER (WHERE p.method = 'CASH'), 0),
-    COALESCE(SUM(p.amount) FILTER (WHERE p.method = 'NEQUI'), 0)
-  INTO v_delivery_cash, v_delivery_nequi
-  FROM payments p
-  JOIN orders o ON o.id = p.order_id
-  WHERE p.cash_closure_id = v_closure.id AND o.type = 'DELIVERY' AND o.deleted = false;
 
   SELECT COALESCE(SUM(amount), 0) INTO v_total_expenses
   FROM expenses WHERE cash_closure_id = v_closure.id AND deleted = false;
 
-  -- Only cash is in the drawer. Delivery cash is already inside v_total_cash;
-  -- the Express version added it again and inflated the expected balance.
   v_expected := v_closure.opening_balance + v_total_cash - v_total_expenses;
 
   UPDATE cash_closures SET
@@ -380,9 +428,6 @@ BEGIN
     total_nequi = v_total_nequi,
     total_vouchers = v_total_vouchers,
     total_expenses = v_total_expenses,
-    delivery_cash = v_delivery_cash,
-    delivery_nequi = v_delivery_nequi,
-    total_delivery = v_delivery_cash + v_delivery_nequi,
     status = 'CLOSED',
     updated_at = NOW()
   WHERE id = v_closure.id;
@@ -400,3 +445,97 @@ GRANT EXECUTE ON FUNCTION public.create_order_tx(JSONB) TO service_role;
 GRANT EXECUTE ON FUNCTION public.close_cash_closure_tx(UUID, UUID, NUMERIC) TO service_role;
 GRANT EXECUTE ON FUNCTION public.deduct_stock(INTEGER, INTEGER, UUID, UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.revert_stock(INTEGER, INTEGER, UUID, UUID) TO service_role;
+
+-- ============ 00006_ticket_book_sale.sql ============
+-- ============================
+-- TICKET BOOK SALE
+-- ============================
+-- Selling a ticket book creates the book and the cash payment that funds the
+-- open register. The Express server did both in one transaction; this keeps that
+-- guarantee now that the write comes from an Edge Function.
+
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN
+    SELECT oid::regprocedure AS sig FROM pg_proc
+    WHERE pronamespace = 'public'::regnamespace AND proname = 'sell_ticket_book_tx'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s;', r.sig);
+  END LOOP;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.sell_ticket_book_tx(
+  p_restaurant_id UUID,
+  p_customer_id UUID,
+  p_total_portions INTEGER,
+  p_purchase_price NUMERIC,
+  p_expiry_days INTEGER,
+  p_day_start TIMESTAMP,
+  p_day_end TIMESTAMP,
+  p_daily_limit INTEGER DEFAULT 3
+) RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_closure_id UUID;
+  v_books_today INTEGER;
+  v_book_id UUID;
+BEGIN
+  IF p_total_portions IS NULL OR p_total_portions <= 0 THEN
+    RAISE EXCEPTION 'INVALID_PORTIONS: total portions must be positive';
+  END IF;
+
+  SELECT id INTO v_closure_id
+  FROM cash_closures
+  WHERE restaurant_id = p_restaurant_id AND status = 'OPEN' AND deleted = false
+  ORDER BY created_at DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'CASH_CLOSURE_REQUIRED: No hay un turno de caja abierto. Por favor abre caja antes de vender tiqueteras.';
+  END IF;
+
+  -- The customer row is locked so two cashiers can't both pass the daily limit.
+  PERFORM 1 FROM customers WHERE id = p_customer_id AND restaurant_id = p_restaurant_id AND deleted = false FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'CUSTOMER_NOT_FOUND: customer does not belong to this restaurant';
+  END IF;
+
+  SELECT COUNT(*) INTO v_books_today
+  FROM ticket_books
+  WHERE "customerId" = p_customer_id
+    AND restaurant_id = p_restaurant_id
+    AND status = 'active'
+    AND purchase_date >= p_day_start
+    AND purchase_date <= p_day_end;
+
+  IF v_books_today >= p_daily_limit THEN
+    RAISE EXCEPTION 'DAILY_TICKET_LIMIT_EXCEEDED: El cliente ya ha adquirido el límite máximo de % tiqueteras hoy. Intenta mañana.', p_daily_limit;
+  END IF;
+
+  INSERT INTO ticket_books (
+    "customerId", total_portions, consumed_portions, purchase_price,
+    purchase_date, expiry_date, status, restaurant_id, updated_at
+  ) VALUES (
+    p_customer_id, p_total_portions, 0, p_purchase_price,
+    NOW(), NOW() + make_interval(days => p_expiry_days), 'active', p_restaurant_id, NOW()
+  )
+  RETURNING id INTO v_book_id;
+
+  INSERT INTO payments (method, amount, cash_closure_id, transaction_ref)
+  VALUES ('CASH', p_purchase_price, v_closure_id,
+          format('Venta Tiquetera: %s porciones', p_total_portions));
+
+  RETURN v_book_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.sell_ticket_book_tx(UUID, UUID, INTEGER, NUMERIC, INTEGER, TIMESTAMP, TIMESTAMP, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sell_ticket_book_tx(UUID, UUID, INTEGER, NUMERIC, INTEGER, TIMESTAMP, TIMESTAMP, INTEGER) TO service_role;
+
+
+ROLLBACK;  -- quita esta línea (y pon COMMIT) solo cuando vayas en serio

@@ -62,6 +62,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       totalRevenue: orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
     };
 
+    // Lunches served against a ticket book: they move no cash, they are reported apart.
+    const { data: usages } = await supabase
+      .from("ticket_book_usages")
+      .select("portion_count, payment:payments!inner(cash_closure_id)")
+      .eq("payment.cash_closure_id", closureId)
+      .eq("deleted", false);
+
+    const ticketBookPortions = (usages || []).reduce((sum, u) => sum + Number(u.portion_count || 0), 0);
+
     // Get expenses for this closure
     const { data: expenses } = await supabase
       .from("expenses")
@@ -79,6 +88,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       message: "Cash closure fetched successfully",
       data: deepToCamelCase({
         ...closure,
+        ticketBookPortions,
         ordersSummary,
         expensesSummary,
       }),
