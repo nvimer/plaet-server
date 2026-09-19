@@ -40,7 +40,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error("Category not found", 404, "CATEGORY_NOT_FOUND"), req);
     }
 
-    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const updateData: Record<string, unknown> = {};
 
     if (input.name !== undefined) {
       const name = String(input.name).trim();
@@ -69,11 +69,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       updateData.order = order;
     }
 
+    if (Object.keys(updateData).length === 0) {
+      return cors(error("No fields to update", 400), req);
+    }
+
     const { data: category, error: updateError } = await supabase
       .from("menu_categories")
       .update(updateData)
       .eq("id", categoryId)
-      .select(`id, name, description, "order", restaurant_id, created_at, updated_at`)
+      .select(`id, name, description, "order", restaurant_id, deleted`)
       .single();
 
     if (updateError) {

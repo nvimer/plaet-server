@@ -5,8 +5,8 @@
 -- migration got no categories, which blocks creating menu items and the daily menu.
 -- Backfill every active restaurant that has none. Idempotent.
 
-INSERT INTO "menu_categories" ("name", "description", "order", "restaurant_id", "created_at", "updated_at")
-SELECT c.name, c.description, c.order, r.id, NOW(), NOW()
+INSERT INTO "menu_categories" ("name", "description", "order", "restaurant_id")
+SELECT c.name, c.description, c.order, r.id
 FROM "restaurants" r
 CROSS JOIN (VALUES
   ('Sopas', 'Sopas y caldos tradicionales elaborados diariamente con ingredientes frescos y el sabor de casa.', 1),

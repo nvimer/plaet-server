@@ -53,7 +53,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       order = (Number(last?.order) || 0) + 1;
     }
 
-    const now = new Date().toISOString();
     const { data: category, error: createError } = await supabase
       .from("menu_categories")
       .insert({
@@ -61,10 +60,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         description: input.description || null,
         order,
         restaurant_id: restaurantId,
-        created_at: now,
-        updated_at: now,
       })
-      .select(`id, name, description, "order", restaurant_id, created_at, updated_at`)
+      .select(`id, name, description, "order", restaurant_id, deleted`)
       .single();
 
     if (createError) {

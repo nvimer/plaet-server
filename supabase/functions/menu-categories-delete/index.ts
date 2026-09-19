@@ -45,10 +45,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return cors(error(`Cannot delete a category with ${count} active item(s)`, 409, "CATEGORY_HAS_ITEMS"), req);
     }
 
-    const now = new Date().toISOString();
     const { error: deleteError } = await supabase
       .from("menu_categories")
-      .update({ deleted: true, deleted_at: now, updated_at: now })
+      .update({ deleted: true, deleted_at: new Date().toISOString() })
       .eq("id", categoryId);
 
     if (deleteError) {

@@ -27,7 +27,6 @@ export async function seedDefaultCategories(supabase: Db, restaurantId: string):
 
   if (existing?.length) return 0;
 
-  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("menu_categories")
     .insert(DEFAULT_CATEGORIES.map(c => ({
@@ -35,8 +34,6 @@ export async function seedDefaultCategories(supabase: Db, restaurantId: string):
       description: c.description,
       order: c.order,
       restaurant_id: restaurantId,
-      created_at: now,
-      updated_at: now,
     })))
     .select("id");
 
