@@ -224,3 +224,9 @@ verify_jwt = false
 
 [functions.menu-items-stock-movements]
 verify_jwt = false
+
+[functions.auth-refresh-token]
+verify_jwt = false
+
+[functions.auth-logout]
+verify_jwt = false

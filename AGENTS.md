@@ -78,6 +78,8 @@ Anything that writes more than one row goes through an RPC, not a sequence of Po
 | `deduct_stock` / `revert_stock` | 00005 | Move stock, log the `stock_adjustment`, flip `is_available` |
 | `adjust_stock_tx` | 00009 | Manual stock correction, logged as MANUAL_ADD / MANUAL_REMOVE |
 | `daily_stock_reset_tx` | 00009 | The morning load: sets each tracked item to the day's portions |
+| `rotate_refresh_token_tx` | 00010 | Burns the presented refresh token, issues the new pair, and on reuse closes every session of that user. Returns a status instead of raising, because raising would roll back that very write |
+| `blacklist_tokens_tx` | 00010 | Logout: burns the tokens handed back, or all of the user's |
 
 They are `SECURITY DEFINER`, only `service_role` may execute them, and **the caller is responsible for the tenant checks before calling**. They raise errors as `CODE: message`; the Edge Function maps the code to an HTTP status (see `orders-create`).
 
@@ -112,7 +114,8 @@ Code, comments, commits and documentation in **English**. Conversation with Nico
 
 - `JWT_SECRET` is in the history of a public repo and has not been rotated.
 - No per-role permissions inside a restaurant: a WAITER can close the register. `role_permissions` exists and is unused.
-- Auth is incomplete: `auth-refresh-token`, `auth-forgot-password`, `auth-reset-password`, `auth-verify-email`, `auth-resend-verification` are called by the client and do not exist. Sessions die after 30 minutes.
+- Auth is still incomplete: `auth-forgot-password`, `auth-reset-password`, `auth-verify-email` and `auth-resend-verification` are called by the client and do not exist.
+- Blacklisted access tokens are not checked on every request (that would be a database round trip per call), so logout takes effect for refreshes immediately and for the access token within its 30 minutes.
 - Profile photo upload needs Supabase Storage.
 - Analytics: menu engineering, predictions and heatmap are still on the legacy API.
 - 58 functions is a lot of cold starts and duplicated boilerplate; grouping them by domain behind a router is the next architectural step, and it changes every client URL.
