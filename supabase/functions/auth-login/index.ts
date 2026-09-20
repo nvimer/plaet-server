@@ -22,7 +22,8 @@ function cors(res: Response, req: Request): Response {
   h.set("Access-Control-Allow-Methods", "POST, OPTIONS");
   h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
   h.set("Access-Control-Allow-Credentials", "true");
-  return new Response(res.body, { ...res, headers: h });
+  // Carry the status over: `{ ...res }` copies nothing from a Response (see _shared/auth.ts).
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
 function json(data: unknown, status = 200): Response {
@@ -108,7 +109,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
     h.set("Access-Control-Allow-Credentials", "true");
     for (const cookie of sessionCookies(accessToken, refreshToken)) h.append("Set-Cookie", cookie);
-    return new Response(resp.body, { ...resp, headers: h });
+    return new Response(resp.body, { status: resp.status, statusText: resp.statusText, headers: h });
 
   } catch (e) {
     console.error("LOGIN ERROR:", e);

@@ -29,7 +29,13 @@ supabase migration list --project-ref alkrxrcpdxecpzgykbrz
 supabase db push        --project-ref alkrxrcpdxecpzgykbrz
 supabase functions deploy --project-ref alkrxrcpdxecpzgykbrz
 supabase functions logs <name> --project-ref alkrxrcpdxecpzgykbrz
+
+# Tests (only _shared/cors_test.ts so far). --node-modules-dir=none because the repo root has the
+# Express package.json, which makes Deno demand a node_modules that this code does not use.
+deno test --no-lock --node-modules-dir=none --allow-env --allow-net --allow-read supabase/functions/_shared/
 ```
+
+If the Supabase CLI answers `401 Unauthorized`, the login token in `~/.supabase/access-token` has expired: run `supabase login` again. It was 7 days old when it failed.
 
 There is no Docker in the usual dev environment, so migrations cannot be run locally. To verify SQL against production without writing anything, use the pattern in `scripts/sql-checks/04_verificacion.sql`: apply the migrations, exercise them, and end with `RAISE EXCEPTION` carrying the results, so the transaction rolls back and the numbers still show up.
 
@@ -63,6 +69,7 @@ Rules that are not optional:
 - The gateway does not authenticate: `verify_jwt = false` everywhere, and the function does the work.
 - Responses are `{ success, message, data, meta? }` and go through `deepToCamelCase`.
 - Errors never leak internals: log with `console.error`, answer with a message and a code.
+- **Never rebuild a `Response` by spreading it** (`{ ...res, headers }`). A Response keeps its status on the prototype, so the spread copies nothing and the result is silently a 200. Pass `status: res.status` explicitly, as `cors()` does. Until 2026-09-20 every 401, 404 and 409 reached the client as a 200 because of this.
 - `supabase-js` runs with the **service role**, so RLS does not protect anything. The code is the only tenant boundary.
 
 ## 4. Transactions live in Postgres
@@ -120,4 +127,4 @@ Code, comments, commits and documentation in **English**. Conversation with Nico
 - Analytics: menu engineering, predictions and heatmap are still on the legacy API.
 - 58 functions is a lot of cold starts and duplicated boilerplate; grouping them by domain behind a router is the next architectural step, and it changes every client URL.
 - Moving to Supabase Auth with a custom claims hook would remove the hand-rolled JWT and hashing, and would make the RLS policies real.
-- `roles-list` has a pre-existing type error; input validation is hand-written (no Zod); `esm.sh` imports are not version-pinned; there are no tests for the functions.
+- `roles-list` has a pre-existing type error; input validation is hand-written (no Zod); `esm.sh` imports are not version-pinned; the only test is `_shared/cors_test.ts`, and none cover the functions themselves.

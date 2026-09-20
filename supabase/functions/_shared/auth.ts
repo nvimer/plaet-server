@@ -131,7 +131,10 @@ export function cors(res: Response, req?: Request): Response {
   h.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
   h.set("Access-Control-Allow-Credentials", "true");
-  return new Response(res.body, { ...res, headers: h });
+  // A Response keeps its status on the prototype, so `{ ...res }` copies nothing and
+  // the new response silently became a 200: every 401, 404 or 409 reached the client
+  // as a success status. Carry it over explicitly.
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
 export function json(data: unknown, status = 200): Response {
