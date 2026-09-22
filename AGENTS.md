@@ -69,6 +69,7 @@ Rules that are not optional:
 - The gateway does not authenticate: `verify_jwt = false` everywhere, and the function does the work.
 - Responses are `{ success, message, data, meta? }` and go through `deepToCamelCase`.
 - Errors never leak internals: log with `console.error`, answer with a message and a code.
+- **CORS is an exact-match allowlist**: the `ALLOWED_ORIGINS` secret (the CLI only shows its hash). `plaet.cloud` and the Vercel alias of `main` are in it; `http://localhost:5173` and per-branch Vercel previews are not, so testing a client from those origins fails with CORS errors until the origin is added. `supabase secrets set ALLOWED_ORIGINS=...` replaces the whole value, so include every existing origin. To probe an origin without a browser, send an `OPTIONS` request with `Origin:` and `Access-Control-Request-Method:` headers: an allowed origin comes back in `Access-Control-Allow-Origin`, a blocked one gets a different origin.
 - **Never rebuild a `Response` by spreading it** (`{ ...res, headers }`). A Response keeps its status on the prototype, so the spread copies nothing and the result is silently a 200. Pass `status: res.status` explicitly, as `cors()` does. Until 2026-09-20 every 401, 404 and 409 reached the client as a 200 because of this.
 - `supabase-js` runs with the **service role**, so RLS does not protect anything. The code is the only tenant boundary.
 
@@ -122,6 +123,7 @@ Code, comments, commits and documentation in **English**. Conversation with Nico
 - `JWT_SECRET` is in the history of a public repo and has not been rotated.
 - No per-role permissions inside a restaurant: a WAITER can close the register. `role_permissions` exists and is unused.
 - Auth is still incomplete: `auth-forgot-password`, `auth-reset-password`, `auth-verify-email` and `auth-resend-verification` are called by the client and do not exist.
+- Refresh rotation has no grace window: a refresh that succeeds but whose response is lost (flaky network), retried with the same token, counts as reuse and closes every session of that user. Supabase Auth tolerates a short window (`refresh_token_reuse_interval = 10` in `config.toml`); `rotate_refresh_token_tx` does not. Two browser tabs racing to refresh at the same instant hit the same case.
 - Blacklisted access tokens are not checked on every request (that would be a database round trip per call), so logout takes effect for refreshes immediately and for the access token within its 30 minutes.
 - Profile photo upload needs Supabase Storage.
 - Analytics: menu engineering, predictions and heatmap are still on the legacy API.
