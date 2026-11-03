@@ -1,295 +1,132 @@
 # Agentic Coding Guidelines (Plaet Server)
 
-Welcome! You are an AI agent operating in the Plaet Server API. This is a Node.js + Express + Prisma backend for a multi-tenant restaurant management SaaS.
+Plaet is a multi-tenant restaurant management SaaS. **The live backend is Supabase Edge Functions (Deno + TypeScript) on top of Postgres.** The Express + Prisma app under `src/` is the previous backend, kept for reference while the last pieces are ported; it is not deployed.
+
+Read this file before touching anything, then the relevant section of `supabase/functions/_shared/`.
 
 ---
 
-## 1. Build, Lint, and Test Commands
+## 1. Where the code lives
 
-### Installation
+| Path | What it is |
+|------|-----------|
+| `supabase/functions/<name>/index.ts` | One Edge Function per endpoint (58 of them) |
+| `supabase/functions/_shared/` | Auth, tenancy, passwords, time zones, menu categories, daily menu, users |
+| `supabase/migrations/` | Schema and Postgres functions, applied in order |
+| `supabase/config.toml` | Every function needs an entry with `verify_jwt = false` |
+| `scripts/sql-checks/` | Queries to verify migrations against a live database without writing |
+| `scripts/menu/` | Menu load and daily stock scripts for Sazonarte |
+| `src/`, `prisma/`, `docs/` | **Legacy Express backend.** Not deployed. Good for business rules, not for how things work today |
+
+## 2. Commands
 
 ```bash
-npm install
+# Type-check every function (needs Deno; there is no package.json for the functions)
+deno check supabase/functions/_shared/*.ts supabase/functions/*/index.ts
+
+# Deploy: migrations FIRST, then functions. Functions call RPCs that migrations create.
+supabase migration list --project-ref alkrxrcpdxecpzgykbrz
+supabase db push        --project-ref alkrxrcpdxecpzgykbrz
+supabase functions deploy --project-ref alkrxrcpdxecpzgykbrz
+supabase functions logs <name> --project-ref alkrxrcpdxecpzgykbrz
+
+# Tests (only _shared/cors_test.ts so far). --node-modules-dir=none because the repo root has the
+# Express package.json, which makes Deno demand a node_modules that this code does not use.
+deno test --no-lock --node-modules-dir=none --allow-env --allow-net --allow-read supabase/functions/_shared/
 ```
 
-### Development & Build
+If the Supabase CLI answers `401 Unauthorized`, the login token in `~/.supabase/access-token` has expired: run `supabase login` again. It was 7 days old when it failed.
 
-```bash
-npm run dev          # Run with ts-node and nodemon (auto-reload)
-npm run build        # Compile TypeScript to dist/
-npm start            # Production: migrate + start compiled
+There is no Docker in the usual dev environment, so migrations cannot be run locally. To verify SQL against production without writing anything, use the pattern in `scripts/sql-checks/04_verificacion.sql`: apply the migrations, exercise them, and end with `RAISE EXCEPTION` carrying the results, so the transaction rolls back and the numbers still show up.
+
+The npm scripts (`npm run dev`, `test`, `prisma:*`) belong to the legacy Express app.
+
+## 3. Writing an Edge Function
+
+Every function follows the same shape. Copy a small one (`menu-items-get`) rather than starting blank.
+
+```ts
+Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") return cors(new Response(null, { status: 204 }), req);
+  if (req.method !== "GET") return cors(error("Method not allowed", 405), req);
+
+  const user = await getUserFromRequest(req);          // ALWAYS await: it verifies the signature
+  if (!user) return cors(error("Unauthorized", 401), req);
+
+  const scope = tenantScope(user);
+  if (scope === false) return cors(error("Restaurant context required", 403, "TENANT_REQUIRED"), req);
+  ...
+});
 ```
 
-### Linting & Formatting
-
-```bash
-npm run eslint-check-only  # Check lint errors
-npm run eslint-fix        # Auto-fix lint errors
-npm run prettier          # Format all files (double quotes, semi-colons)
-```
-
-### Testing
-
-```bash
-npm run test           # Run all tests
-npm run test:watch     # Watch mode for development
-npm run test:coverage  # Coverage report
-
-# Single test file (Jest accepts regex pattern)
-npm test -- orders.service.test.ts
-npm run test:watch -- --testPathPattern="order.repository"
-
-npm run test:integration  # Integration tests (requires TEST_TYPE=integration)
-npm run test:e2e          # End-to-end tests (requires TEST_TYPE=e2e)
-npm run test:all          # Run unit + integration + e2e sequentially
-```
-
-### Test Database Management
-
-```bash
-npm run test:db:start    # Start test PostgreSQL container
-npm run test:db:stop     # Stop container
-npm run test:db:reset     # Reset database
-npm run test:db:migrate  # Run migrations on test DB
-npm run test:db:status   # Check container status
-```
-
-### Prisma
-
-```bash
-npm run prisma:generate  # Generate Prisma client
-npm run prisma:migrate   # Apply migrations
-npm run prisma:seed      # Seed database
-npm run prisma:studio    # Open Prisma Studio GUI
-npm run prisma:reset     # Reset migrations (DANGEROUS)
-```
-
----
-
-## 2. Code Style & Conventions
-
-### TypeScript Configuration
-
-- Strict mode enabled (all strict checks)
-- Module: CommonJS
-- Paths: Use `@/` alias for `src/` directory
-- JSON modules: enabled (resolveJsonModule)
-
-### Formatting Rules
-
-- **Quotes**: Double quotes (`"`)
-- **Semicolons**: Always required
-- **Trailing commas**: All (ES5+)
-- **Tab width**: 2 spaces
-- **Single quotes**: Disabled
-
-### Naming Conventions
-
-| Element             | Convention                    | Example                           |
-| ------------------- | ----------------------------- | --------------------------------- |
-| Files               | kebab-case                    | `order.service.ts`                |
-| Classes             | PascalCase                    | `OrderService`                    |
-| Interfaces          | PascalCase + Interface suffix | `OrderServiceInterface`           |
-| Variables/Functions | camelCase                     | `createOrder`, `orderData`        |
-| Constants           | UPPER_SNAKE_CASE              | `MAX_ITEMS`                       |
-| Types               | PascalCase                    | `OrderStatus`, `PaginationParams` |
-| Enums               | PascalCase members            | `OrderStatus.PENDING`             |
-
-### Imports
-
-```typescript
-// Use import type for type-only imports
-import type { OrderServiceInterface } from "./interfaces";
-import type { CustomErrorInterface } from "../../types";
-
-// Regular imports
-import { Order } from "@prisma/client";
-import { CustomError } from "../../types/custom-errors";
-
-// Internal path alias
-import { paginationHelper } from "@/utils/pagination.helper";
-```
-
-### Types & TypeScript
-
-- **STRICT ZERO TOLERANCE** for `any` or `unknown` - always define explicit types
-- Use `import type` for interfaces and type definitions
-- Use `Prisma.Decimal` for monetary values (never use number for money)
-- Define interfaces for all services (`*ServiceInterface` suffix)
-
-### Error Handling
-
-- Use `CustomError` class for expected failures (validation, not found, etc.)
-- Use Winston logger (never raw `console.log`)
-- All errors should have `statusCode` and optional `errorCode`
-
-```typescript
-throw new CustomError(
-  "Order not found",
-  HttpStatus.NOT_FOUND,
-  "ORDER_NOT_FOUND",
-);
-```
-
-### Validation
-
-- Use **Zod** for all input validation (request bodies, query params)
-- For optional DB fields (`String?`), use `.optional().nullable()` in Zod schemas
-
-### Logging
-
-```typescript
-import { logger } from "@/config/logger";
-
-logger.info("Message with context", { userId, action });
-logger.error("Error occurred", { error: err.message, stack });
-```
-
----
-
-## 3. Architecture
-
-### Directory Structure
-
-```
-src/
-  api/{module}/
-    {module}.route.ts      # Express routes
-    {module}.controller.ts # Request handling
-    {module}.service.ts    # Business logic
-    {module}.repository.ts # Data access
-    {module}.validator.ts  # Zod schemas
-    interfaces/            # Contract definitions
-    services/              # Sub-services (for large modules)
-    __tests__/             # Tests (unit/, integration/, e2e/, helpers/)
-  config/                  # App configuration
-  database/                # Prisma client setup
-  middlewares/             # Express middleware
-  types/                  # TypeScript types
-  utils/                  # Utilities
-```
-
-### Layered Modular Pattern
-
-```
-Route -> Controller -> Service -> Repository
-```
-
-- Routes define endpoints and apply middleware
-- Controllers handle request/response (use `asyncHandler`)
-- Services contain business logic (can be split into sub-services)
-- Repositories handle data access via Prisma
-
-### Large Service Splitting
-
-Services that exceed ~200 lines MUST be split:
-
-```typescript
-// order.service.ts
-export class OrderService {
-  private creationService: OrderCreationService;
-  private statusService: OrderStatusService;
-  // ...
-}
-```
-
----
-
-## 4. Multi-Tenant Architecture (CRITICAL)
-
-### Server-Side
-
-- Prisma Client extensions automatically filter all queries by `restaurantId`
-- **NEVER manually filter by `restaurantId`** in repositories (except for SUPERADMIN analytics)
-- `restaurantId` is extracted from JWT and set via `tenantContext`
-- Global queries (cross-tenant) use `getBasePrismaClient()`
-
-### Security
-
-- Soft delete enforced at Prisma extension level
-- All tenant-aware models checked on `findUnique`, `update`, `findMany`
-- Unauthorized cross-tenant access returns `null` (not 403)
-
----
-
-## 5. Testing Patterns
-
-### Test Structure
-
-```
-__tests__/
-  unit/           # Isolated service/repository tests
-  integration/    # API endpoint tests with test DB
-  e2e/            # Full flow tests
-  helpers/        # Fixtures and mock factories
-```
-
-### Mocking Prisma
-
-```typescript
-// Mock BEFORE imports
-const mockPrismaClient = {
-  order: { findUnique: jest.fn(), create: jest.fn() /* ... */ },
-  $transaction: jest.fn(),
-};
-
-jest.mock("../../../../database/prisma", () => ({
-  default: { $transaction: mockPrismaClient.$transaction },
-  getPrismaClient: jest.fn(() => mockPrismaClient),
-}));
-```
-
-### Fixtures Pattern
-
-```typescript
-export function createOrderFixture(
-  overrides: Partial<Record<string, unknown>> = {},
-) {
-  return {
-    id: "default-id",
-    status: OrderStatus.PENDING,
-    createdAt: new Date("2024-01-01T12:00:00.000Z"),
-    ...overrides,
-  };
-}
-```
-
-### Test Requirements
-
-- Coverage threshold: 80% (branches, functions, lines, statements)
-- All tests must pass before declaring task complete
-- Integration tests require running test database
-
----
-
-## 6. Access Control (RBAC)
-
-- Use `permissionMiddleware("module:action")` for route protection
-- Permissions follow pattern: `{resource}:{action}`
-- SuperAdmin bypasses all permission checks
-- Users can always access their own roles/permissions (`/users/:id` with own ID)
-
----
-
-## 7. API Documentation
-
-- Swagger docs located in `./docs/**/*.yaml`
-- Access at `/api/v1/docs` when server running
-- JSON spec at `/api/v1/docs.json`
-
----
-
-## 8. Git Workflow
-
-- Branch naming: `feature/`, `bugfix/`, `refactor/`, `perf/`
-- Small, atomic commits
-- Conventional Commits standard
-- Run lint and tests before committing
-
----
-
-## 9. Language Policy
-
-- **English ONLY** for code, comments, commits, documentation
-- **Spanish ONLY** for user-facing UI strings (errors, labels, messages)
-- No emojis in commits or code comments
+Rules that are not optional:
+
+- **`getUserFromRequest` is async and verifies the HS256 signature, the expiry and the `alg`.** Never decode a token by hand with `atob`. Refresh tokens are rejected as access tokens.
+- **Every query is scoped**, with the three helpers in `_shared/auth.ts`:
+  - `tenantScope(user)` → the restaurant id, `null` for a global SUPERADMIN, `false` for a caller with no tenant (reject).
+  - `canAccessRestaurant(user, row.restaurant_id)` for reads and updates of a single row.
+  - `writeRestaurantId(user, body.restaurantId)` for inserts.
+- The gateway does not authenticate: `verify_jwt = false` everywhere, and the function does the work.
+- Responses are `{ success, message, data, meta? }` and go through `deepToCamelCase`.
+- Errors never leak internals: log with `console.error`, answer with a message and a code.
+- **CORS is an exact-match allowlist**: the `ALLOWED_ORIGINS` secret (the CLI only shows its hash). `plaet.cloud` and the Vercel alias of `main` are in it; `http://localhost:5173` and per-branch Vercel previews are not, so testing a client from those origins fails with CORS errors until the origin is added. `supabase secrets set ALLOWED_ORIGINS=...` replaces the whole value, so include every existing origin. To probe an origin without a browser, send an `OPTIONS` request with `Origin:` and `Access-Control-Request-Method:` headers: an allowed origin comes back in `Access-Control-Allow-Origin`, a blocked one gets a different origin.
+- **Never rebuild a `Response` by spreading it** (`{ ...res, headers }`). A Response keeps its status on the prototype, so the spread copies nothing and the result is silently a 200. Pass `status: res.status` explicitly, as `cors()` does. Until 2026-09-20 every 401, 404 and 409 reached the client as a 200 because of this.
+- `supabase-js` runs with the **service role**, so RLS does not protect anything. The code is the only tenant boundary.
+
+## 4. Transactions live in Postgres
+
+Anything that writes more than one row goes through an RPC, not a sequence of PostgREST calls:
+
+| RPC | Migration | What it owns |
+|-----|-----------|--------------|
+| `create_order_tx(jsonb)` | 00005, 00008 | Locks the items in id order, validates stock, writes the order, its items, the stock movements and the payment |
+| `register_payment_tx(jsonb)` | 00007 | Payments, including ticket book redemption, and marks the order paid |
+| `close_cash_closure_tx` | 00005 | Locks the open register, totals payments and expenses, closes it |
+| `sell_ticket_book_tx` | 00006 | The book plus the cash payment that funds the register |
+| `deduct_stock` / `revert_stock` | 00005 | Move stock, log the `stock_adjustment`, flip `is_available` |
+| `adjust_stock_tx` | 00009 | Manual stock correction, logged as MANUAL_ADD / MANUAL_REMOVE |
+| `daily_stock_reset_tx` | 00009 | The morning load: sets each tracked item to the day's portions |
+| `rotate_refresh_token_tx` | 00010 | Burns the presented refresh token, issues the new pair, and on reuse closes every session of that user. Returns a status instead of raising, because raising would roll back that very write |
+| `blacklist_tokens_tx` | 00010 | Logout: burns the tokens handed back, or all of the user's |
+
+They are `SECURITY DEFINER`, only `service_role` may execute them, and **the caller is responsible for the tenant checks before calling**. They raise errors as `CODE: message`; the Edge Function maps the code to an HTTP status (see `orders-create`).
+
+When a function's body changes, replace it from a new migration with `CREATE OR REPLACE`; never edit an applied migration.
+
+## 5. Business rules worth knowing
+
+- **A lunch (corrientazo) is one order item**, the protein, priced `daily_menus.base_price + protein price`. The soup, principio, rice and drink are included and are not sent as items. The prices on those products are for selling them on their own.
+- **Substitutions are free** (`is_substitution`, `price_at_order = 0`, `replaces_category_type`) and never apply to the protein, which sets the price. Paid additions use `is_extra`.
+- **Ticket books:** money enters when the book is sold. Redeeming a lunch moves no cash, sits in the `TICKET_BOOK` bucket, and never counts towards the drawer. One lunch is one portion, one redemption per customer per day, several portions allowed in that one redemption.
+- **The register:** each method is totalled on its own, delivery cash and nequi are shown apart, and the expected balance is `opening + cash − expenses`. Delivery cash is already inside the cash total; do not add it twice.
+- **Categories carry a role** (`menu_categories.type`: SOUP, RICE, PRINCIPLE, PROTEIN, DRINK, EXTRA, SALAD, DESSERT, OTHER). The daily menu must resolve its slots by this type. Matching by name is what it used to do and it broke whenever a restaurant renamed a category. One category per role per restaurant, enforced by a partial unique index.
+- **Days belong to the restaurant's time zone** (`_shared/time.ts`, default `America/Bogota`). The server runs in UTC, so `setHours(0,0,0,0)` is always wrong.
+- **Enums are narrower than they look.** `OrderStatus` is OPEN, SENT_TO_CASHIER, PAID, CANCELLED. IN_KITCHEN, READY and DELIVERED belong to `OrderItemStatus`. `PaymentMethod` is CASH, NEQUI, TICKET_BOOK only.
+- **Columns are not uniformly snake_case:** `orders."customerId"`, `daily_menus."isActive"`, `ticket_books."customerId"`, `daily_ticket_book_codes."customerId"` and `profiles."birthDate"` are quoted camelCase, inherited from Prisma. `menu_categories` has no `created_at` / `updated_at`.
+
+## 6. Multi-tenancy
+
+`restaurantId` travels in the JWT payload and is the tenant boundary. A SUPERADMIN may have no restaurant, and then sees everything; any other role without a restaurant is rejected. RLS policies exist in migration `00002` but do not apply, because the functions use the service role.
+
+## 7. Git workflow
+
+Branch per task → PR → `develop` → PR → `main`. Commits are prefixed (`feat:`, `fix:`, `chore:`) and **signed with an SSH key that asks for a passphrase**, so an agent cannot commit: leave the work staged and the message in `.git/<NAME>_COMMIT_MSG`, and let Nicolas run `git commit -F`.
+
+Branches chain off each other when the work builds on itself; the last one carries the whole chain, so one PR is enough.
+
+## 8. Language
+
+Code, comments, commits and documentation in **English**. Conversation with Nicolas in **Spanish**, using "tú", never voseo. User-facing strings in the product are Spanish.
+
+## 9. What is still missing
+
+- `JWT_SECRET` is in the history of a public repo and has not been rotated.
+- No per-role permissions inside a restaurant: a WAITER can close the register. `role_permissions` exists and is unused.
+- Auth is still incomplete: `auth-forgot-password`, `auth-reset-password`, `auth-verify-email` and `auth-resend-verification` are called by the client and do not exist.
+- Refresh rotation has no grace window: a refresh that succeeds but whose response is lost (flaky network), retried with the same token, counts as reuse and closes every session of that user. Supabase Auth tolerates a short window (`refresh_token_reuse_interval = 10` in `config.toml`); `rotate_refresh_token_tx` does not. Two browser tabs racing to refresh at the same instant hit the same case.
+- Blacklisted access tokens are not checked on every request (that would be a database round trip per call), so logout takes effect for refreshes immediately and for the access token within its 30 minutes.
+- Profile photo upload needs Supabase Storage.
+- Analytics: menu engineering, predictions and heatmap are still on the legacy API.
+- 58 functions is a lot of cold starts and duplicated boilerplate; grouping them by domain behind a router is the next architectural step, and it changes every client URL.
+- Moving to Supabase Auth with a custom claims hook would remove the hand-rolled JWT and hashing, and would make the RLS policies real.
+- `roles-list` has a pre-existing type error; input validation is hand-written (no Zod); `esm.sh` imports are not version-pinned; the only test is `_shared/cors_test.ts`, and none cover the functions themselves.

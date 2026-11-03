@@ -209,3 +209,24 @@ verify_jwt = false
 
 [functions.analytics-top-products]
 verify_jwt = false
+
+[functions.menu-items-stock-adjust]
+verify_jwt = false
+
+[functions.menu-items-stock-reset]
+verify_jwt = false
+
+[functions.menu-items-stock-history]
+verify_jwt = false
+
+[functions.menu-items-inventory-type]
+verify_jwt = false
+
+[functions.menu-items-stock-movements]
+verify_jwt = false
+
+[functions.auth-refresh-token]
+verify_jwt = false
+
+[functions.auth-logout]
+verify_jwt = false

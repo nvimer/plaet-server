@@ -24,6 +24,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const categoryId = url.searchParams.get("categoryId");
     const isAvailable = url.searchParams.get("isAvailable");
     const search = url.searchParams.get("search");
+    // "low" = at or under the alert but still sellable; "out" = nothing left.
+    const stockStatus = url.searchParams.get("stockStatus");
 
     const supabase = getSupabase();
 
@@ -48,6 +50,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (search) {
       query = query.ilike("name", `%${search}%`);
     }
+    if (stockStatus === "out") {
+      query = query.eq("inventory_type", "TRACKED").lte("stock_quantity", 0);
+    } else if (stockStatus === "low") {
+      query = query.eq("inventory_type", "TRACKED").gt("stock_quantity", 0);
+    }
 
     const { data: items, error: queryError } = await query;
 
@@ -68,13 +75,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
       countQuery = countQuery.eq("is_available", isAvailable === "true");
     }
     if (search) countQuery = countQuery.ilike("name", `%${search}%`);
+    if (stockStatus === "out") {
+      countQuery = countQuery.eq("inventory_type", "TRACKED").lte("stock_quantity", 0);
+    } else if (stockStatus === "low") {
+      countQuery = countQuery.eq("inventory_type", "TRACKED").gt("stock_quantity", 0);
+    }
 
     const { count: total } = await countQuery;
+
+    // PostgREST can't compare two columns, so the alert threshold is applied here.
+    const filtered = stockStatus === "low"
+      ? (items || []).filter(i => Number(i.stock_quantity) <= Number(i.low_stock_alert ?? 0))
+      : (items || []);
 
     return cors(json({
       success: true,
       message: "Menu items fetched successfully",
-      data: deepToCamelCase(items || []),
+      data: deepToCamelCase(filtered),
       meta: {
         page,
         limit,
